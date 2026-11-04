@@ -4,7 +4,7 @@ Back to the [master plan](README.md).
 
 ## Method
 
-Scores are prospective judgments on a 0 to 10 scale, where higher is better. Weighted totals are the sum of each score times its percentage weight divided by 100. Criteria and weights reflect the particular choice, not forecasts of judging. Risk scores reflect estimated probability times impact, with higher scores meaning lower risk. Margins compare the winner with the highest-scoring alternative; margins below 0.5 are sensitive. Evidence describes assumptions to test, not completed results. A conditional choice remains subject to its stated gate. Weights express the solo builder’s preferences, not the published judging weights. Scores are ordinal estimates, not measured probabilities or forecasts; decimal totals are arithmetic, not measurement precision. Effort and risk can correlate; criteria address distinct consequences but independence is not assumed. A one-point score change shifts a total by the criterion weight divided by 100. Linked plans and reviews establish the rationale, not implementation.
+Scores are prospective judgments on a 0 to 10 scale, where higher is better. Weighted totals are the sum of each score times its percentage weight divided by 100. Criteria and weights reflect the particular choice, not forecasts of judging. Risk scores reflect estimated probability times impact, with higher scores meaning lower risk. Margins compare the winner with the highest-scoring alternative; margins below 0.5 are flagged sensitive as a screening rule, not a robustness test. Evidence describes assumptions to test, not completed results. A conditional choice remains subject to its stated gate. Judging weights are Switch 30%, technical execution 25%, creativity and impact 25%, presentation 20% ([scorecard](09-submission-and-risks.md)); each local criterion approximates the relevant judging dimensions while explicitly accounting for builder-hours and delivery or authorization risk. These local weights express the solo builder’s preferences, not a conversion of the judging rubric. Scores are ordinal estimates, not measured probabilities or forecasts; decimal totals are arithmetic, not measurement precision. Effort and risk can correlate; criteria address distinct consequences but independence is not assumed. A one-point score change shifts a total by the criterion weight divided by 100. Linked plans and reviews establish the rationale, not implementation.
 
 ## Summary
 
@@ -27,7 +27,7 @@ Scores are prospective judgments on a 0 to 10 scale, where higher is better. Wei
 | [Test tools](#test-tools) | pytest and Playwright | 3.00 | Not within 0.5 |
 | [Eval metric](#eval-metric) | pass^3 plus Wilson intervals | 2.75 | Not within 0.5 |
 | [CI scope](#ci-scope) | Offline deterministic matrix | 2.60 | Not within 0.5 |
-| [Schedule](#schedule) | Rebased 38 h 10 min core | 2.40 | Not within 0.5 |
+| [Schedule](#schedule) | Rebased 40 h 10 min core | 2.40 | Not within 0.5 |
 | [Wispr usage](#wispr-usage) | Authentic build dictation and Insights | 3.75 | Not within 0.5 |
 | [Prize stacking](#prize-stacking) | Main track plus eligible side tracks | 3.60 | Not within 0.5 |
 | [Core PR](#core-pr) | Skip before submission | 3.30 | Not within 0.5 |
@@ -35,7 +35,7 @@ Scores are prospective judgments on a 0 to 10 scale, where higher is better. Wei
 | [Novelty: source flow](#novelty-source-flow) | Optional source labeling | 2.55 | Not within 0.5 |
 | [Novelty: RO-Crate](#novelty-ro-crate) | Optional provenance export | 2.55 | Not within 0.5 |
 | [Novelty: delegation](#novelty-delegation) | Defer scoped delegation | 4.00 | Not within 0.5 |
-| [User study](#user-study) | One reachable participant if core green | 0.20 | Sensitive |
+| [User study](#user-study) | One optional 0.5 h booking observation | 0.20 | Sensitive |
 | [Room layout](#room-layout) | One core room | 0.60 | Not within 0.5 |
 | [External sharing](#external-sharing) | Synthetic internal demo | 3.70 | Not within 0.5 |
 | [Server path](#server-path) | Native Windows first | 1.35 | Not within 0.5 |
@@ -148,7 +148,7 @@ Total: 0.45 x 8 + 0.35 x 9 + 0.20 x 4 = 7.55.
 Total: 0.45 x 9 + 0.35 x 4 + 0.20 x 9 = 7.25.
 
 Margin: 0.30 points. Evidence: [03-architecture.md#technology-choices](03-architecture.md#technology-choices). Revisit: Run I-01 for 50 concurrent attempts and a restore test; reconsider for measured contention or multi-host requirements.
-Sensitive: if I-01 reveals enough contention or transaction failures to lower SQLite transaction safety by one point, its total falls 0.45 and PostgreSQL leads.
+Calibration: during the scheduled transactional-store block, run I-01 and record actual contention and failures; absent results the scores are provisional. Sensitive: if I-01 reveals enough contention or transaction failures to lower SQLite transaction safety by one point, its total falls 0.45 and PostgreSQL leads.
 
 ### MCP versus CLI
 
@@ -197,7 +197,7 @@ Total: 0.40 x 7 + 0.35 x 8 + 0.25 x 6 = 7.10.
 Total: 0.40 x 8 + 0.35 x 4 + 0.25 x 9 = 6.85.
 
 Margin: 0.25 points. Evidence: [03-architecture.md#34-scholarly-apis-and-budgets](03-architecture.md#34-scholarly-apis-and-budgets). Revisit: Inspect pinned fixture coverage and live budgets; add sources only for a demonstrated gap.
-Sensitive: if pinned fixture testing shows the chosen pair misses a required source that an extra API reliably supplies, lowering its coverage score by one point reduces its total by 0.40 and flips this choice.
+Calibration: scholarly work is deferred; before enabling it separately fund and time the pinned fixture comparison against an extra API, recording coverage and failures. Sensitive: if pinned fixture testing shows the chosen pair misses a required source that an extra API reliably supplies, lowering its coverage score by one point reduces its total by 0.40 and flips this choice.
 
 ### Verifier thresholds
 
@@ -217,6 +217,8 @@ Margin: 1.25 points. Evidence: [06-testing.md](06-testing.md). Revisit: Run cita
 
 ### Stale cascade
 
+This conditional roadmap choice does not fund stale detection; the booking-only baseline has none.
+
 - **Delivery risk, 45%:** unfunded work can threaten booking.
 - **Demonstrated consequence, 35%:** release denial is the proposed distinction.
 - **Claim integrity, 20%:** story must match behavior.
@@ -233,6 +235,8 @@ Margin: 0.60 points. Evidence: [03-architecture.md#33-data-model-and-invariants]
 
 ### Demo scenario
 
+This comparison selects a fixture for the separately funded expanded scenario. The funded booking-only demo uses the conflict and alternative in [04](04-demo.md); no plate is required.
+
 - **Evidence trace, 45%:** a correction must map to exact data.
 - **Clarity, 35%:** judges must understand the scenario.
 - **Preparation, 20%:** fixtures must be ready.
@@ -248,6 +252,8 @@ Total: 0.45 x 5 + 0.35 x 7 + 0.20 x 4 = 5.50.
 Margin: 2.15 points. Evidence: [04-demo.md](04-demo.md). Revisit: Rehearse C5 mapping and paired output; reconsider if viewers cannot follow or fixture fails.
 
 ### Demo duration
+
+This compares expanded cuts only. The funded booking-only and proposal-only targets are each 2:00; the 3:50 expanded target requires separately funded capabilities.
 
 - **Viewer comprehension, 40%:** proof must be legible.
 - **Deadline effort, 35%:** editing competes with delivery.
@@ -333,7 +339,7 @@ Margin: 2.60 points. Evidence: [06-testing.md#66-ci-githubworkflowsciyml](06-tes
 - **Functional coverage, 30%:** more scope can increase proof.
 - **Fatigue and contingency, 20%:** one builder needs rest and slack.
 
-**Rebased 38 h 10 min core: 5.80/10.** Deadline feasibility 6/10: smaller reforecast remains unvalidated and may overlap. Functional coverage 6/10: cuts retain booking while features fall away. Fatigue and contingency 5/10: planned rest and slack are not a guarantee.
+**Rebased 40 h 10 min core: 5.80/10.** Deadline feasibility 6/10: smaller reforecast remains unvalidated and may overlap. Functional coverage 6/10: cuts retain booking while features fall away. Fatigue and contingency 5/10: planned rest and slack are not a guarantee.
 
 Total: 0.50 x 6 + 0.30 x 6 + 0.20 x 5 = 5.80.
 
@@ -461,7 +467,7 @@ Margin: 4.00 points. Evidence: [03-architecture.md](03-architecture.md). Revisit
 - **Feasibility, 35%:** recruitment must not threaten submission.
 - **Breadth, 20%:** more participants can uncover issues.
 
-**One reachable participant if core green: 5.65/10.** Evidence quality 5/10: one uncoached observation is exploratory. Feasibility 8/10: 09 caps this at half an hour after core. Breadth 3/10: one person covers little variation.
+**One optional 0.5 h booking observation: 5.65/10.** Evidence quality 5/10: one uncoached observation is exploratory. Feasibility 8/10: 09 caps this at half an hour after core. Breadth 3/10: one person covers little variation.
 
 Total: 0.45 x 5 + 0.35 x 8 + 0.20 x 3 = 5.65.
 
@@ -470,9 +476,11 @@ Total: 0.45 x 5 + 0.35 x 8 + 0.20 x 3 = 5.65.
 Total: 0.45 x 7 + 0.35 x 2 + 0.20 x 8 = 5.45.
 
 Margin: 0.20 points. Evidence: [01-problem-market-usp.md](01-problem-market-usp.md). Revisit: After core green measure completion and active versus wait time; plan a larger same-task comparison if access permits.
-Sensitive: if recruiting a suitable cohort takes at most the half-hour allocated for one observation, raise cohort feasibility by one point; its total rises 0.35 and it leads.
+Sensitive: a one-point cohort feasibility increase raises its total by 0.35 to 5.80 and reverses the 0.20 margin. Calibrate only after core is green by timing recruitment, all cohort sessions and analysis against a separately funded block; recruiting alone is insufficient. The selected optional 0.5 h booking observation is unfunded and cannot validate the full 1.25-1.75 h protocol.
 
 ### Room layout
+
+Sensitivity beyond the 0.5 screen: a two-point change to the 40% demonstration-coverage score changes a total by 0.80, exceeding the 0.60 margin. Calibrate with the S4 timed room import and the Friday two-viewer rehearsal; until then retain one room unless the observed failure justifies a separately funded reforecast.
 
 - **Demonstration coverage, 40%:** core needs a decision room.
 - **Provisioning effort, 35%:** more rooms require tests.
@@ -630,7 +638,7 @@ Total: 0.55 x 9 + 0.25 x 6 + 0.20 x 7 = 7.85.
 
 Total: 0.55 x 2 + 0.25 x 8 + 0.20 x 8 = 4.70.
 
-Margin: 3.15 points. Evidence: [03-architecture.md](03-architecture.md). Revisit: Run U-C02 subset negation and mismatch cases with zero automatic passes; reconcile conflicting test text; see [VN-03](../review/round2/v-novelty.md).
+Margin: 3.15 points. Evidence: [03-architecture.md](03-architecture.md). Revisit: Run U-C02 subset negation and mismatch cases with zero automatic passes; see [VN-03](../review/round2/v-novelty.md).
 
 ### Protocol history
 

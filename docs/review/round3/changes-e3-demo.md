@@ -23,7 +23,7 @@
 
 ## Requests for other owners
 
-- VP-02, README Numbers and first actions: replace the old three projections and "booking-only cut has no numerical projection" with: "Conditional booking-only, separately funded stale-detection and full-release projections are 68, 72.75 and 82.75 out of 100; no score is earned, and proposal-only has no projection. See [submission and risks](09-submission-and-risks.md)."
+- VP-02, README Numbers and first actions: replace the old three projections and "booking-only cut has no numerical projection" with: "Conditional booking-only, separately funded stale-detection and full-release projections are 68, 72.75 and 82.75 out of 100; no score is earned, and proposal-only has no projection. See [submission and risks](../../plan/09-submission-and-risks.md)."
 - VP-03, README opening: add "If certification fails, the filmed workflow is proposal-only: an unapproved alternative and no committed booking, subject to the recorded status evidence." Link `docs/evidence/proposal-only/` only after the matching artifact exists.
 
 ## Open questions

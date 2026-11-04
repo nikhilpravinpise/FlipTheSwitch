@@ -3,7 +3,7 @@
 | File | Use | Verified by |
 | --- | --- | --- |
 | `labquorum-core.template.yaml` | Solo core: four agents in one room, three HQ roles | Spike S4 |
-| `labquorum-lab.template.yaml` | Run once per lab in Switch Console: the five agents (instructions, addressing, directories, `auto_mode: false`), the HQ room, handbook, roles, aliases, kickoff | Spike S4 |
+| `labquorum-lab.template.yaml` | Run once per lab in Switch Console: the five agents (instructions, addressing, directories, `auto_mode: false`), the HQ room, handbook, roles, aliases, kickoff | Optional; separately fund import |
 | `labquorum-project.template.yaml` | Run once per project, per demo take and per E2E run: one project room that reuses the lab's agents through `type: agent` params | Spike S4 |
 | `seed-data.md` | Demo seed sketch: people, instruments, inventory, protocol, papers, plate CSVs, request ids | Golden tests U-D05, I-09, I-15 |
 

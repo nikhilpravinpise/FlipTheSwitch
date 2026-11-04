@@ -14,6 +14,6 @@
 | [Submission and risks](plan/09-submission-and-risks.md) | Form, prizes, scores and operational risks |
 | [Decision record](plan/10-decision-record.md) | Weighted choices and revisit triggers |
 | [Templates](plan/templates/README.md) | Draft templates and seed fixtures |
-| [Reviews](review/) | Round 1 and round 2 findings, change logs and integration checks |
+| [Reviews](review/) | Round 1, round 2 and round 3 findings, change logs and integration checks |
 | [Event briefing](flip-the-switch-hackathon.md) | Hackathon facts and Switch references |
 

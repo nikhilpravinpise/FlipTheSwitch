@@ -85,7 +85,7 @@ Never draw fake approval buttons, never present a deterministic replay as a live
 
 ## 4.6 Recording and editing
 
-- **Baseline first:** record one complete, honest take on Friday evening and keep it untouched as the fallback.
+- **Baseline first:** record one complete, honest take Friday 20:15-22:15 and keep it untouched as the fallback; freeze Saturday 00:15.
 - **Final:** three full takes Saturday 10:30-12:30, after clean-room testing 09:00-10:30; edit 13:15-15:15. Pick the best complete causal run; label any retake that starts a new scenario.
 - Edit in Clipchamp (built into Windows) or DaVinci Resolve; burned-in captions; 1080p; upload to YouTube (public or unlisted per organizer guidance) and attach to a GitHub release.
 - Pixel pass: full-width chat for decisions, figure close-up and brief audit inset only when useful. Inspect upload at 720p and embedded size; key text should be >=16 px at 720p and readable by two viewers without pause. Crop to relevant rows and highlight two draft sentences.

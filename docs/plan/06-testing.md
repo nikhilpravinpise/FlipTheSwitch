@@ -129,7 +129,7 @@ IDs are stable and become test names (`test_U_B01_...`).
 | U-C07 | Preprint with published version gives `VERIFIED_WITH_NOTE` + version of record |
 | U-C08 | Network failure after retries gives `UNREACHABLE`, never `VERIFIED` |
 | U-C09 | Dedupe by DOI, else normalized title + first author + year |
-| U-C10 | Parse DOI and author-year references from Markdown, text and BibTeX; malformed or unparsed references block publication, and matching metadata alone never proves claim support |
+| U-C10 | Resolve DOI or author-year references to unique verified library IDs; ambiguous, unmatched or unsupported references require human review and are never automatically approved. Claim support remains separate. |
 | U-C11 | `draft_put_section` refuses any DOI without a passing verdict and names it |
 | U-C12 | Correction or expression of concern gives `VERIFIED_WITH_NOTE`; DataCite DOI falls back to OpenAlex |
 
