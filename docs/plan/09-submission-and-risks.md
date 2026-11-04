@@ -79,10 +79,12 @@ Reduced-build independent estimate: Switch 7.5, technical 6.5, creativity 5.5, p
 | Room sessions exceed laptop capacity (S6) | Medium | Medium | Measure actual 3 + 5R sessions, clean prior takes, require 20% RAM headroom; cut `@scribe` if needed |
 | LLM variance while recording | High | Medium | Deterministic core, tight instructions, baseline video, one traceable causal run and labeled new-scenario retakes |
 | OpenAlex new-account pacing or budgets | Medium | Medium | Key created Wednesday; cache; cassettes; labeled replay |
-| Scope creep | High | High | Cut lines A-D; freeze Fri 23:00 |
+| Scope creep | High | High | Cut lines A-D; freeze Fri 22:45 |
 | Solo fatigue | High | High | Scheduled sleep |
 | Overclaiming (privacy, compliance, IRB, Wispr API) | Medium | High | Limits section in README; honest labels |
 | Submit form surprises | Low-medium | High | S8 on Wednesday; submit five hours early |
+
+**Operational ownership and costs:** For the solo demonstration the builder operates and backs up the standalone ledger, verifies restore, reconciles any external record manually, and monitors the PI queue. The PI is the planned decision owner; a named real human fallback must be agreed before any real deployment, otherwise requests remain pending or expire. No external purchasing is performed. Estimate total cost as hosting + model/API usage + storage/backups + operator and PI time + reconciliation and recovery; all components and actual demand remain unmeasured. For an illustrative monthly cost, assuming $0 hosting, $10 model/API, $2 backup storage, two operator hours and 10 PI minutes at an assumed $20/hour, total is 0 + 10 + 2 + (2 + 10/60) x 20 = $55.33; replace every assumption with observed values, including reconciliation and recovery time. Do not equate self-hosting with free operation. If 0.5-0.75 h remains after core and delivery are green, test whether lineage is readable in the existing room message; record active task and wait separately.
 
 ## 9.8 Questions for the organizers (WeMakeDevs Discord, Wednesday)
 

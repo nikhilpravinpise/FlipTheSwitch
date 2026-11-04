@@ -35,7 +35,7 @@ All run on **Claude Code** via Switch Console (`@analyst` may run on Codex if sp
 
 **The rule that makes it safe:** an agent that anyone may address must have **nothing ask-reachable**, because "anyone may address" means "anyone may answer its cards". So gated tools live only on `@pi-desk`, which only the PI may address, and every `anyone` agent has all built-in tools that could prompt (Bash, PowerShell, Read, Glob, Grep, Write, Edit, WebFetch and unapproved MCP tools) denied. This is enforced three ways: the MCP server registers tools per profile, each agent folder's `.claude/settings.json` denies everything else, and contract tests (C-01 to C-12) fail the build if either drifts.
 
-Why five: roles make handoffs and tool boundaries explicit; cost and completion effects are unmeasured. Scribe can be folded into analyst, reducing configured agents by 20%, not necessarily token usage. A separate `@protocol` agent would share `@labops`'s boundary (it proposes). A `@coordinator` is unnecessary because Switch addressing, `send_targeted_message` and roles already route work. `@scribe` is the first to cut (cut line A) if spike S6 shows five concurrent sessions do not fit the laptop.
+The four-agent core omits `@scribe`; the five-agent configuration below is roadmap. Roles make handoffs and tool boundaries explicit; cost and completion effects are unmeasured. Scribe can be folded into analyst, reducing configured agents by 20%, not necessarily token usage. A separate `@protocol` agent would share `@labops`'s boundary (it proposes). A `@coordinator` is unnecessary because Switch addressing, `send_targeted_message` and roles already route work. S6 measures the actual room-attending sessions, not just configured identities.
 
 ### Shared rules (in every agent's instructions and the `Lab handbook` room document)
 
@@ -73,10 +73,12 @@ Why five: roles make handoffs and tool boundaries explicit; cost and completion 
 
 ## 2.3 Rooms, roles and documents
 
+The solo core uses one room with `labops`, `scout`, `pi-desk`, and `analyst`. The two-room, five-agent arrangement below is a template and roadmap configuration, not a requirement for the core. Keep external collaborators out of internal rooms; all demo data is synthetic. Participant checks and query-length limits do not intercept every Switch attachment or establish confidentiality.
+
 | Room | Bridge | Members | Purpose | Documents | MVP? |
 | --- | --- | --- | --- | --- | --- |
-| `#rao-lab-hq` | Mattermost | PI, lab members, `@labops`, `@pi-desk`, `@scout` | Lab-wide operations: bookings, inventory, safety, digest | `Lab handbook` (SOPs, mention and approval etiquette), `Instrument rules`, `Lab state` (created and kept current by `@labops` from the ledger) | MVP |
-| `#rao-proj-<slug>` (demo: `#rao-proj-egcg`) | Mattermost | PI, Maya, internal lab members, all five agents | One project from question to draft | `Project charter` (question, hypotheses, success criteria, from a template param), `Draft` (created by `@scribe`) | MVP |
+| `#rao-lab-hq` | Mattermost | PI, lab members, `@labops`, `@pi-desk`, `@scout` | Lab-wide operations: bookings, inventory, safety, digest | `Lab handbook` (SOPs, mention and approval etiquette), `Instrument rules`, `Lab state` (created and kept current by `@labops` from the ledger) | Roadmap |
+| `#rao-proj-<slug>` (demo: `#rao-proj-egcg`) | Mattermost | PI, Maya, internal lab members, all five agents | One project from question to draft | `Project charter` (question, hypotheses, success criteria, from a template param), `Draft` (created by `@scribe`) | Roadmap |
 | `#bench` | Telegram group adopted by Switch | RA and student phones, `@labops` | Hands-busy bench logging from a phone with the iPhone Flow keyboard or Android Flow bubble on a tested device | none | Polish |
 
 - Room instruction for HQ: "This is the Rao Lab operations room. Book instruments and order reagents through @labops; approvals come from @pi-desk and only Prof. Rao can grant them. One thread per request."
@@ -90,39 +92,33 @@ Templates (two, because a template that creates agents refuses to run again once
 
 ## 2.4 Scope across the research lifecycle
 
-Legend: **MVP** must ship and be in the video. **Polish** only after the MVP E2E suite passes three consecutive runs. **Stretch** is roadmap unless everything else is done.
+The binding solo scope is one room, four agents (`labops`, `scout`, `pi-desk`, `analyst`), one booking request, one pinned citation fixture, one synthetic CSV, a descriptive figure and a small stale check. The broader lifecycle below is roadmap unless explicitly included in that core; protocol release, inventory orders, general bench parsing, external rooms and other providers are roadmap. Release refusal and fresh reapproval are conditional on the complete tested cycle. Cut literature and assay if the critical path slips.
 
 | Stage | What LabQuorum does | Agent | Tier |
 | --- | --- | --- | --- |
-| Problem selection | `Project charter` from the project template (question, hypotheses, success criteria, risks); `@scout` novelty scan | scout | MVP (charter); polish (novelty scan) |
-| Literature review | OpenAlex search, dedupe by DOI and normalized title, project library, reading queue | scout | MVP |
-| Citation verification | `verify_citation`, `verify_bibliography`: DOI resolves, title, first author, year, retraction, version of record | scout, scribe | **MVP** |
+| Problem selection | `Project charter` from the project template (question, hypotheses, success criteria, risks); `@scout` novelty scan | scout | Roadmap |
+| Literature review | OpenAlex search, dedupe by DOI and normalized title, project library, reading queue | scout | Core: one pinned fixture; broader search roadmap |
+| Citation verification | `verify_citation`, `verify_bibliography`: DOI resolves, title, first author, year, retraction, version of record | scout, scribe | Core: one pinned fixture; bibliography roadmap |
 | Hypothesis | Stored in the charter; `@analyst` maps each hypothesis to a planned recipe and primary endpoint | analyst | Polish |
-| Protocol | Versioned Markdown protocol; hazard scan from a seeded hazard table (about 30 reagents, fail closed on unknowns); draft, in review, released, superseded | labops, pi-desk | MVP (hazard scan + gated release) |
+| Protocol | Versioned Markdown protocol; hazard scan from a seeded hazard table (about 30 reagents, fail closed on unknowns); draft, in review, released, superseded | labops, pi-desk | Roadmap |
 | Equipment booking | Availability, training at booking start, maintenance, min gap, nearest free slot, proposal, gated commit | labops, pi-desk | **MVP (flagship)** |
-| Inventory | Stock vs protocol need (unit-safe), reorder proposal to pack size, gated commit | labops, pi-desk | MVP |
-| Bench log | Draft from text or dictation, structured read-back, token confirmation, linked to the released protocol version | labops | MVP in Mattermost; Telegram polish |
-| Data capture | CSV attached in chat; `register_dataset` (SHA-256, schema, sensitivity); strict validation with row-level errors | analyst | MVP |
+| Inventory | Stock vs protocol need (unit-safe), reorder proposal to pack size, gated commit | labops, pi-desk | Roadmap |
+| Bench log | Draft from text or dictation, structured read-back, token confirmation, linked to the released protocol version | labops | Roadmap |
+| Data capture | CSV attached in chat; `register_dataset` (SHA-256, schema, sensitivity); strict validation with row-level errors | analyst | Core: one synthetic CSV |
 | Analysis | `run_analysis` descriptive recipe for one synthetic plate; inferential recipes and `run_script` are roadmap | analyst | MVP (one recipe) |
-| Results review and stale cascade | Every run, figure and draft section records its parents' hashes; a changed dataset or recipe marks computational descendants stale; critical protocol changes require review without rewriting performed history | analyst, scribe, pi-desk | **MVP (the third wow)** |
+| Results review and stale cascade | Every run, figure and draft section records its parents' hashes; a changed dataset or recipe marks computational descendants stale; critical protocol changes require review without rewriting performed history | analyst, scribe, pi-desk | Core stale detection; release enforcement conditional |
 | Approvals | Certified fresh Switch decision per gated call; ledger lifecycle with revision, hash, hold expiry | pi-desk | **MVP** |
-| Paper drafting | Methods from the protocol version, results from runs, related work from the library; Markdown; PDF via Pandoc if installed | scribe | MVP (one results paragraph + methods); PDF polish |
-| Results packet | `finalize_packet`: minimal currentness check and exact-revision release decision; ZIP formatting is polish | pi-desk | MVP |
+| Paper drafting | Methods from the protocol version, results from runs, related work from the library; Markdown; PDF via Pandoc if installed | scribe | Fixed results paragraph only; methods and PDF roadmap |
+| Results packet | `finalize_packet`: minimal currentness check and exact-revision release decision; ZIP formatting is polish | pi-desk | Conditional roadmap |
 | Daily digest | `@labops standup`: today's bookings, low stock, pending approvals, expiring training | labops | Polish (manual trigger) |
 | Export | BibTeX / CSL JSON for Zotero; bench log to eLabFTW | scout, labops | BibTeX polish; eLabFTW stretch |
 | Submission checklist | All citations verified, figures from recorded runs, data availability statement | scribe, pi-desk | Stretch |
 
-**Definition of shipped:** a clean clone on Windows can run the deterministic suite green, load the demo seed, import both templates into a running Switch with Mattermost, and complete the demo story in a real browser: metadata and indexed retraction checks with a labeled fixture, a booking and order proposed, a student refused, a PI approval recorded by Switch, an analysis with provenance, a structured draft with resolved library entries and claim support labeled unreviewed, and a stale cascade after a data correction.
+**Definition of shipped:** the selected core runs in one real Switch room on the recorded version tuple; the booking and real human gate pass, the synthetic figure and stale check work if retained, and the clean-clone instructions match the actual build. No unrun feature or test is claimed. If authorization cannot be proven, disable commits and present proposal-only behavior.
 
 ### Cut lines (solo)
 
-| Checkpoint | Trigger | Decision |
-| --- | --- | --- |
-| A, Thu 18:00 | Spike S6 shows the room-attending sessions do not fit | Drop `@scribe` from MVP; `@analyst` writes the results paragraph through `draft_put_section` |
-| B, Fri 12:00 | `run_script` container not solid on Windows | Recipes only; `run_script` becomes roadmap |
-| C, Fri 20:00 | Telegram claim and link flow not done | `#bench` dropped from the video; bench logging shown in Mattermost |
-| D, Fri 13:30 | No complete green cycle | Feature freeze; ship literature + booking/approval + analysis + stale; do not advertise cut stages |
-| Never cut | | A tested authenticated PI decision (native card or steward message), the wrong-person refusal, citation verification, the stale cascade core, the README reproduction path, the CI suite |
+Use the checkpoints and escalation rules in [08](08-build-schedule.md#83-escalation-rules). Cut literature and analysis first if the critical loop slips; preserve testing, evidence, a baseline recording and submission. A steward requires 3-5 hours and all its identity and recovery tests. Never claim a binding decision without the tested native or steward boundary.
 
 ### With teammates
 

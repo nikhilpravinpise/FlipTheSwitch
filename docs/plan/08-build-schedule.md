@@ -4,6 +4,8 @@ Back to the [master plan](README.md). All times IST; hard cutoff **Saturday 7 No
 
 ## 8.1 Day-1 spikes with go/no-go rules
 
+Reserve 1-1.5 h for version certification inside the overlapping S2/S3 and harness blocks, in addition to the 1.25 h S3d boundary inventory. At most one optional 1.5-2 h research upgrade may be considered before the Friday checkpoint, only after the core passes and actual slack is verified.
+
 Record installed versions, effective configuration hashes/revision, room/session/tool-call IDs, request revision/hash, displayed decision and ledger outcome in `docs/adr/000-spikes.md` and `docs/test-evidence.md`. Build the minimal two-person Playwright harness and observe a behavioral red before binding commit implementation (EN-03). Each box includes its result; stop on failure.
 
 | Spike | Box | Pass / decision |
@@ -23,7 +25,7 @@ Decision by end of S3: native card only if all installed-runtime gates pass. A t
 
 ## 8.2 Hour by hour
 
-Reforecast at Thu 00:20 checkpoint: 38 h 40 min scheduled work including 1 h 55 min defect slack and 30 min submission; 4 h 59 min later calendar contingency remains after the target submission. The schedule is contingent on S0 path A; path B costs 60-90 min and consumes defect slack or displaces the citation beat. No unpaid overlap between tasks. Windows are illustrative and must be shifted if the actual start differs.
+Reforecast at Thu 00:20 checkpoint: 38 h 10 min scheduled work including 1 h 55 min defect slack and 30 min submission; 4 h 59 min later calendar contingency remains after the target submission. The schedule is contingent on S0 path A; path B costs 60-90 min and consumes defect slack or displaces the citation beat. No unpaid overlap between tasks. Windows are illustrative and must be shifted if the actual start differs.
 
 | IST | Work and checkable exit | Hours |
 | --- | --- | ---: |
@@ -47,18 +49,18 @@ Reforecast at Thu 00:20 checkpoint: 38 h 40 min scheduled work including 1 h 55 
 | Fri 18:45-20:45 | Baseline rehearsal and recording with future valid slot | 2 |
 | Fri 20:45-22:45 | Blog, voice log, submission draft; feature freeze | 2 |
 | Fri 22:45-Sat 07:00 | Sleep | 0 |
-| Sat 07:00-09:00 | Run actual MVP gate, record timings and failures | 2 |
-| Sat 09:00-10:00 | Clean-room setup against README | 1 |
-| Sat 10:00-12:00 | Final takes or keep baseline | 2 |
-| Sat 12:00-12:45 | Lunch | 0 |
-| Sat 12:45-14:45 | Edit, caption, upload and verify logged out | 2 |
-| Sat 14:45-16:00 | README, blog and links | 1.25 |
-| Sat 16:00-17:55 | Defect and overrun slack, no features | 1.92 |
-| Sat 17:55-18:30 | Final Wispr Insights screenshot, package and link audit | 0.58 |
+| Sat 07:00-08:30 | Run actual MVP gate, record timings and failures | 1.5 |
+| Sat 09:00-10:30 | Clean-room setup against README | 1.5 |
+| Sat 10:30-12:30 | Final takes or keep baseline | 2 |
+| Sat 12:30-13:15 | Lunch | 0 |
+| Sat 13:15-15:15 | Edit, caption, upload and verify logged out | 2 |
+| Sat 15:15-16:30 | README, blog and links | 1.25 |
+| Sat 16:30-18:25 | Defect and overrun slack, no features; capture final Insights by 18:00 | 1.92 |
+| Sat 18:25-18:30 | Package and link audit; attach/check Insights | 0.08 |
 | Sat 18:30-19:00 | Submit via website Submit form and save confirmation | 0.5 |
 | Sat 19:00-23:59 | Submission contingency only | 0 |
 
-Bottom-up forecast within the above blocks: setup, proof and harness 5.42 h; minimum domain/store/MCP loop 5 h; integration, seed and evidence 3 h; optional literature and descriptive assay 5 h; testing/capacity 5 h; docs/clean room 6.25 h; recording/edit 6 h; final package 0.58 h; defect slack 1.92 h; submission 0.5 h. These categories total 38.67 h, so they exceed the listed 38.67 h blocks by 0 h; actual durations and remaining available hours must be recalculated at each checkpoint. Critical path: S0 -> S1/S2/S3 -> red harness -> transactional booking -> real decision -> MVP gate -> baseline -> edit -> Submit. MVP target is one room and four agents: `labops`, `scout`, `pi-desk`, and `analyst` (also writes the fixed results paragraph), one booking kind, one citation fixture, one synthetic CSV, a descriptive figure and a stale check. Cut literature and assay only if the core path slips, and disclose the reduced demo. Protocol release, inventory orders, general bench parsing and external rooms are roadmap.
+Bottom-up forecast within the above blocks: setup, proof and harness 5.42 h; minimum domain/store/MCP loop 5 h; integration, seed and evidence 3 h; optional literature and descriptive assay 5 h; testing/capacity 4.5 h; docs/clean room 6.75 h; recording/edit 6 h; final package 0.08 h; defect slack 1.92 h; submission 0.5 h. These categories total 38.17 h, so they exceed the listed 38.17 h blocks by 0 h; actual durations and remaining available hours must be recalculated at each checkpoint. Critical path: S0 -> S1/S2/S3 -> red harness -> transactional booking -> real decision -> MVP gate -> baseline -> edit -> Submit. MVP target is one room and four agents: `labops`, `scout`, `pi-desk`, and `analyst` (also writes the fixed results paragraph), one booking kind, one citation fixture, one synthetic CSV, a descriptive figure and a stale check. Cut literature and assay only if the core path slips, and disclose the reduced demo. Protocol release, inventory orders, general bench parsing and external rooms are roadmap.
 
 ## 8.3 Escalation rules
 

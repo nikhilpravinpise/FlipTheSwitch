@@ -72,13 +72,13 @@ How the pieces connect (grounded in the Switch source and docs):
 | Choice | Alternatives | Why |
 | --- | --- | --- |
 | **Python 3.12 + uv** (lockfile) | Node/TypeScript | The analysis stack (pandas, scipy, statsmodels, matplotlib) is Python anyway; one language for ledger, MCP, recipes and tests; `uv` gives fast reproducible installs on Windows |
-| **SQLite, `BEGIN IMMEDIATE`, 5 s busy timeout, under `%LOCALAPPDATA%\LabQuorum`** | Postgres in Docker; JSON files | One file, transactional, zero ops. Room sessions may start multiple MCP processes, so writes are short immediate transactions; never in OneDrive (live SQLite corruption risk) |
+| **SQLite, `BEGIN IMMEDIATE`, 5 s busy timeout, under `%LOCALAPPDATA%\LabQuorum`** | Postgres in Docker; JSON files | One file and transactional, with backup and recovery work. Room sessions may start multiple MCP processes, so writes are short immediate transactions; never in OneDrive (live SQLite corruption risk) |
 | **MCP server (stdio) built with the official `mcp` Python SDK (FastMCP), one profile per agent** | Agents shell out to a CLI; an HTTP service | Typed tool schemas the agent sees; Claude Code permission rules match tool names (`mcp__lab__commit_booking`), so approval attaches to exactly the dangerous tool; a profile's missing tools simply do not exist. Pin `mcp<2` and test v1 FastMCP with a real stdio list-tools and gated round trip; stdout is JSON-RPC only, logs go to stderr |
 | **httpx + per-host token bucket + on-disk response cache** | requests; no cache | Async, timeouts, `Retry-After`; cache keeps demos fast and budgets safe |
 | **pytest-recording (VCR.py) cassettes, respx for fault injection** | Live APIs in CI | CI never depends on OpenAlex or Crossref uptime or budgets |
 | **rapidfuzz** for title matching | difflib | Fast, well-tested token-set ratios |
 | **pint** for units | Hand-rolled | Unit mismatch must fail, not silently convert |
-| **pandas, scipy (`scipy.stats.dunnett`), statsmodels, matplotlib** | R | Golden-testable, the agent never writes the statistics in the MVP |
+| **pandas and matplotlib; scipy and statsmodels only for separately validated future recipes** | R | Golden-testable, the agent never writes the statistics in the MVP |
 | **structlog JSON lines** | print | Correlated logs per request id |
 | **Pandoc if present, else Markdown + PNG** | A full TeX install | TeX on Windows is a time sink; `render_document` says "pandoc not found" loudly |
 | **No web dashboard** | Streamlit, Next.js, a Jinja dossier | A second UI competes with Switch and weakens the 30% criterion; room documents are the dashboard |
@@ -174,7 +174,7 @@ protocol_version, dataset_version, recipe/params
                         -> draft_section -> results packet
 ```
 
-Each node records its parents' fingerprints. Registering a corrected dataset (a new `dataset_version` that supersedes the old one), or changing a recipe version marks every descendant `STALE` with the reason ("DS-0003 v2 supersedes v1: well C5 corrected"). Effects: `finalize_packet` refuses while anything in the packet is stale; `draft_put_section` refuses to cite stale runs; `@analyst` and `@scribe` say what is stale and what to re-run; old versions stay readable with a stale mark. Re-running produces new ids; nothing becomes current again silently.
+Each node records its parents' fingerprints. Registering a corrected dataset (a new `dataset_version` that supersedes the old one), or changing a recipe version marks every descendant `STALE` with the reason ("DS-0003 v2 supersedes v1: well C5 corrected"). If release enforcement is implemented and passes the full cycle, `finalize_packet` refuses while anything in the packet is stale; `draft_put_section` refuses to cite stale runs; `@analyst` and `@scribe` say what is stale and what to re-run; old versions stay readable with a stale mark. Re-running produces new ids; nothing becomes current again silently.
 
 ### Where state lives
 
@@ -232,7 +232,7 @@ Every run records recipe name and version (or script hash), input hashes, output
 | Figures | PNG (300 dpi) + SVG | Switch `send_attachment` into the thread (certify installed outbound cap; inbound host cap is 10 MiB in reviewed version) |
 | Statistics | Markdown table in the message (Mattermost renders tables) + CSV | Message + attachment |
 | Draft | Creator-owned room document plus versioned Markdown | Scribe posts readable attachment; listing documents exposes metadata only |
-| Results packet | Minimal release record is MVP; optional ZIP includes input data, exact recipe source, lockfile, parameters, runtime versions, outputs, tolerances and tested reproduction command, plus sanitized decision/run timeline and synthetic label | Attachment after `finalize_packet` |
+| Results packet | Minimal release record is conditional on the full tested stale-release cycle; optional ZIP includes input data, exact recipe source, lockfile, parameters, runtime versions, outputs, tolerances and tested reproduction command, plus sanitized decision/run timeline and synthetic label | Attachment after `finalize_packet` |
 | Lab state digest | Creator-owned room document and readable status | `@labops` posts current snapshot in chat |
 
 ## 3.8 Observability, secrets, threat model

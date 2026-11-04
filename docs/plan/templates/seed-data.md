@@ -44,9 +44,9 @@ Opening hours: 08:00-20:00 Mon-Sat. Closures: none in the demo window.
 
 ## Papers
 
-- 6 to 8 real papers on EGCG and bacterial biofilms, chosen during the build with `@scout` and recorded as cassettes (the exact DOIs are picked live, verified, and pinned in `tests/fixtures/library.yaml`). Do not invent DOIs in seed files.
-- 1 retracted microbiology paper selected from Crossref retraction data (`/works?filter=update-type:retraction&query=biofilm`), pinned with its notice DOI.
-- 1 fabricated reference (plausible title, a DOI that does not resolve), used only inside Pin a relevant real source and a known planted negative fixture before filming. Record each DOI, expected classification, retrieval date and original/notice relationship. If the retracted source is unrelated, label it a generic planted citation-check example; never imply it supports EGCG. Two lookup misses mean unresolved, not proof of fabrication. Box selection to 30 minutes.
+- Pinned generic planted retraction example, unrelated to EGCG: original `10.1038/s41598-019-45611-3` expects `RETRACTED`; notice `10.1038/s41598-023-44593-7` is its retraction notice. [Crossref Crossmark](https://crossmark.crossref.org/dialog/?doi=10.1038%2Fs41598-019-45611-3) confirms the relationship; checked 2026-11-05. Recheck and record actual cassette retrieval time when the fixture is built. This does not support any EGCG claim.
+- Separate negative fixture: deliberately nonexistent DOI `10.5555/labquorum-unresolved-fixture-20261107`, expected `UNRESOLVED` after both lookups; never include it in the valid-source allowlist. Confirm lookup results and date during fixture recording; a miss is not proof of fabrication.
+- Pin any genuine EGCG source separately with metadata, expected verdict and retrieval date. Metadata does not establish claim support.
 
 ## Plate CSV: `plate3_od590.csv` and `plate3_od590_v2.csv`
 

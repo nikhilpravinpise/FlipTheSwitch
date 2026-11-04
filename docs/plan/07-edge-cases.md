@@ -71,7 +71,7 @@ Back to the [master plan](README.md). Each row has detection, handling, what the
 
 | ID | Case | Detect | Handle | User sees | Test |
 | --- | --- | --- | --- | --- | --- |
-| L01 | Hallucinated citation | NOT_FOUND | Refused in drafts | Findings table | G-03, E2E-09 |
+| L01 | Hallucinated citation | UNRESOLVED | Refused in drafts | Findings table | G-03, E2E-09 |
 | L02 | Real DOI, wrong metadata | MISMATCH | Field diff | "Year 2019 claimed, 2021 actual" | U-C04, G-02 |
 | L03 | Retracted paper | RETRACTED | Bold, notice DOI, alternative | Findings table | G-04, E2E-07 |
 | L04 | Correction or expression of concern | `update-to` types | VERIFIED_WITH_NOTE | Note | U-C12 |
@@ -168,7 +168,7 @@ Back to the [master plan](README.md). Each row has detection, handling, what the
 | P03 | Submit form rejects a field or link | Dry run | Submit Saturday 19:00, five hours early; keep receipt | Checklist |
 | P04 | Video link private or region-blocked | Incognito check | Public or unlisted link verified logged out | Checklist |
 | P05 | README steps drift from reality | Clean-room run | Fix every gap Saturday morning | M-03 |
-| P06 | Scope creep | Cut lines | Feature freeze Fri 23:00 | Schedule |
+| P06 | Scope creep | Cut lines | Feature freeze Fri 22:45 | Schedule |
 | P07 | Fatigue | Schedule | Scheduled sleep, no work after 00:30 | Schedule |
 | P08 | Wispr screenshot shows unrelated private app names | Review | Crop identifying details, keep stats | Checklist |
 
