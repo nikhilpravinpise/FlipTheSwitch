@@ -14,6 +14,7 @@
 | [Submission and risks](plan/09-submission-and-risks.md) | Form, prizes, scores and operational risks |
 | [Decision record](plan/10-decision-record.md) | Weighted choices and revisit triggers |
 | [Templates](plan/templates/README.md) | Draft templates and seed fixtures |
-| [Reviews](review/) | Round 1, round 2 and round 3 findings, change logs and integration checks |
+| [Review loop](review/README.md) | Six rounds of adversarial review: scores per round (all scopes now pass 9/10), findings, change logs, citation check |
+| [Planner inputs](inputs/README.md) | The two original raw plans (Opus 5.5 and Codex gpt-6.1-sol), unedited |
 | [Event briefing](flip-the-switch-hackathon.md) | Hackathon facts and Switch references |
 
