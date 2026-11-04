@@ -327,9 +327,11 @@ Setup: `LQ_E2E=1`; Console running with a local server and Mattermost; four-agen
 | EDGE-01 trailing period | Quiet group, no assigned agent, `!follow-ups off` and `!unassign-agent` verified | "please check stock @labops." | 0 addressed events in 60 s; recreate room and repeat |
 | EDGE-02 trailing comma | same | "@labops, check stock" | Reply within 120 s |
 | EDGE-03 agent offline | Session stopped | Maya addresses `@labops` | Switch "not available" reply; `!agents-status` shows no session |
-| EDGE-04 unlinked account | Unclaimed Maya and unclaimed PI, then claimed PI | Address helper and owner-scoped pi-desk | Open/unclaimed allowed; owner/unclaimed refused; claimed owner allowed |
+| EDGE-04 unlinked account | Initially unclaimed Maya and PI enrolled in S4 | Record both unclaimed probes, then claim and re-enroll both, verify posting, and address owner-scoped pi-desk as PI | Open/unclaimed allowed; owner/unclaimed refused; claimed owner allowed; both claimed before S3 |
 | EDGE-05 thread follow-up | Quiet unassigned group with follow-ups off, verified after room creation | Reply without then with mention; test bare card answers separately | 0 addressed events without mention; 1 with mention |
 | EDGE-06 unheld role | `@approver` addressed while unheld | Message sent | Behavior characterized; no ledger change |
+
+S4 manual fixture checks: record installed versions, inspect kickoff activity card and server log for Invalid RootId or retry loops, and assert `!roles` holders match scout/librarian, labops/bench-manager and pi-desk/approver. On a reproduced failure, remove kickoff from a disposable copy, import into a fresh room, re-enroll both unclaimed personas and verify posting, send the equivalent top-level human message, then retest holders and activity cards within the 20-minute probe; unresolved checks disable binding and use the fallback in [08](08-build-schedule.md). Record results as UNVERIFIED until executed.
 
 Assertions use ids, verdict words, statuses and hashes. Before recording, selected MVP cases E2E-01 through E2E-06 and E2E-10 through E2E-13 pass once; record actual elapsed time. Run optional cases only for shipped features; no unrun test is reported green.
 

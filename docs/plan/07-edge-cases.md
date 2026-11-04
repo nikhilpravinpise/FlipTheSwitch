@@ -12,14 +12,14 @@ Back to the [master plan](README.md). Each row has detection, handling, what the
 | R04 | Mention typo (`@labop`) | No reply | Dictionary, short aliases | Silence (platform); handbook explains | EDGE-01 analog |
 | R05 | Trailing period after mention | No addressed event | Mention-first convention, style check | Silence | EDGE-01, EDGE-02 |
 | R06 | Thread reply without mention | Follow-ups off and no assigned agent verified in each room | Repeat the mention; `!follow-ups` documented | Silence | EDGE-05 |
-| R07 | Role with no holder | `!roles` | Kickoff re-takes roles; critical paths use names | Characterized reply | EDGE-06 |
+| R07 | Role with no holder | `!roles` | Check `!roles`; use the capped fresh-room top-level recovery in [08](08-build-schedule.md); unresolved disables binding | Characterized reply | EDGE-06 |
 | R08 | Agent holds a role in another room | Role take refused | Roles only in HQ | Agent explains |Manual; M-05 |
 | R09 | Card never answered | Pending past hold | Lazy expiry; PI can `!interrupt @pi-desk` | "AR-0042 expired" | E2E-10 |
 | R10 | Wrong person clicks Allow | Switch refuses (addressing) | Nothing in our code | Refusal, card stays open | E2E-03 |
 | R11 | PI picks Allow for this session | Next commit | `ask` rule plus gate hook force a fresh card | New card per request | E2E-11 |
 | R12 | Agent posts bare "yes" under a card | Card state | Rule 8; inbound-only answers | Card stays open | E2E-12 |
 | R13 | PI account not linked to Switch owner | `@pi-desk` refuses PI | README setup step; spike S1 | Refusal: account not linked | EDGE-04 |
-| R14 | Student account unclaimed | Open policy accepts unclaimed user | Claim only the actual PI identity for owner-scoped approval | Helper replies; owner policy refuses unclaimed PI | EDGE-04 |
+| R14 | Student account unclaimed | Open policy accepts unclaimed user | Record both unclaimed probes first; then claim and re-enroll both personas before S3 | Helper replies; owner policy refuses unclaimed PI | EDGE-04 |
 | R15 | Same agent in two rooms | Sessions share nothing | Truth in ledger; room docs are local context | Verify both sessions, or leave unsupported |Manual; M-05 |
 | R16 | Event gap after server restart | Gap notice | Agent re-reads context | "Missed messages; re-reading" |Manual; M-05 |
 | R17 | Long-day context growth | Slower turns | `!compact` ritual; compact tool results | None | C-14 |

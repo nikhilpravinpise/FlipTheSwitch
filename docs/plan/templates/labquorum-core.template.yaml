@@ -138,4 +138,4 @@ room:
       Biosafety cabinet A: training required, max 3 h, 30 min UV gap.
 
       '
-kickoff: '@labops @pi-desk @scout @analyst hello. Labops and pi-desk handle booking proposals only; scout and analyst state that literature and analysis are unavailable.'
+kickoff: '@labops @pi-desk @scout @analyst hello. Please take your roles here: scout as librarian, labops as bench-manager, and pi-desk as approver. Labops and pi-desk handle booking proposals only; scout and analyst state that literature and analysis are unavailable.'

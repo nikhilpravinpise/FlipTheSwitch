@@ -70,7 +70,7 @@ No score is earned yet: the product and runtime boundary are UNBUILT / UNVERIFIE
 | Presentation 20% | 7 (14): legible causal booking film, labels and reproducible README | 7.5 (15): booking presentation plus legible causal stale proof | 8.5 (17): full causal cycle and its limits legible in film and README |
 | Total | **68/100** | **72.75/100** | **82.75/100** |
 
-Stale detection and full release are unfunded until separately scheduled and tested; these scenarios are not the funded scope. A failed certification uses the proposal-only script and has no numerical projection. Scores are editorial estimates, not objective measurements. For shot priority, score Switch specificity, visible consequence, distinctiveness and clarity 0-2 each: retraction 0+1+1+2=4/8; refusal/commit 2+2+1+2=7/8; complete stale-block/new-decision 2+2+2+1=7/8. These estimates favor the certified booking beat; the complete release beat remains unfunded.
+Stale detection and full release are unfunded until separately scheduled and tested; these scenarios are not the funded scope. A failed certification uses the proposal-only script and has no numerical projection. Scores are editorial estimates, not objective measurements. If either viewer is unavailable or fails after the bounded retest, mark the viewer gate UNVERIFIED and submit the best legible cut; no viewer-dependent projection is established. For shot priority, score Switch specificity, visible consequence, distinctiveness and clarity 0-2 each: retraction 0+1+1+2=4/8; refusal/commit 2+2+1+2=7/8; complete stale-block/new-decision 2+2+2+1=7/8. These estimates favor the certified booking beat; the complete release beat remains unfunded.
 
 ## 9.7 Risks
 

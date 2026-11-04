@@ -4,18 +4,18 @@ Back to the [master plan](README.md). All times IST; hard cutoff **Saturday 7 No
 
 ## 8.1 Day-1 spikes with go/no-go rules
 
-Certification, the harness, and behavioral red have separate time blocks below. The 115-minute late block reserves 20 minutes for S6, 30 minutes for clean-room setup, 50 minutes for defect slack and 15 minutes for Insights retry; the smoke fallback has its own earlier 30-minute box. Certification has its own 180-minute block; its estimate is unmeasured and a timeout fails closed. All timings are estimates until measured.
+Certification, the harness, and behavioral red have separate time blocks below. The 115-minute late block reserves 20 minutes for S6, 30 minutes for clean-room setup, 30 minutes for defect slack and 15 minutes for Insights retry; the smoke fallback has its own earlier 30-minute box. Certification has its own 180-minute block; its estimate is unmeasured and a timeout fails closed. All timings are estimates until measured.
 
 Record installed versions, effective configuration hashes/revision, room/session/tool-call IDs, request revision/hash, full displayed decision and ledger outcome in `docs/adr/000-spikes.md` and `docs/test-evidence.md`. Build the minimal two-person Playwright harness and observe a behavioral red before binding commit implementation (EN-03). Each box includes its result; stop on failure.
 
 | Spike | Box | Pass / decision |
 | --- | ---: | --- |
-| S0 server | 90 min native + separately budgeted 60-90 min fallback if needed | Path A: fresh Windows Console native server and Docker Mattermost; run the installed Console smoke flow and verify one agent replies. Path B: follow the [self-host guide](https://github.com/sandbox-quantum/switch/blob/main/docs/official/deploy/self-host.md) for a separate Linux/Docker Compose server and Mattermost, verify health, bridge URL and PI ownership, then Console **Connect to an existing server** and get one reply. Preflight B before relying on it; pin and record actual image digest, Compose version, exact commands, health endpoint and bridge URL; these remain UNVERIFIED until the 90-minute preflight succeeds. No native/Docker toggle is assumed. If neither passes, stop binding demo. |
-| S1 identity | 20 min | Open/unclaimed helper allowed, unclaimed owner-scoped PI refused, claimed owner allowed (EDGE-04). |
+| S0 server | 90 min native + fallback requires a separately funded 60-90 min reforecast if needed | Path A: fresh Windows Console native server and Docker Mattermost; run the installed Console smoke flow and verify one agent replies. Path B: follow the [self-host guide](https://github.com/sandbox-quantum/switch/blob/main/docs/official/deploy/self-host.md) for a separate Linux/Docker Compose server and Mattermost, verify health, bridge URL and PI ownership, then Console **Connect to an existing server** and get one reply. Preflight B before relying on it; pin and record actual image digest, Compose version, exact commands, health endpoint and bridge URL; these remain UNVERIFIED until the 90-minute preflight succeeds. No native/Docker toggle is assumed. If neither passes, stop binding demo. |
+| S1 identity | 20 min | Before claiming, record unclaimed Maya on open helper and unclaimed PI on owner-scoped pi-desk. Then claim and re-enroll both, prove both can post, and verify claimed owner allowed (EDGE-04). Two claimed personas are mandatory before S3. |
 | S2 MCP and settings | 60 min | Separately test MCP discovery and effective permission enforcement. If only MCP launch fails and enforcement passes, try a separate gate-only CLI settings profile without blanket Bash deny and rerun the entire approval suite. If settings enforcement fails, CLI is not a remedy; select steward or disable commits. [Permission precedence](https://code.claude.com/docs/en/permissions) checks deny first. |
 | S3a-c approval | 60 min after 30 min disposable stub, hook and settings preparation | Use a nonbinding synthetic gated stub: wrong person refused, two same-session calls each gated, agent yes ignored; inject hook missing/crash/bad JSON/timeout/bypass and unknown mode. Record card and stub state separately. Repeat on actual commit tool during the Friday E2E gate; either failure disables binding. |
 | S3d boundary | 75 min | Inventory effective offered tools and policies; reproduce then block same-owner policy widening, unexpected native and MCP tools, forbidden read/shell/attachment; 0 unauthorized changes or commits. Include real runtime mode test. |
-| S4 templates and fixture | 30 min | After S0 and before S1, lint and import the booking-only core template, create two distinct local synthetic PI and Maya test users, enroll them in the private room and prove both can post. Use one real organizer identity; local test users are not event registrations. If fixture fails, stop dependent tests and binding. Defer other templates. |
+| S4 templates and fixture | 50 min | After S0 and before S1, allocate 30 min to lint and import core and provision two distinct initially unclaimed local synthetic PI and Maya accounts; enroll them in the private room and verify both can post. Use one real organizer identity; local test users are not event registrations. Allocate 20 min to record installed Console/server versions, inspect kickoff activity card and server log for invalid RootId and retries, and assert `!roles` shows scout as librarian, labops as bench-manager and pi-desk as approver. If the reported kickoff failure appears, remove kickoff from a disposable template copy, import into a fresh room, re-enroll both unclaimed personas and verify posting, send equivalent role-taking instructions as a human top-level message, and retest role holders and activity cards within this same 20-minute cap. If any fixture, card or holder check remains unresolved at the cap, disable binding; use the tested proposal-only path if available, otherwise the labeled non-running prototype. Defer other templates. |
 | S5 Codex | 0 min | Deferred: use one verified provider; optional only after all gates and deliverables. |
 | S6 capacity | 20 min | Measure actual session and MCP process count, peak RAM and latency with active rooms and after three takes; stop old sessions, serialize tests, require >=20% RAM headroom. Two rooms may create 3 + 5R placements, not merely five. |
 | S7 literature | 0 min | Deferred; no citation beat in funded baseline. |
@@ -25,17 +25,17 @@ S3 is preliminary; native binding is permitted only after the full Friday instal
 
 ## 8.2 Hour by hour
 
-Reforecast at Thu 00:20: 41 h 10 min including 50 min defect slack, 30 min bounded smoke fallback, 15 min Insights retry, 3 h certification and 30 min submission. Rebase on the actual clock; elapsed time cannot be recovered. The funded baseline is booking only. Literature, assay, inventory holds, release and bench parsing are deferred; 22 mL is background, not evidence of a hold. Stale detection may be shown only if separately built and tested; no release claim without separately funded certification.
+Reforecast at Thu 00:20: 41 h 10 min including 30 min defect slack, 30 min bounded smoke fallback, 15 min Insights retry, 3 h certification and 30 min submission. Rebase on the actual clock; elapsed time cannot be recovered. The funded baseline is booking only. Literature, assay, inventory holds, release and bench parsing are deferred; 22 mL is background, not evidence of a hold. Stale detection may be shown only if separately built and tested; no release claim without separately funded certification.
 
 | IST | Work and checkable exit | Time |
 | --- | --- | ---: |
 | Thu 00:20-01:00 | S8 10 min, Wispr baseline 10 min, start S0 20 min | 40 min |
 | Thu 01:00-07:00 | Sleep | 0 |
 | Thu 07:00-07:30 | Prepare disposable nonbinding gated stub, hook and test settings for S3a-c; production hook is built later | 30 min |
-| Thu 07:30-09:30 | Finish S0 70 min; S4 fixture 30 min; S1 20 min | 120 min |
-| Thu 09:30-11:30 | S2 60 min and S3a-c 60 min | 120 min |
-| Thu 11:30-12:45 | S3d effective boundary | 75 min |
-| Thu 12:45-13:30 | Lunch | 0 |
+| Thu 07:30-09:50 | Finish S0 70 min; S4 fixture and kickoff probe 50 min; S1 20 min | 140 min |
+| Thu 09:50-11:50 | S2 60 min and S3a-c 60 min | 120 min |
+| Thu 11:50-13:05 | S3d effective boundary | 75 min |
+| Thu 13:05-13:30 | Lunch | 0 |
 | Thu 13:30-15:00 | Build two-person harness, isolated ledger and behavioral red before commit implementation | 90 min |
 | Thu 15:00-16:30 | Booking policy and conflict tests: 60-minute request within 14:00-17:00, alternative 15:45-16:45 | 90 min |
 | Thu 16:30-18:30 | Transactional store, race and audit | 120 min |
@@ -51,7 +51,7 @@ Reforecast at Thu 00:20: 41 h 10 min including 50 min defect slack, 30 min bound
 | Fri 16:15-19:15 | Installed-runtime certification including six attacks and controls | 180 min |
 | Fri 19:15-19:35 | Read/propose smoke gate, evidence and decision | 20 min |
 | Fri 19:35-20:20 | Capture and verify authentic prompt clip first, then remaining reel clips, maximum 45 min | 45 min |
-| Fri 20:20-22:15 | Booking-only or proposal-only baseline rehearsal and recording with valid future slot | 115 min |
+| Fri 20:20-22:15 | 5 min outreach to two unfamiliar viewers before filming; 110 min booking-only or proposal-only baseline rehearsal and recording with valid future slot | 115 min |
 | Fri 22:15-Sat 00:15 | README, test evidence and submission draft; freeze | 120 min |
 | Sat 00:15-07:00 | Sleep | 0 |
 | Sat 07:00-08:30 | Rerun changed gate and log evidence | 90 min |
@@ -59,24 +59,24 @@ Reforecast at Thu 00:20: 41 h 10 min including 50 min defect slack, 30 min bound
 | Sat 09:00-10:30 | Smoke fallback 09:00-09:30 (30 min); clean-room README setup 09:30-10:30 (60 min) | 90 min |
 | Sat 10:30-12:30 | Final takes or baseline; per-shot timing and 720p review | 120 min |
 | Sat 12:30-13:15 | Lunch | 0 |
-| Sat 13:15-15:15 | Edit, caption, upload and verify logged out | 120 min |
+| Sat 13:15-15:15 | Edit, caption, upload and verify logged out; reserve 20 min for two-viewer review, simplification and retest; if unavailable or failed after that cap, submit the best legible cut and mark the viewer gate UNVERIFIED | 120 min |
 | Sat 15:15-16:30 | README 45 min and link audit 30 min; optional blog dropped | 75 min |
-| Sat 16:30-18:25 | S6 16:30-16:50 (20 min); clean-room setup 16:50-17:20 (30 min); defect slack 17:20-17:45 and 18:00-18:25 (50 min); Insights retry 17:45-18:00 (15 min); retain a timestamped prior complete screenshot if refresh fails | 115 min |
+| Sat 16:30-18:25 | S6 16:30-16:50 (20 min); clean-room setup 16:50-17:20 (30 min); break 17:20-17:40 (20 min); defect slack 17:40-17:45 and 18:00-18:25 (30 min); Insights retry 17:45-18:00 (15 min); retain a timestamped prior complete screenshot if refresh fails | 95 min |
 | Sat 18:25-18:30 | Package and check Insights attachment | 5 min |
 | Sat 18:30-19:00 | Submit on website and save confirmation | 30 min |
 | Sat 19:00-23:59 | Submission contingency only | 0 |
 
-Bottom-up productive block sum: Thu 40 + 30 + 120 + 120 + 75 + 90 + 90 + 120 + 150 = 835 min; Friday 120 + 90 + 90 + 120 + 90 + 180 + 20 + 45 + 115 + 120 = 990 min; Saturday 90 + 90 + 120 + 120 + 75 + 115 + 5 + 30 = 645 min. Total 2,470 min = 41 h 10 min, including 50 min defect slack, 30 min smoke alternative, 20 min S6 and 15 min Insights retry. Estimates are unmeasured. E2E includes resets and timed holds; EV includes 15 trials and resets. Protect submission. The 70-minute Friday blocker-fix allocation is cut and the baseline shortened by 5 minutes to fund certification and voice: the decision record gives the certified refusal/commit 7/8 versus optional retraction 4/8; preserve that higher-value causal proof and defer optional presentation features. If a gate does not pass within its box, disable binding; do not count an unrun test as passing.
+Bottom-up productive block sum: Thu 40 + 30 + 140 + 120 + 75 + 90 + 90 + 120 + 150 = 855 min; Friday 120 + 90 + 90 + 120 + 90 + 180 + 20 + 45 + 115 + 120 = 990 min; Saturday 90 + 90 + 120 + 120 + 75 + 95 + 5 + 30 = 625 min. Total 2,470 min = 41 h 10 min, including 30 min defect slack, 30 min smoke alternative, 20 min S6 and 15 min Insights retry. The added 20-minute kickoff and holder probe is funded by cutting 20 minutes of Saturday defect slack; S4 moves 20 minutes into Thursday lunch and Saturday gains a 20-minute break. Preserve the higher-value certified refusal/commit (7/8) over optional retraction (4/8); the latter remains cut. Viewer outreach and review use existing baseline and edit time, displacing optional polish. Estimates are unmeasured. E2E includes resets and timed holds; EV includes 15 trials and resets. Protect submission. The 70-minute Friday blocker-fix allocation is cut and the baseline shortened by 5 minutes to fund certification and voice: the decision record gives the certified refusal/commit 7/8 versus optional retraction 4/8; preserve that higher-value causal proof and defer optional presentation features. If a gate does not pass within its box, disable binding; do not count an unrun test as passing.
 
 **Separate certification procedure (180 min maximum):** after the behavioral-red harness and implementation, use the installed Console, provider, effective settings and the two local personas. Allocate 25 min to I-14 hook failure and mode injections, 35 min to I-23 effective-tool and bypass probes, 25 min to I-29 full-card/hash and truncation checks, 20 min to restart and persisted-mode checks, 15 min to evidence and decision, and 60 min to prepare and execute I-36 through I-41 plus their legitimate controls. Record versions, effective settings hashes, room/session/call IDs, inputs, card and durable ledger state. Pass only if no unauthorized action or mismatched decision commits, the complete decision matches the transaction, and restart preserves the certified configuration. E2E-01-06 and 10-13 remain in their separate 120-minute block; they are not counted as certification time. Any failure, unexecuted step or timeout disables binding; film and package the proposal-only path. A changed tuple requires recertification.
 
-Critical path: S0 -> S4 fixture -> S1/S2/S3 -> harness red -> booking/store/MCP -> expiry/revision/hook -> real runtime gate -> baseline -> clean room/edit -> Submit. The 50 min defect slack cannot fund the 60-90 min server fallback; it requires a new reforecast and a cut before it starts; the 180-300 min steward is unfunded. Post-target contingency is 4 h 59 min. No optional work consumes slack without a new arithmetic reforecast.
+Critical path: S0 -> S4 fixture -> S1/S2/S3 -> harness red -> booking/store/MCP -> expiry/revision/hook -> real runtime gate -> baseline -> clean room/edit -> Submit. The 30 min defect slack cannot fund the 60-90 min server fallback; it requires a new reforecast and a cut before it starts; the 180-300 min steward is unfunded. Post-target contingency is 4 h 59 min. No optional work consumes slack without a new arithmetic reforecast.
 
 ## 8.3 Escalation rules
 
 | Trigger | Decision |
 | --- | --- |
-| S0 fails after 90 min | Stop binding; path B needs 60-90 min and a new reforecast because 50 min defect slack is insufficient. If no tested room/proposal exists, use the non-running prototype fallback. |
+| S0 fails after 90 min | Stop binding; path B needs 60-90 min and a new reforecast because 30 min defect slack is insufficient. If no tested room/proposal exists, use the non-running prototype fallback. |
 | Approval boundary unproven | No binding mutation; use a fully tested steward only if its 3-5 h fits, otherwise proposal-only. Never simulate a human authorization. |
 | Critical loop late | Those features are deferred; if the gate cannot pass, disable binding and preserve evidence, baseline and submission. |
 | Authorization or integrity red | Fix or remove affected capability; record failure. |

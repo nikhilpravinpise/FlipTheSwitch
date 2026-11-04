@@ -91,7 +91,7 @@ Margin: 1.55 points. Evidence: [03-architecture.md#32-the-two-layer-approval-mod
 - **Builder time, 35%:** each agent needs setup and tests.
 - **Capacity risk, 25%:** session pressure can block the demo.
 
-**Four core agents: 7.15/10.** Scope fit 8/10: separates operations analysis writing and decisions. Builder time 7/10: one fewer profile than the five-agent template. Capacity risk 6/10: S6 capacity is unmeasured.
+**Four core agents: 7.15/10.** Scope fit 8/10: separates booking operations and decisions; scout and analyst are present but analysis and writing are deferred. The prospective scope-fit score remains 8 for the funded booking demonstration. Builder time 7/10: one fewer profile than the five-agent template. Capacity risk 6/10: S6 capacity is unmeasured.
 
 Total: 0.40 x 8 + 0.35 x 7 + 0.25 x 6 = 7.15.
 
@@ -339,7 +339,7 @@ Margin: 2.60 points. Evidence: [06-testing.md#66-ci-githubworkflowsciyml](06-tes
 - **Functional coverage, 30%:** more scope can increase proof.
 - **Fatigue and contingency, 20%:** one builder needs rest and slack.
 
-**Rebased 41 h 10 min core: 5.60/10.** Deadline feasibility 6/10: smaller reforecast remains unvalidated and may overlap. Functional coverage 6/10: cuts retain booking while features fall away. Fatigue and contingency 4/10: 50 minutes defect slack and reduced rest make recovery less likely.
+**Rebased 41 h 10 min core: 5.60/10.** Deadline feasibility 6/10: smaller reforecast remains unvalidated and may overlap. Functional coverage 6/10: cuts retain booking while features fall away. Fatigue and contingency 4/10: 30 minutes defect slack and reduced rest make recovery less likely.
 
 Total: 0.50 x 6 + 0.30 x 6 + 0.20 x 4 = 5.60.
 
@@ -480,7 +480,7 @@ Sensitive: a one-point cohort feasibility increase raises its total by 0.35 to 5
 
 ### Room layout
 
-Sensitivity beyond the 0.5 screen: a two-point change to the 40% demonstration-coverage score changes a total by 0.80, exceeding the 0.60 margin. Calibrate with the S4 timed room import and the Friday two-viewer rehearsal; until then retain one room unless the observed failure justifies a separately funded reforecast.
+Sensitivity beyond the 0.5 screen: a two-point change to the 40% demonstration-coverage score changes a total by 0.80, exceeding the 0.60 margin. Calibrate with the S4 timed room import and the Saturday two-viewer review; until then retain one room unless the observed failure justifies a separately funded reforecast.
 
 - **Demonstration coverage, 40%:** core needs a decision room.
 - **Provisioning effort, 35%:** more rooms require tests.
