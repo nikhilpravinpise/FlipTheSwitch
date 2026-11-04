@@ -1,0 +1,77 @@
+# LabQuorum project room template: run once per research project.
+#
+# Reuses the agents that labquorum-lab.template.yaml created (agent-typed
+# params, as in examples/room-templates/red-blue-workroom.template.yaml), so
+# it never creates agents and can be run again for every new project, every
+# demo take ("egcg-take3") and every E2E run ("e2e-<timestamp>") without a
+# name_taken refusal. It defines no roles: an agent holds one role lease
+# globally, and the agents already hold their roles in the HQ room.
+#
+# DRAFT. Verify on Day 1 (spike S4): user-typed params with required: false,
+# aliases keyed by param values, kickoff addressing aliases.
+version: 1
+
+params:
+  project:
+    type: string
+    description: Short project slug (used in the room name), for example "egcg"
+  question:
+    type: string
+    multiline: true
+    description: The research question, hypotheses and success criteria (becomes the Project charter)
+  scout:
+    type: agent
+    description: The lab's literature agent (for example rao-scout)
+  labops:
+    type: agent
+    description: The lab's operations agent (for example rao-labops)
+  analyst:
+    type: agent
+    description: The lab's analysis agent (for example rao-analyst)
+  scribe:
+    type: agent
+    description: The lab's writing agent (for example rao-scribe)
+  pi_desk:
+    type: agent
+    description: The PI's gate agent (for example rao-pi-desk)
+  member_1:
+    type: user
+    description: A lab member to invite (for example the student on this project)
+    required: false
+  member_2:
+    type: user
+    description: Another lab member or an external collaborator
+    required: false
+  bridge:
+    type: bridge
+    description: Messaging app for the room. The server's default app is chosen.
+    default: [$first]
+
+room:
+  name: "proj-{project}"
+  description: "Research project {project}, from question to paper."
+  bridge: "{bridge}"
+  channel_type: channel_private
+  agents: ["{scout}", "{labops}", "{analyst}", "{scribe}", "{pi_desk}"]
+  users: ["{$creator}", "{member_1}", "{member_2}"]
+  aliases:
+    "{scout}": scout
+    "{labops}": labops
+    "{analyst}": analyst
+    "{scribe}": scribe
+    "{pi_desk}": pi-desk
+  instructions: |
+    Project {project}. Every claim in this room needs a verified citation or
+    a run id. Data stays in this room; if an external collaborator is a
+    member, agents do not attach raw unpublished data here. Put the mention
+    first in every message to an agent ("@labops, ..."). Approvals come from
+    @pi-desk and only the PI can grant them.
+  docs:
+    - name: Project charter
+      description: Question, hypotheses, success criteria
+      instructions: Use this to judge relevance of papers and to plan analyses.
+      content: |
+        {question}
+
+kickoff: |
+  @scout @labops @analyst @scribe @pi-desk hello, this is project {project}. Each of you, in one line: what you will do here
