@@ -4,7 +4,7 @@ Back to the [master plan](README.md).
 
 ## Method
 
-Scores are prospective judgments on a 0 to 10 scale, where higher is better. Weighted totals are the sum of each score times its percentage weight divided by 100. Criteria and weights reflect the particular choice, not forecasts of judging. Risk scores reflect estimated probability times impact, with higher scores meaning lower risk. Margins compare the winner with the highest-scoring alternative; margins below 0.5 are flagged sensitive as a screening rule, not a robustness test. Evidence describes assumptions to test, not completed results. A conditional choice remains subject to its stated gate. Judging weights are Switch 30%, technical execution 25%, creativity and impact 25%, presentation 20% ([scorecard](09-submission-and-risks.md)); each local criterion approximates the relevant judging dimensions while explicitly accounting for builder-hours and delivery or authorization risk. These local weights express the solo builder’s preferences, not a conversion of the judging rubric. Scores are ordinal estimates, not measured probabilities or forecasts; decimal totals are arithmetic, not measurement precision. Effort and risk can correlate; criteria address distinct consequences but independence is not assumed. A one-point score change shifts a total by the criterion weight divided by 100. Linked plans and reviews establish the rationale, not implementation.
+Scores are prospective judgments on a 0 to 10 scale, where higher is better. Weighted totals are the sum of each score times its percentage weight divided by 100. Criteria and weights reflect the particular choice, not forecasts of judging. Risk scores are subjective ordinal judgments, with higher scores meaning lower risk. Margins compare the winner with the highest-scoring alternative; margins below 0.5 are flagged sensitive as a screening rule, not a robustness test. Evidence describes assumptions to test, not completed results. A conditional choice remains subject to its stated gate. Judging weights are Switch 30%, technical execution 25%, creativity and impact 25%, presentation 20% ([scorecard](09-submission-and-risks.md)); each local criterion approximates the relevant judging dimensions while explicitly accounting for builder-hours and delivery or authorization risk. These illustrative weights express the solo builder’s preferences and are not estimated risk probabilities or a conversion of the judging rubric. Score anchors: 0 means fails the criterion, 5 means partial or unproven, 10 means excellent and verified; local low/base/high ranges below are plausible judgments, not confidence intervals. Hard certification gates override weighted totals. Scores are ordinal estimates, not measured probabilities or forecasts; decimal totals are arithmetic, not measurement precision. Effort and risk can correlate; criteria address distinct consequences but independence is not assumed. A one-point score change shifts a total by the criterion weight divided by 100. Linked plans and reviews establish the rationale, not implementation.
 
 ## Summary
 
@@ -27,7 +27,7 @@ Scores are prospective judgments on a 0 to 10 scale, where higher is better. Wei
 | [Test tools](#test-tools) | pytest and Playwright | 3.00 | Not within 0.5 |
 | [Eval metric](#eval-metric) | pass^3 plus Wilson intervals | 2.75 | Not within 0.5 |
 | [CI scope](#ci-scope) | Offline deterministic matrix | 2.60 | Not within 0.5 |
-| [Schedule](#schedule) | Rebased 40 h 10 min core | 2.40 | Not within 0.5 |
+| [Schedule](#schedule) | Rebased 41 h 10 min core | 2.20 | Not within 0.5 |
 | [Wispr usage](#wispr-usage) | Authentic build dictation and Insights | 3.75 | Not within 0.5 |
 | [Prize stacking](#prize-stacking) | Main track plus eligible side tracks | 3.60 | Not within 0.5 |
 | [Core PR](#core-pr) | Skip before submission | 3.30 | Not within 0.5 |
@@ -339,15 +339,15 @@ Margin: 2.60 points. Evidence: [06-testing.md#66-ci-githubworkflowsciyml](06-tes
 - **Functional coverage, 30%:** more scope can increase proof.
 - **Fatigue and contingency, 20%:** one builder needs rest and slack.
 
-**Rebased 40 h 10 min core: 5.80/10.** Deadline feasibility 6/10: smaller reforecast remains unvalidated and may overlap. Functional coverage 6/10: cuts retain booking while features fall away. Fatigue and contingency 5/10: planned rest and slack are not a guarantee.
+**Rebased 41 h 10 min core: 5.60/10.** Deadline feasibility 6/10: smaller reforecast remains unvalidated and may overlap. Functional coverage 6/10: cuts retain booking while features fall away. Fatigue and contingency 4/10: 50 minutes defect slack and reduced rest make recovery less likely.
 
-Total: 0.50 x 6 + 0.30 x 6 + 0.20 x 5 = 5.80.
+Total: 0.50 x 6 + 0.30 x 6 + 0.20 x 4 = 5.60.
 
 **71-109 h full scope: 3.40/10.** Deadline feasibility 1/10: original range exceeds a short solo build. Functional coverage 9/10: more optional features could be demonstrated. Fatigue and contingency 1/10: extra hours leave inadequate recovery.
 
 Total: 0.50 x 1 + 0.30 x 9 + 0.20 x 1 = 3.40.
 
-Margin: 2.40 points. Evidence: [08-build-schedule.md](08-build-schedule.md). Revisit: Rebase from actual time and velocity at each checkpoint; cut when blocks overlap or work exceeds waking hours; see [VT-02](../review/round2/v-technical.md).
+Margin: 2.20 points. Evidence: [08-build-schedule.md](08-build-schedule.md). Revisit: Rebase from actual time and velocity at each checkpoint; cut when blocks overlap or work exceeds waking hours; see [VT-02](../review/round2/v-technical.md).
 
 ### Wispr usage
 
@@ -687,3 +687,15 @@ Total: 0.50 x 9 + 0.30 x 9 + 0.20 x 8 = 8.80.
 Total: 0.50 x 1 + 0.30 x 5 + 0.20 x 5 = 3.00.
 
 Margin: 5.80 points. Evidence: [02-product.md](02-product.md). Revisit: Run E2E-06 and confirm exact alternative and same-duration rule; see [VP-01](../review/round2/v-presentation.md).
+
+### High-impact sensitivity bounds (VN-01)
+
+Ranges below are low/base/high for each option's criterion scores in the listed criterion order. They describe plausible subjective variation, not measured bounds. If weighted ranges overlap, retain the simpler funded choice provisionally, measure its stated gate and revisit; for approval, an unpassed gate always means proposal-only, regardless of score. One-at-a-time flip thresholds hold other scores and weights fixed.
+
+| Choice | Winner low / base / high | Alternative low / base / high | Plausible weights, sum 100%; result and flip threshold |
+| --- | --- | --- | --- |
+| Approval | 5,7,8 / 6,8,9 / 7,9,10 | 6,2,6 / 7,3,7 / 8,4,8 | 50/25/25 yields 7.25 vs 6.00. At base weights native boundary must drop by more than 1.55/0.45 = 3.44 points to flip. Overlap: certify native or disable binding. |
+| Agent count | 7,6,5 / 8,7,6 / 9,8,7 | 8,3,3 / 9,4,4 / 10,5,5 | 45/30/25 yields 7.20 vs 6.25. Four-agent scope must drop more than 1.15/0.40 = 2.875 points to flip at base weights. Overlap: retain four pending measured capacity. |
+| Database | 7,8,3 / 8,9,4 / 9,10,5 | 8,3,8 / 9,4,9 / 10,5,10 | 50/30/20 yields 7.50 vs 7.50. SQLite safety drop greater than 0.30/0.45 = 0.667 points flips base result. Overlap: retain SQLite only if I-01 and restore pass; otherwise reforecast PostgreSQL. |
+| Room layout | 7,8,3 / 8,9,4 / 9,10,5 | 8,3,6 / 9,4,7 / 10,5,8 | 45/30/25 yields 7.30 vs 7.00. One-room coverage drop greater than 0.60/0.40 = 1.5 points flips base result. Overlap: retain one room pending smoke and capacity results. |
+

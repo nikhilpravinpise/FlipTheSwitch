@@ -88,7 +88,7 @@ The solo core uses one room with `labops`, `scout`, `pi-desk`, and `analyst`. Th
 - Context does not cross rooms ([shared context](https://docs.switchagents.ai/switch-rooms/using/shared-context)), so anything both rooms need lives in the ledger and room documents, never in chat memory.
 - Switch has **no scheduler** ([work in a room](https://docs.switchagents.ai/switch-rooms/using/work-in-a-room)). Rituals are triggered by a person (a Wispr snippet makes it one phrase). Mattermost scheduled posts are a stretch experiment, tested before being relied on.
 
-Roadmap templates (two, because a template that creates agents refuses to run again once the names exist): [`labquorum-lab.template.yaml`](templates/labquorum-lab.template.yaml) runs once per lab (five agents, HQ room, handbook, roles, aliases); [`labquorum-project.template.yaml`](templates/labquorum-project.template.yaml) runs once per project, per demo take and per E2E run (takes the five agents as `type: agent` params). Both are drafts until spike S4 imports them on the pinned Console release.
+Roadmap templates (two, because a template that creates agents refuses to run again once the names exist): [`labquorum-lab.template.yaml`](templates/labquorum-lab.template.yaml) runs once per lab (five agents, HQ room, handbook, roles, aliases); [`labquorum-project.template.yaml`](templates/labquorum-project.template.yaml) runs once per project, per demo take and per E2E run (takes the five agents as `type: agent` params). Both remain drafts; each import and its tests require separate funding. S4 imports only the core template.
 
 ## 2.4 Scope across the research lifecycle
 

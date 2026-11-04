@@ -66,7 +66,7 @@ Columns: `well,row,col,condition,egcg_ug_ml,replicate,od590`
 
 | id | kind | requested for | payload |
 | --- | --- | --- | --- |
-| AR-0042 | booking | maya | INS-01, next open day 15:45-16:45, PRT-007 v3, 1 plate |
+| AR-0042 | booking | maya | INS-01, next open day 15:45-16:45 |
 | AR-0043 | order | maya | INV-01, 100 mL (one pack) |
 
 Request id numbering starts at 42 in the demo seed so the video shows non-trivial ids (seed sets the sequence).

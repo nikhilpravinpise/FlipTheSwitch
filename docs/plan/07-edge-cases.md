@@ -174,3 +174,5 @@ Back to the [master plan](README.md). Each row has detection, handling, what the
 
 The catalogue contains 22 + 12 + 16 + 14 + 10 + 12 + 8 + 6 + 12 + 8 = 120 planned cases; referenced manual, CI, spike and rehearsal checks require recorded evidence. That is 120 planned cases, not evidence of executed coverage. Manual and rehearsal references require recorded observations; unsupported capabilities remain unshipped.
 
+
+Mandatory certification also exercises I-36 through I-41 for instrument, interval, handoff, impersonation, evidence and revision attacks. These are tests of existing authorization and integrity cases, not additional edge-case catalogue rows. Failure or timeout disables binding; corrupted proposals are possible.
