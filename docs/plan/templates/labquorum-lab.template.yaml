@@ -1,4 +1,5 @@
-# Draft Switch template; certify the installed runtime before use.
+# Roadmap template: requires separately implemented specialist tools and certification.
+# Do not install as the funded booking-only baseline.
 version: 1
 params:
   lab:
@@ -231,7 +232,7 @@ room:
 
     Each binding request requires its own PI decision. Use Allow once. LabQuorum does
     not offer batch approval. Session-wide provider permission never authorizes another
-    lab request.
+    lab request. If the next request has no fresh card, stop and use the proposal-only fallback.
 
     '
   docs:
@@ -242,7 +243,7 @@ room:
 
       Each binding request requires its own PI decision. Use Allow once. LabQuorum
       does not offer batch approval. Session-wide provider permission never authorizes
-      another lab request.
+      another lab request. If the next request has no fresh card, stop and use the proposal-only fallback.
 
       Verify the displayed person, resource, absolute time, quantity and revision.
 

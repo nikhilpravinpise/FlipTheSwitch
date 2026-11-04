@@ -23,7 +23,7 @@ Two Switch facts the design rests on:
 
 ## 2.2 The five agents
 
-All run on **Claude Code** via Switch Console (`@analyst` may run on Codex if spike S5 passes, to show Switch's bring-your-own-provider story; Codex sessions lack Claude Code's native question forms, so Codex never hosts a gated tool). Every agent has `auto_mode: false` and `auto_approve: false` in the template and in Console's agent settings (Auto mode is on by default in Console and lets the provider's own reviewer skip asking, see [agent settings](https://docs.switchagents.ai/switch-rooms/getting-started/agent-settings.md)).
+The roadmap roles below run on **Claude Code** via Switch Console (`@analyst` may run on Codex if spike S5 passes, to show Switch's bring-your-own-provider story; Codex sessions lack Claude Code's native question forms, so Codex never hosts a gated tool). Every agent has `auto_mode: false` and `auto_approve: false` in the template and in Console's agent settings (Auto mode is on by default in Console and lets the provider's own reviewer skip asking, see [agent settings](https://docs.switchagents.ai/switch-rooms/getting-started/agent-settings.md)).
 
 | Switch name (alias) | Role | Addressing | MCP profile: the only lab tools it has | Built-in tools | Needs human approval |
 | --- | --- | --- | --- | --- | --- |
@@ -35,7 +35,7 @@ All run on **Claude Code** via Switch Console (`@analyst` may run on Codex if sp
 
 **Required boundary, UNVERIFIED until certification:** an `anyone` helper must have nothing ask-reachable; gated calls belong only to owner-scoped `@pi-desk`. Profile registration and folder settings are proposed controls, not proof of effective permissions. On the recorded runtime tuple, inventory native, MCP and plugin tools; test policy widening, failure modes and repeated same-session calls (I-23, S3d and 3.2). Any failed or unexecuted test disables commits; static C-01 to C-12 alone cannot certify the boundary.
 
-The four-agent core omits `@scribe`; the five-agent configuration below is roadmap. Roles make handoffs and tool boundaries explicit; cost and completion effects are unmeasured. Scribe can be folded into analyst, reducing configured agents by 20%, not necessarily token usage. A separate `@protocol` agent would share `@labops`'s boundary (it proposes). A `@coordinator` is unnecessary because Switch addressing, `send_targeted_message` and roles already route work. S6 measures the actual room-attending sessions, not just configured identities.
+The funded booking-only installation enables only booking tools for `@labops` and `@pi-desk`; `@scout` and `@analyst` must say literature and analysis are unavailable and must not call deferred tools. The table and specialist instructions below describe roadmap profiles, not enabled baseline capabilities. Two of four baseline agents otherwise advertise unfunded workflows (VT-03). The four-agent core omits `@scribe`; the five-agent configuration below is roadmap. Roles make handoffs and tool boundaries explicit; cost and completion effects are unmeasured. Scribe can be folded into analyst, reducing configured agents by 20%, not necessarily token usage. A separate `@protocol` agent would share `@labops`'s boundary (it proposes). A `@coordinator` is unnecessary because Switch addressing, `send_targeted_message` and roles already route work. S6 measures the actual room-attending sessions, not just configured identities.
 
 ### Shared rules (in every agent's instructions and the `Lab handbook` room document)
 
@@ -49,7 +49,7 @@ The four-agent core omits `@scribe`; the five-agent configuration below is roadm
 8. Never post a message that is only "yes" or "no" (those words alone can answer approval cards).
 9. Physical work is done by people. Never state that an experiment was performed unless a confirmed bench entry says so.
 
-### Core instructions (core draft in [`templates/labquorum-core.template.yaml`](templates/labquorum-core.template.yaml); broader roles in the lab template)
+### Roadmap specialist instructions (booking-only core draft in [`templates/labquorum-core.template.yaml`](templates/labquorum-core.template.yaml); broader roles in the lab template)
 
 `@labops`:
 
@@ -97,18 +97,18 @@ The funded solo baseline is one room, four agents (`labops`, `scout`, `pi-desk`,
 | Stage | What LabQuorum does | Agent | Tier |
 | --- | --- | --- | --- |
 | Problem selection | `Project charter` from the project template (question, hypotheses, success criteria, risks); `@scout` novelty scan | scout | Roadmap |
-| Literature review | OpenAlex search, dedupe by DOI and normalized title, project library, reading queue | scout | Core: one pinned fixture; broader search roadmap |
-| Citation verification | `verify_citation`, `verify_bibliography`: DOI resolves, title, first author, year, retraction, version of record | scout, scribe | Core: one pinned fixture; bibliography roadmap |
+| Literature review | OpenAlex search, dedupe by DOI and normalized title, project library, reading queue | scout | Deferred; one pinned fixture only if separately funded |
+| Citation verification | `verify_citation`, `verify_bibliography`: DOI resolves, title, first author, year, retraction, version of record | scout, scribe | Deferred; one pinned fixture only if separately funded |
 | Hypothesis | Stored in the charter; `@analyst` maps each hypothesis to a planned recipe and primary endpoint | analyst | Polish |
 | Protocol | Versioned Markdown protocol; hazard scan from a seeded hazard table (about 30 reagents, fail closed on unknowns); draft, in review, released, superseded | labops, pi-desk | Roadmap |
 | Equipment booking | Availability, training at booking start, maintenance, min gap, nearest free slot, proposal, gated commit | labops, pi-desk | **MVP (flagship)** |
 | Inventory | Stock vs protocol need (unit-safe), reorder proposal to pack size, gated commit | labops, pi-desk | Roadmap |
 | Bench log | Draft from text or dictation, structured read-back, token confirmation, linked to the released protocol version | labops | Roadmap |
-| Data capture | CSV attached in chat; `register_dataset` (SHA-256, schema, sensitivity); strict validation with row-level errors | analyst | Core: one synthetic CSV |
-| Analysis | `run_analysis` descriptive recipe for one synthetic plate; inferential recipes and `run_script` are roadmap | analyst | MVP (one recipe) |
+| Data capture | CSV attached in chat; `register_dataset` (SHA-256, schema, sensitivity); strict validation with row-level errors | analyst | Deferred |
+| Analysis | `run_analysis` descriptive recipe for one synthetic plate; inferential recipes and `run_script` are roadmap | analyst | Deferred (one recipe) |
 | Results review and stale cascade | Every run, figure and draft section records its parents' hashes; a changed dataset or recipe marks computational descendants stale; critical protocol changes require review without rewriting performed history | analyst, scribe, pi-desk | Deferred stale detection; release enforcement conditional |
 | Approvals | Certified fresh Switch decision per gated call; ledger lifecycle with revision, hash, hold expiry | pi-desk | **MVP** |
-| Paper drafting | Methods from the protocol version, results from runs, related work from the library; Markdown; PDF via Pandoc if installed | scribe | Fixed results paragraph only; methods and PDF roadmap |
+| Paper drafting | Methods from the protocol version, results from runs, related work from the library; Markdown; PDF via Pandoc if installed | scribe | Deferred; fixed results paragraph requires separate implementation |
 | Results packet | `finalize_packet`: minimal currentness check and exact-revision release decision; ZIP formatting is polish | pi-desk | Conditional roadmap |
 | Daily digest | `@labops standup`: today's bookings, low stock, pending approvals, expiring training | labops | Polish (manual trigger) |
 | Export | BibTeX / CSL JSON for Zotero; bench log to eLabFTW | scout, labops | BibTeX polish; eLabFTW stretch |
@@ -131,6 +131,8 @@ Use the checkpoints and escalation rules in [08](08-build-schedule.md#83-escalat
 Share schemas and fixture ids first; no two people own the same domain transition.
 
 ## 2.5 How each user gets the most out of LabQuorum
+
+The full task pilot and onboarding time are UNVERIFIED. Fund a separate 1.25-1.75 h for the full sequential interview and identical-task comparison before claiming validation; the separate optional 0.5 h observation cannot validate it. Record task completion, errors, clarification, active time, model wait and PI wait; if no participant or allocation is available, report no usability result.
 
 ### A day in the life
 
@@ -164,7 +166,7 @@ Share schemas and fixture ids first; no two people own the same domain transitio
 | First-pass analysis and figure | 30-60 min | 2-5 min plus human review | Run timestamps |
 | Recover after corrected data | Manual chain of updates, often missed | Every affected artifact flagged automatically | Change one fixture, inspect state |
 
-These are hypotheses with a measurement plan; the README presents them that way.
+All today estimates and proposed targets in this table are UNVERIFIED hypotheses, not observed baselines or measured savings. Only the booking row is in funded scope; the other measurements require a separately scheduled implementation and pilot.
 
 ### Onboarding (duration unmeasured)
 

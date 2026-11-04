@@ -82,6 +82,7 @@ Prior voice ELN work includes [LabTablet](https://doi.org/10.1145/2948992.294899
 
 ## 5.6 Maximizing the scorecard legitimately
 
+- Reserve 17:45-18:00 for final capture and bounded refresh/retry; stop at 18:00. Pass only when a complete, legible desktop Insights screenshot is saved and opens, and the actual form-supported attachment or link route is confirmed. If refresh fails, preserve the timestamped prior complete screenshot and disclose its capture time; do not imply it includes later usage. If the route remains unconfirmed, label the Wispr entry uncertain and submit the core on time. The 15-minute cap preserves the 18:00 capture and 18:30 attachment milestones.
 - Capture baseline now and keep an earlier complete backup. After the last real authoring dictation, capture final desktop Insights by Saturday 18:00 IST; attach and verify by 18:30 for 19:00 submission. Keep full originals and comparable account/count context.
 - [Insights](https://docs.wisprflow.ai/articles/8760230576-your-usage-tab-track-your-dictation-stats-in-wispr-flow) uses UTC days (05:30-05:29 IST); hover dates when useful. Wait until the final dictation appears; use documented retry controls for errors. Rankings are conditional, not guaranteed. Final minus baseline measures account usage in the window, not authenticated project-only work or productivity.
 - No word target or filler. Log actual work and correction failures in `docs/voice-log.md`; link resulting artifacts. Categories are observed, not promised.

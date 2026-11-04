@@ -57,7 +57,7 @@ Back to the [master plan](README.md). Each row has detection, handling, what the
 | D05 | Duplicate rows or replicates | Profile | Report and ask | Duplicates table | U-D02 |
 | D06 | PII or human-subjects data | Heuristic detector; misses are possible | Flag matched examples, synthetic-only policy | De-identification and IRB pointer | U-D04, E2E-18 |
 | D07 | Unpublished data with an external member present | Room membership and actual attachment paths | Exclude outsiders from internal rooms; synthetic inputs only | Reason stated | E2E-19 |
-| D08 | Data leaking to scholarly APIs | Explicit allowlisted public inputs | Do not send private text; length alone proves nothing | Policy notice | I-30 |
+| D08 | Data leaking to scholarly APIs | No general provenance guard is funded | Scholarly calls deferred; synthetic/public-only is an operational rule, not a privacy guarantee. If implemented, test short model-generated private text before claims | Limitation stated | I-30 |
 | D09 | Agent-written script escapes folder | Container mounts | Only run folder and staged data | n/a | I-18 |
 | D10 | Nondeterministic analysis | Golden mismatch | Fixed seeds | None | U-D05 |
 | D11 | Unreadable figure | Pixel review | Fixed style module | n/a | M-04 |
@@ -168,7 +168,7 @@ Back to the [master plan](README.md). Each row has detection, handling, what the
 | P03 | Submit form rejects a field or link | Dry run | Submit Saturday 19:00, five hours early; keep receipt |Checklist; M-05 |
 | P04 | Video link private or region-blocked | Incognito check | Public or unlisted link verified logged out |Checklist; M-05 |
 | P05 | README steps drift from reality | Clean-room run | Fix every gap Saturday morning | M-03 |
-| P06 | Scope creep | Cut lines | Feature freeze Fri 22:45 |Schedule; M-05 |
+| P06 | Scope creep | Cut lines | Feature freeze Sat 00:15 |Schedule; M-05 |
 | P07 | Fatigue | Schedule | Scheduled sleep, no work after 00:30 |Schedule; M-05 |
 | P08 | Wispr screenshot shows unrelated private app names | Review | Crop identifying details, keep stats |Checklist; M-05 |
 

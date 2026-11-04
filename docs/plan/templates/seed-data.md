@@ -1,5 +1,7 @@
 # LabQuorum demo seed data (sketch)
 
+Only people, instrument and booking fixtures are funded; inventory, protocol, papers and plate fixtures below are roadmap and require separately scheduled implementation and tests.
+
 All dates are relative to `--anchor-date`; generate bookings on the next open day after the recording date, never in the past. Times are Asia/Kolkata unless noted. The seed lives in `seed/demo.yaml` and is loaded by `lq seed --demo --anchor-date YYYY-MM-DD`.
 
 ## People
