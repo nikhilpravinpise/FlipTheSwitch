@@ -1,0 +1,40 @@
+## Applied
+
+- SW-01 to SW-06, SW-08, SW-09, SW-14 to SW-16, SW-18, SW-20, SW-21; EN-04 to EN-09, EN-11 to EN-15, EN-21, EN-28, EN-31, EN-34, EN-35, EN-41, EN-42, EN-46; RS-04 to RS-06 and RS-U2: `03` 3.1-3.3 and 3.8-3.9 define effective tool inventory, policy-update denial, fail-closed hook, exact visible decision, real-runtime version certification, steward recovery and restricted trust boundary. Native card and SQLite WAL claims are conditional on primary-source and installed-runtime checks. SQLite advisory: https://sqlite.org/wal.html#the_wal_reset_bug. Hook reference: https://code.claude.com/docs/en/hooks.
+- SW-07, SW-12, SW-13, EN-43, JD-07, RS-08, RS-U1: lab and project templates and templates README now have one HQ, one project room, three HQ roles, fixed Claude gate, no batch approval, and readable status. Verified single-room top-level kickoff and current field vocabulary in https://github.com/sandbox-quantum/switch/blob/main/docs/TEMPLATES.md; grouped rooms are distinct.
+- SW-10, SW-11, SW-17, SW-19, EN-07, EN-10, EN-47, MK-11, MK-18, MK-19, RS-03, RS-07, RS-24: `02` 2.1-2.5 corrects identity, internal-only membership, helper writes, one-human scope, conditional approval mechanism, actual onboarding and measurable PI burden.
+- JD-03, JD-04, JD-09, EN-23 to EN-29, RS-20, RS-21, RS-U4, MK-13, MK-17: seed data aligns 22 mL/20 mL/25 mL, C5 8 ug/mL, future booking date, blank treatment and descriptive-only synthetic plate; pin source fixtures and run counterfactual checks before making claims.
+- JD-05, EN-30, RS-09 to RS-12, RS-15 to RS-19, RS-22, RS-25, RS-U3, RS-U6, RS-U7, MK-14 to MK-16: `02` 2.4 and `03` 3.3-3.7 promote minimal release, record actual protocol version, use structured numbers and references, enforce citation freshness and mark optional reproducibility/RO-Crate and source-label work with cost and tests. RapidFuzz primary examples support candidate-only fuzzy matching: https://rapidfuzz.github.io/RapidFuzz/Usage/fuzz.html#token-set-ratio. RO-Crate 1.2 is a published recommendation: https://www.researchobject.org/ro-crate/specification/1.2/.
+- RS-02 and RS-U1: `03` 3.10 credits Switch and established dependency tracking, identifying two observable domain consequences. RS-U5 and SW MUST test additions are requested from their owners below; no tests are claimed to have run.
+- SW SHOULD status response accepted at 0.5 h, conditional on the core passing; RS-U6 and RS-U7 accepted as optional 1.5-2 h each, at most one before Friday checkpoint, not assumed schedule slack. Reproduction packet contents are required for any claim of reproducibility.
+
+## Rejected
+
+- RS-U8: capability-scoped delegation deferred (3-4 h plus a trusted independent decision receipt); widening addressing alone grants too much, and an LLM-supplied approval flag is not a receipt. Seven negative tests and a legitimate one-use decision are prerequisites. See https://arxiv.org/html/2611.00729v1.
+- RS-U9: paired voice/type study deferred (0.75-1 h plus participant availability); no speed or safety claim without data. Retained the shorter decision-task measurement when a participant is available.
+- SW external sanitized room and groups/links/second-provider upgrades: deferred at 1-2 h each because no measured slack remains before the core cycle; internal-only scope and zero groups/links are explicit.
+- EN-22: inferential Dunnett demo rejected for the one-plate fixture, which has no established independent biological replicates; descriptive summaries avoid the invalid inference and RNG tolerance issue. https://pmc.ncbi.nlm.nih.gov/articles/PMC5902037/.
+
+## Identifier changes
+
+- Project room template now generates `{lab}-proj-{project}` rather than `proj-{project}`; added `lab` parameter, default `rao`. Existing demo name `rao-proj-egcg` remains stable; take names include unique project slug. No agent, request, test or edge-case IDs renamed or removed.
+- Citation missing-lookup outcome is `UNRESOLVED` rather than `NOT_FOUND`; ambiguous title is `NEEDS_REVIEW`. Integrate these status identifiers in tests and UI.
+- MVP analysis recipe is `descriptive` rather than `dose_response_anova_dunnett`; retain old recipe identifier only as roadmap if independently validated.
+
+## Requests for other owners
+
+- README: replace every claim that every shared-state write requires a card with "Bookings, local purchase-request approvals, protocol releases and final research releases require a certified PI decision; helpers may record observations and drafts." Replace ledger-authenticates-approval claims with "Switch/provider enforces the human decision on the tested runtime; the ledger checks the exact decision payload and revision." Replace card-only fallback with "authenticated PI decision through certified native card or separately tested steward". Replace room-document dashboard and group claims with readable agent-posted status, 3 HQ roles and no groups or links.
+- 04-demo: use 22 mL stock, 20 mL need, 25 mL reorder threshold, C5 at 8 ug/mL and next open day; describe one synthetic plate, six technical wells per dose, descriptive results and no sub-MIC or efficacy inference. Purchase approval creates a local request only. Show stale release refusal, rerun and fresh decision only if implemented; otherwise explicitly show stale detection only. Full card input is canonical snapshot under 900 characters; PI requests release.
+- 05-wispr-flow: replace any batching snippet with "Each binding request requires its own PI decision. Use Allow once. LabQuorum does not offer batch approval. Session-wide provider permission never authorizes another lab request." Use iPhone Flow keyboard or Android Flow bubble only on a tested device.
+- 06-testing and 07-edge-cases: add the exact runtime/control-plane and attachment tests in `03` 3.2 and Operational preflight; E2E-11 uses two calls to the same tool and same session three times. EDGE-04 must assert open/unclaimed allow, owner/unclaimed refuse, owner/claimed allow. Replace automatic decline and protocol-stale assumptions with the lifecycle in `03`. Add C5 one-cell mapping, 12 mL rejection, 22 mL hold, no biological inference, structured claims and citation freshness tests. RS-U5: 40 regression plus 24 source-separated holdout citations, frozen matcher, DOI-only baseline, confusion matrix and per-class denominators, 1.25-1.5 h.
+- 08-build-schedule: reserve 1-1.5 h for effective boundary inventory and 1-1.5 h overlapping spikes for version certification, plus 3-5 h only if steward is selected by Thursday morning. S0 requires an independently preflighted external Linux Compose path and 60-90 min after the 90 min native box; S6 measures 3 + 5R possible placements and at least 20% RAM headroom. Allocate at most one 1.5-2 h optional research upgrade before Friday checkpoint; preserve submission buffer.
+- 09-submission-and-risks: disclose synthetic-only, unmeasured demand/cost, no real purchase or multi-human quorum, provider-boundary limitation, exact installed versions and passed vs planned tests; avoid unverified safety and citation-recall claims. Preserve one causal recording.
+
+## Open questions
+
+- Installed Console, server, Claude CLI and effective settings have not been certified; card repetition, hook failure behavior, template imports and attachment limits remain UNVERIFIED until S0-S4 and E2E run.
+- Exact citation fixtures and original/notice relationship are unselected; pin and check within 30 minutes or use a clearly labeled generic retraction example.
+- Native Windows setup and a working pinned self-hosted fallback have not been exercised; validate the actual self-host guide and health endpoint on the selected release.
+- Whether optional source-flow or RO-Crate work fits actual slack is unknown; neither is a shipped security or standards claim until tests pass.
+
+Validation: both YAML files parsed with PyYAML; static assertions passed for resource counts, gate provider/addressing/modes, project naming and absence of batch language. No Switch runtime or application tests were run.

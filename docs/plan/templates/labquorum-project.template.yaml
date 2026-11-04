@@ -12,9 +12,15 @@
 version: 1
 
 params:
+  lab:
+    type: string
+    description: Same prefix used when creating the lab agents
+    default: rao
+    pattern: "[a-z][a-z0-9-]*"
   project:
     type: string
-    description: Short project slug (used in the room name), for example "egcg"
+    description: Unique project or take slug
+    pattern: "[a-z][a-z0-9-]*"
   question:
     type: string
     multiline: true
@@ -40,7 +46,7 @@ params:
     required: false
   member_2:
     type: user
-    description: Another lab member or an external collaborator
+    description: Another internal lab member
     required: false
   bridge:
     type: bridge
@@ -48,7 +54,7 @@ params:
     default: [$first]
 
 room:
-  name: "proj-{project}"
+  name: "{lab}-proj-{project}"
   description: "Research project {project}, from question to paper."
   bridge: "{bridge}"
   channel_type: channel_private
@@ -61,11 +67,10 @@ room:
     "{scribe}": scribe
     "{pi_desk}": pi-desk
   instructions: |
-    Project {project}. Every claim in this room needs a verified citation or
-    a run id. Data stays in this room; if an external collaborator is a
-    member, agents do not attach raw unpublished data here. Put the mention
-    first in every message to an agent ("@labops, ..."). Approvals come from
-    @pi-desk and only the PI can grant them.
+    Project {project}. Use only synthetic or public nonsensitive data.
+    Internal members only; external review requires a separate sanitized room.
+    Citation identity and retraction checks do not establish claim support.
+    Mention first. Each binding request requires its own PI decision.
   docs:
     - name: Project charter
       description: Question, hypotheses, success criteria

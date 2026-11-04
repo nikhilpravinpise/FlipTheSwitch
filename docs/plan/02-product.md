@@ -10,16 +10,16 @@ All names are fictional. In the demo, Nikhil plays the PI and the student in two
 | --- | --- | --- | --- | --- | --- |
 | **PI**, Prof. Asha Rao (`prof-rao`) | Decide scope; trust results | Owner of every LabQuorum agent; Mattermost account linked (claimed) | All agents | **Yes** | Override a safety prerequisite with a vague "yes" (the commit re-checks policy) |
 | **PhD student**, Maya Iyer (`maya`) | A clear next step; resources on time | Separate Switch user with a claimed Mattermost account (spike S1) | `@scout`, `@labops`, `@analyst`, `@scribe` | No: visible refusal | Approve her own booking; mark exploratory analysis as prespecified |
-| **Postdoc**, Dr. Lena Okafor (`lena`) | Unblock students, check rigor | Same as student | Same as student | Only if the PI delegates by widening `@pi-desk` addressing to include her (for a travel week) | Self-approve without delegation |
-| **Research assistant**, Dev Sharma (`dev`) | Log bench work without losing detail | Telegram-linked Switch user (polish) or Mattermost | `@labops` | No | Book an instrument with expired training |
+| **Postdoc**, Dr. Lena Okafor (`lena`) | Unblock students, check rigor | Same as student | Same as student | No; action-scoped delegation is roadmap | Self-approve without delegation |
+| **Research assistant**, Dev Sharma (`dev`) | Log bench work without losing detail | Telegram-linked Switch user (polish) or Mattermost | All helpers present in his room | No | Book an instrument with expired training |
 | **Lab manager** | No conflicts, no untrained use, stock on hand | Same as student | `@labops` | Stretch: owns an `@ops-desk` gate for inventory orders | Approve scientific conclusions by owning equipment |
-| **External collaborator**, Jonas Weber (`jonas`, Europe/Berlin) | Review a limited evidence package | Member of one project room only, never HQ | `@scout` | No | See unpublished raw data (agents refuse to attach it when an external member is present) |
+| **External collaborator**, Jonas Weber (`jonas`, Europe/Berlin) | Review a limited evidence package | Not admitted to MVP internal rooms | None in internal rooms | No | Access internal room content; sanitized external room is roadmap |
 | **Safety officer** | See every hazard release | Member of HQ | `@labops` | Stretch: owns a `@safety-desk` gate for hazard acknowledgements | Be replaced by an agent-issued "certificate" |
 
 Two Switch facts the design rests on:
 
 - **An agent inherits exactly its owner's permissions** and addressing rules decide who it responds to; room membership alone does not admit a sender ([identity and access](https://docs.switchagents.ai/switch-rooms/internals/identity-and-access.md)).
-- **Whoever may address an agent may answer its approval cards**; a person needs a linked Switch identity to answer at all (verified in source: [bridge_answers.py](https://github.com/sandbox-quantum/switch/blob/main/core/switch_core/session_activity/bridge_answers.py)).
+- **Eligible humans who may address an agent may answer its approval cards**; owner recognition requires a claimed platform identity (verified in source: [bridge_answers.py](https://github.com/sandbox-quantum/switch/blob/main/core/switch_core/session_activity/bridge_answers.py)).
 
 ## 2.2 The five agents
 
@@ -29,13 +29,13 @@ All run on **Claude Code** via Switch Console (`@analyst` may run on Codex if sp
 | --- | --- | --- | --- | --- | --- |
 | `rao-scout` (`@scout`) | Literature: search, screen, library, verify citations, reading queue | `anyone` | `librarian`: `search_literature`, `get_paper`, `verify_citation`, `verify_bibliography`, `library_add`, `library_list`, `export_bibtex` | WebFetch denied (all network goes through our rate-limited clients) | None (reads, plus project-library writes) |
 | `rao-labops` (`@labops`) | Instruments, training, inventory, protocols, hazards, bench log, lab state digest | `anyone` | `proposer`: `list_instruments`, `check_availability`, `propose_booking`, `cancel_my_proposal`, `inventory_search`, `propose_order`, `protocol_get`, `protocol_draft`, `protocol_hazard_scan`, `submit_protocol_for_review`, `bench_log_draft`, `bench_log_confirm`, `lab_state` | Bash, Write, Edit, WebFetch denied | None: it can only propose |
-| `rao-analyst` (`@analyst`) | Dataset intake, validation, analysis, figures, provenance, stale detection | `anyone` | `analyst`: `register_dataset`, `dataset_profile`, `run_analysis` (vetted recipes), `run_script` (agent-written code in a sealed container, polish), `list_runs`, `run_status` | **No shell, no file tools** | None, and nothing is ask-reachable |
+| `rao-analyst` (`@analyst`) | Dataset intake, validation, analysis, figures, provenance, stale detection | `anyone` | `analyst`: `register_dataset`, `dataset_profile`, `run_analysis` (vetted recipes), `run_script` (agent-written code in a sealed container, polish), `list_runs`, `run_status` | Shell and file tools denied in certified effective inventory | None, and nothing is ask-reachable |
 | `rao-scribe` (`@scribe`) | Methods and results drafts from released protocols and recorded runs, related work from the verified library | `anyone` | `writer`: `draft_get`, `draft_put_section`, `verify_bibliography`, `list_runs`, `protocol_get`, `render_document` | Bash, Write, Edit denied | None: it cannot finalize |
-| `rao-pi-desk` (`@pi-desk`) | The gate: validate, present one decision, commit after the PI approves | `owner-agents` (protocol value `owner_and_owner_agents`): the PI plus the PI's agents | `approver`: `get_request`, `policy_check`, `lab_state`, `decline_request`, and the gated `commit_booking`, `commit_order`, `release_protocol`, `finalize_packet` | Everything else denied | **Every `commit_*`, `release_*`, `finalize_*` call** raises a Switch card |
+| `rao-pi-desk` (`@pi-desk`) | The gate: validate, present one decision, commit after the PI approves | `owner-agents` (protocol value `owner_and_owner_agents`): the PI plus the PI's agents | `approver`: `get_request`, `policy_check`, `lab_state`, `decline_request`, and the gated `commit_booking`, `commit_order`, `release_protocol`, `finalize_packet` | Unapproved tools denied after effective inventory | Each gated call requires a fresh decision on a certified runtime; see 3.2 |
 
-**The rule that makes it safe:** an agent that anyone may address must have **nothing ask-reachable**, because "anyone may address" means "anyone may answer its cards". So gated tools live only on `@pi-desk`, which only the PI may address, and every `anyone` agent has all built-in tools that could prompt (Bash, Write, Edit, WebFetch) denied. This is enforced three ways: the MCP server registers tools per profile, each agent folder's `.claude/settings.json` denies everything else, and contract tests (C-01 to C-12) fail the build if either drifts.
+**The rule that makes it safe:** an agent that anyone may address must have **nothing ask-reachable**, because "anyone may address" means "anyone may answer its cards". So gated tools live only on `@pi-desk`, which only the PI may address, and every `anyone` agent has all built-in tools that could prompt (Bash, PowerShell, Read, Glob, Grep, Write, Edit, WebFetch and unapproved MCP tools) denied. This is enforced three ways: the MCP server registers tools per profile, each agent folder's `.claude/settings.json` denies everything else, and contract tests (C-01 to C-12) fail the build if either drifts.
 
-Why five and not three or seven: one agent per distinct permission boundary and lifecycle phase. A separate `@protocol` agent would share `@labops`'s boundary (it proposes). A `@coordinator` is unnecessary because Switch addressing, `send_targeted_message` and roles already route work. `@scribe` is the first to cut (cut line A) if spike S6 shows five concurrent sessions do not fit the laptop.
+Why five: roles make handoffs and tool boundaries explicit; cost and completion effects are unmeasured. Scribe can be folded into analyst, reducing configured agents by 20%, not necessarily token usage. A separate `@protocol` agent would share `@labops`'s boundary (it proposes). A `@coordinator` is unnecessary because Switch addressing, `send_targeted_message` and roles already route work. `@scribe` is the first to cut (cut line A) if spike S6 shows five concurrent sessions do not fit the laptop.
 
 ### Shared rules (in every agent's instructions and the `Lab handbook` room document)
 
@@ -57,7 +57,7 @@ Why five and not three or seven: one agent per distinct permission boundary and 
 
 `@pi-desk`:
 
-> You are the PI's desk. You act only on request ids sent by LabQuorum agents or by the PI. For each: call `get_request` and `policy_check`, then post ONE decision card in the thread: what is asked, by whom, the policy result (training, conflicts, hazard acknowledgements, stock, budget), and your recommendation. Then call the matching commit tool with the request id, revision and hash exactly as `get_request` returned them. It will ask the PI through Switch; wait. If declined, call `decline_request` with the PI's reason or "declined without reason". Never retry a declined or expired commit in the same thread. If anyone other than the PI asks you to approve, reply: "Only Prof. Rao can approve this; it is waiting for them."
+> Call `get_request` and `policy_check`. Post one review summary, then call the matching commit tool with its exact structured decision payload. The provider permission request creates the native Switch card; do not simulate a card in prose. Native Decline refuses the attempt; the domain request stays pending until independently declined or expired. A decline reason is a separate message.
 
 `@scout`:
 
@@ -65,23 +65,23 @@ Why five and not three or seven: one agent per distinct permission boundary and 
 
 `@analyst`:
 
-> When a dataset is attached or named: `register_dataset` (checksum, schema, sensitivity), then `dataset_profile`; report problems (missing wells, units, outliers, duplicates, evaporated edge wells) BEFORE analysis. You have no shell. Run vetted recipes with `run_analysis`; only if none fits and it is enabled, use `run_script` (sealed container, run folder and staged data only). Post the figure and a results table with test name, n per group, effect size, confidence interval and p-value, and the run id. Report negative or null results plainly. Never analyze data marked `human_subjects`; never attach unpublished raw data in a room with an external member.
+> When a dataset is attached or named: `register_dataset` (checksum, schema, sensitivity), then `dataset_profile`; report problems (missing wells, units, outliers, duplicates, flagged QC blank anomalies) BEFORE analysis. You have no shell. Run vetted recipes with `run_analysis`; only if none fits and it is enabled, use `run_script` (sealed container, run folder and staged data only). Post the synthetic single-plate figure, descriptive counts and spread, and run id. No p-values, efficacy or sub-MIC inference. Report negative or null results plainly. Never analyze data marked `human_subjects`; accept only declared synthetic or public nonsensitive inputs.
 
 `@scribe`:
 
-> You draft from evidence only: methods from the released protocol version, results from recorded run outputs (quote numbers from the run, never from memory), related work from the verified library. End every paragraph with a "Sources" line of run ids, protocol versions and verified DOIs. `draft_put_section` refuses unverified DOIs and stale runs; report what it refused instead of working around it.
+> You draft from evidence only: methods from the released protocol version, results from recorded run outputs (render structured numbers from the run JSON, never from memory), related work from the verified library. End every paragraph with a "Sources" line of run ids, protocol versions and verified DOIs. `draft_put_section` refuses unverified DOIs and stale runs; report what it refused instead of working around it.
 
 ## 2.3 Rooms, roles and documents
 
 | Room | Bridge | Members | Purpose | Documents | MVP? |
 | --- | --- | --- | --- | --- | --- |
 | `#rao-lab-hq` | Mattermost | PI, lab members, `@labops`, `@pi-desk`, `@scout` | Lab-wide operations: bookings, inventory, safety, digest | `Lab handbook` (SOPs, mention and approval etiquette), `Instrument rules`, `Lab state` (created and kept current by `@labops` from the ledger) | MVP |
-| `#rao-proj-<slug>` (demo: `#rao-proj-egcg`) | Mattermost | PI, Maya, optionally Jonas, all five agents | One project from question to draft | `Project charter` (question, hypotheses, success criteria, from a template param), `Draft` (created by `@scribe`) | MVP |
-| `#bench` | Telegram group adopted by Switch | RA and student phones, `@labops` | Hands-busy bench logging from a phone with the Wispr keyboard | none | Polish |
+| `#rao-proj-<slug>` (demo: `#rao-proj-egcg`) | Mattermost | PI, Maya, internal lab members, all five agents | One project from question to draft | `Project charter` (question, hypotheses, success criteria, from a template param), `Draft` (created by `@scribe`) | MVP |
+| `#bench` | Telegram group adopted by Switch | RA and student phones, `@labops` | Hands-busy bench logging from a phone with the iPhone Flow keyboard or Android Flow bubble on a tested device | none | Polish |
 
 - Room instruction for HQ: "This is the Rao Lab operations room. Book instruments and order reagents through @labops; approvals come from @pi-desk and only Prof. Rao can grant them. One thread per request."
-- Room instruction for a project: "Project: does EGCG reduce E. coli biofilm at sub-inhibitory concentrations? Every claim needs a verified citation or a run id. Data in this room are synthetic for the demo."
-- **Roles** (defined only in HQ, because an agent holds at most one role lease globally across rooms; [hand off work](https://github.com/sandbox-quantum/switch/blob/main/docs/official/using/hand-off-work.md)): `librarian` (`@scout`), `bench-manager` (`@labops`), `statistician` (`@analyst`), `approver` (`@pi-desk`). Roles are addresses, never authority: addressing `@approver` reaches `@pi-desk`, whose addressing policy still decides. Critical paths use exact names or aliases.
+- Room instruction for a project: "Project: How does synthetic crystal-violet absorbance vary across the listed EGCG doses? Every claim needs a verified citation or a run id. Data in this room are synthetic for the demo."
+- **Roles** (defined only in HQ, because an agent holds at most one role lease globally across rooms; [hand off work](https://github.com/sandbox-quantum/switch/blob/main/docs/official/using/hand-off-work.md)): `librarian` (`@scout`), `bench-manager` (`@labops`), `approver` (`@pi-desk`). Roles are addresses, never authority: addressing `@approver` reaches `@pi-desk`, whose addressing policy still decides. Critical paths use exact names or aliases.
 - **Why Telegram for the bench:** the local Switch server binds to this computer only, so a phone cannot reach the bundled Mattermost without extra networking, while the Telegram bridge connects outbound and the bot needs no admin rights ([Telegram bridge](https://github.com/sandbox-quantum/switch/blob/main/docs/official/deploy/messaging-apps/telegram.md)). Gotchas: create the group by hand, turn off Group Privacy in BotFather first, and a person can link their account only after posting in the group.
 - Context does not cross rooms ([shared context](https://docs.switchagents.ai/switch-rooms/using/shared-context)), so anything both rooms need lives in the ledger and room documents, never in chat memory.
 - Switch has **no scheduler** ([work in a room](https://docs.switchagents.ai/switch-rooms/using/work-in-a-room)). Rituals are triggered by a person (a Wispr snippet makes it one phrase). Mattermost scheduled posts are a stretch experiment, tested before being relied on.
@@ -103,26 +103,26 @@ Legend: **MVP** must ship and be in the video. **Polish** only after the MVP E2E
 | Inventory | Stock vs protocol need (unit-safe), reorder proposal to pack size, gated commit | labops, pi-desk | MVP |
 | Bench log | Draft from text or dictation, structured read-back, token confirmation, linked to the released protocol version | labops | MVP in Mattermost; Telegram polish |
 | Data capture | CSV attached in chat; `register_dataset` (SHA-256, schema, sensitivity); strict validation with row-level errors | analyst | MVP |
-| Analysis | `run_analysis` recipe `dose_response_anova_dunnett` (MVP), plus `two_group_ttest`, `descriptive` (polish); `run_script` in Docker (polish) | analyst | MVP (one recipe) |
-| Results review and stale cascade | Every run, figure and draft section records its parents' hashes; a changed dataset or protocol marks descendants stale and blocks `finalize_packet` until re-run and re-approved | analyst, scribe, pi-desk | **MVP (the third wow)** |
-| Approvals | Switch cards on every commit; ledger request lifecycle with revision, hash, hold expiry | pi-desk | **MVP** |
+| Analysis | `run_analysis` descriptive recipe for one synthetic plate; inferential recipes and `run_script` are roadmap | analyst | MVP (one recipe) |
+| Results review and stale cascade | Every run, figure and draft section records its parents' hashes; a changed dataset or recipe marks computational descendants stale; critical protocol changes require review without rewriting performed history | analyst, scribe, pi-desk | **MVP (the third wow)** |
+| Approvals | Certified fresh Switch decision per gated call; ledger lifecycle with revision, hash, hold expiry | pi-desk | **MVP** |
 | Paper drafting | Methods from the protocol version, results from runs, related work from the library; Markdown; PDF via Pandoc if installed | scribe | MVP (one results paragraph + methods); PDF polish |
-| Results packet | `finalize_packet`: bundle of data, run manifest, figure, draft, bibliography; refused while anything is stale or unverified | pi-desk | Polish |
+| Results packet | `finalize_packet`: minimal currentness check and exact-revision release decision; ZIP formatting is polish | pi-desk | MVP |
 | Daily digest | `@labops standup`: today's bookings, low stock, pending approvals, expiring training | labops | Polish (manual trigger) |
 | Export | BibTeX / CSL JSON for Zotero; bench log to eLabFTW | scout, labops | BibTeX polish; eLabFTW stretch |
 | Submission checklist | All citations verified, figures from recorded runs, data availability statement | scribe, pi-desk | Stretch |
 
-**Definition of shipped:** a clean clone on Windows can run the deterministic suite green, load the demo seed, import both templates into a running Switch with Mattermost, and complete the demo story in a real browser: verified literature with a retraction caught, a booking and order proposed, a student refused, a PI approval recorded by Switch, an analysis with provenance, a draft with only verified citations, and a stale cascade after a data correction.
+**Definition of shipped:** a clean clone on Windows can run the deterministic suite green, load the demo seed, import both templates into a running Switch with Mattermost, and complete the demo story in a real browser: metadata and indexed retraction checks with a labeled fixture, a booking and order proposed, a student refused, a PI approval recorded by Switch, an analysis with provenance, a structured draft with resolved library entries and claim support labeled unreviewed, and a stale cascade after a data correction.
 
 ### Cut lines (solo)
 
 | Checkpoint | Trigger | Decision |
 | --- | --- | --- |
-| A, Thu 18:00 | Live approval loop not working, or spike S6 shows five sessions do not fit | Drop `@scribe` from MVP; `@analyst` writes the results paragraph through `draft_put_section` |
+| A, Thu 18:00 | Spike S6 shows the room-attending sessions do not fit | Drop `@scribe` from MVP; `@analyst` writes the results paragraph through `draft_put_section` |
 | B, Fri 12:00 | `run_script` container not solid on Windows | Recipes only; `run_script` becomes roadmap |
 | C, Fri 20:00 | Telegram claim and link flow not done | `#bench` dropped from the video; bench logging shown in Mattermost |
 | D, Fri 13:30 | No complete green cycle | Feature freeze; ship literature + booking/approval + analysis + stale; do not advertise cut stages |
-| Never cut | | The PI approval card, the wrong-person refusal, citation verification, the stale cascade core, the README reproduction path, the CI suite |
+| Never cut | | A tested authenticated PI decision (native card or steward message), the wrong-person refusal, citation verification, the stale cascade core, the README reproduction path, the CI suite |
 
 ### With teammates
 
@@ -140,12 +140,12 @@ Share schemas and fixture ids first; no two people own the same domain transitio
 
 | Persona | Morning | During the day | What they finish with |
 | --- | --- | --- | --- |
-| **Prof. Rao (PI)** | Reads the `@labops standup` digest on the phone: today's bookings, low stock, pending approvals, expiring training | Answers two cards with "Allow once" between meetings; asks `@scout`, "what changed this week in EGCG biofilm literature?"; reviews `@scribe`'s paragraph in the `Draft` document and dictates edits | Every binding decision made in under a minute with full context; figures she can trace to data |
-| **Maya (PhD student)** | "@scout, screen these 40 OpenAlex hits against my inclusion criteria" while setting up cultures | Asks `@labops` for the plate reader and crystal violet in one message; logs steps by voice at the bench; drops the CSV for `@analyst` before leaving | A booking, the reagent, a figure, stats and a draft paragraph with only verified citations, without chasing anyone |
+| **Prof. Rao (PI)** | Reads the `@labops standup` digest on the phone: today's bookings, low stock, pending approvals, expiring training | Answers two cards with "Allow once" between meetings; asks `@scout`, "what changed this week in EGCG biofilm literature?"; reviews a versioned `@scribe` Markdown attachment and dictates edits | A decision and traceable figures; active review time is unmeasured |
+| **Maya (PhD student)** | "@scout, screen these 40 OpenAlex hits against my inclusion criteria" while setting up cultures | Asks `@labops` for the plate reader and crystal violet in one message; logs steps by voice at the bench; drops the CSV for `@analyst` before leaving | A booking, an approved local purchase request (no order placed), a descriptive figure and a draft requiring review |
 | **Dev (RA)** | Opens the run checklist in `#bench` | Dictates observations with gloves on; confirms the read-back token; learns his plate-reader training expired and who re-certifies him | A clean bench record with sample ids, times, units and deviations |
-| **Lena (postdoc)** | Reviews the student's protocol revision | Delegated approver for bookings while the PI travels; re-runs last month's analysis on new data with identical recipe and hashes | Exact comparisons, unblocked students |
+| **Lena (postdoc)** | Reviews the student's protocol revision | Reviews the protocol; re-runs last month's analysis on new data with identical recipe and hashes | Exact comparisons, unblocked students |
 | **Lab manager** | Weekly low-stock digest | Maintains the hazard table and instrument records (through `lq` or by asking `@labops` to propose changes) | No double bookings, no surprise shortages |
-| **External collaborator** | Receives a sanitized results packet in the project room | Asks `@scout` questions about the literature | A review that never exposes unrelated internal data |
+| **External collaborator** | Not in MVP internal rooms | A separate sanitized review room is future work | No confidentiality guarantee in the prototype |
 
 ### Rituals (no scheduler needed)
 
@@ -164,13 +164,13 @@ Share schemas and fixture ids first; no two people own the same domain transitio
 | Discover a reagent shortage | Often on the day; a lost day per incident | At booking time | Inventory check at proposal |
 | Find the current approved protocol | Minutes of searching | Under 30 s | Blind task in the walkthrough |
 | Trace a figure to raw input and code | Often impossible | Under 60 s, all hashes present | Second person reproduces |
-| Catch a retracted or fabricated citation | Often not caught | Always flagged by code | Verifier golden set |
+| Catch a retracted or fabricated citation | Often not caught | Flag all supported negative fixtures; general recall unmeasured | Frozen regression and held-out cases, with unresolved counts |
 | First-pass analysis and figure | 30-60 min | 2-5 min plus human review | Run timestamps |
 | Recover after corrected data | Manual chain of updates, often missed | Every affected artifact flagged automatically | Change one fixture, inspect state |
 
 These are hypotheses with a measurement plan; the README presents them that way.
 
-### Onboarding in under 10 minutes (for a lab that already runs Switch)
+### Onboarding (duration unmeasured)
 
 1. Clone, `uv sync`, `lq init` (creates the ledger under `%LOCALAPPDATA%\LabQuorum`, `.env` from `.env.example`), `lq seed --example` (2 min).
 2. `lq doctor` (30 s): Python, uv, ledger path not in OneDrive, each agent folder's `.mcp.json` resolves, API keys present, Docker up, agent settings have Auto mode and Bypass off.
@@ -179,4 +179,11 @@ These are hypotheses with a measurement plan; the README presents them that way.
 5. In HQ: `!agents-status`, then "@labops, what instruments do we have?" (1 min).
 6. Edit `seed/lab.yaml` with your real instruments and stock, `lq seed --apply` (3 min).
 
-Initial Docker, Console and provider installation takes longer and is counted separately. A first-time Switch user starts with the official quickstart (one agent answering in about 10 minutes, [quickstart](https://docs.switchagents.ai/switch-rooms/getting-started)).
+The listed estimates sum to at least 10.5 minutes before troubleshooting; time a clean install, account linking, templates and lab data entry separately. Demo UI is local Mattermost; existing-chat adoption is a hypothesis. Initial Docker, Console and provider installation takes longer and is counted separately. A first-time Switch user starts with the official quickstart (one agent answering in about 10 minutes, [quickstart](https://docs.switchagents.ai/switch-rooms/getting-started)).
+
+
+**Permission and input scope:** Open-policy/unclaimed sender may address `anyone` labops; unclaimed PI cannot satisfy owner-scoped pi-desk; claimed owner can. Test all three on the installed runtime. Helpers can write library entries, observations and drafts; booking commitments, local purchase-request approvals, protocol release and final research release are gated. The native demo uses a card click, while supported typed answers follow the same authorization check. A purchase request does not order or receive stock. Only synthetic/public nonsensitive data is supported; no institutional confidentiality guarantee.
+
+**Review metric:** one uncoached participant locates the current protocol, understands one decision, identifies stale evidence and recovers after correction; record active PI seconds, clarifications and completion. A hypothetical 20 decisions/day at 60 seconds costs 20 minutes/day, not a measured workload. Room documents brief agents; creators update their own documents, and agents post readable status or versioned Markdown attachments. Test current protocol discovery in under 30 seconds.
+
+For mention-routing tests, after each room creation run and verify `!follow-ups off` and `!unassign-agent` where supported; an assigned main agent or enabled follow-ups can receive unmentioned messages. In a quiet unassigned room without a mention pill, test trailing period gives zero addressed events while comma and colon each give one; recreate and repeat. Human approval-answer routing is a separate path.

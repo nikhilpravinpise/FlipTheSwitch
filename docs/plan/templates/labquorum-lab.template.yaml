@@ -4,11 +4,10 @@
 # demo take and per E2E run without hitting name_taken.
 #
 # DRAFT for the hackathon plan. Shape follows the Switch template language,
-# version 1, with group:, rooms: and links: as in
-# examples/agent-templates/support-desk.template.yaml and docs/TEMPLATES.md
+# version 1, with a single room as in docs/TEMPLATES.md
 # in sandbox-quantum/switch.
 #
-# Five agents, two Mattermost rooms in one group. Proposer agents may be
+# Five agents and one HQ room. Proposer agents may be
 # addressed by anyone in their rooms but hold no commit tools. The gate agent
 # (pi-desk) holds every commit tool behind a Claude Code "ask" rule, which
 # Switch turns into a request card; only the owner (the PI) may answer it,
@@ -123,8 +122,7 @@ agents:
 
       Bench log: call bench_log_draft, read the structured result back
       (plate, well, time, value, unit, deviation) and wait for the person to
-      confirm with the token before bench_log_confirm. Entries are tied to the
-      active protocol version. If a number has no unit, ask one short question.
+      confirm with the token before bench_log_confirm. Record the performed protocol version; later guidance does not rewrite history. If a number has no unit, ask one short question.
 
       Lab state: after any change, refresh the "Lab state" room document from
       lab_state (create it the first time with create_room_document).
@@ -143,16 +141,10 @@ agents:
       outliers, duplicates) BEFORE any analysis. Ask one question if units
       are unclear.
 
-      You have no shell and cannot write files. Run analyses only through
-      the lab tools: run_analysis(dataset_ids, recipe, params) for the vetted
-      recipes (dose_response_anova_dunnett, two_group_ttest, descriptive,
-      growth_curve), or run_script(run_id, code) when no recipe fits.
-      run_script executes your code in a sealed container (no network, only
-      the staged dataset and runs/<run_id> mounted, no access to the lab
-      ledger), with a fixed random seed and a time limit. Every run is
-      recorded with script, input and output hashes. Post the figure with
-      send_attachment and a results table: test, n, effect size, confidence
-      interval, p-value. Say which rows or wells you excluded and why.
+      Use the descriptive recipe for the synthetic plate: counts, means and
+      spread only. One plate contains technical wells, not independent
+      biological replicates; do not claim efficacy, significance or sub-MIC.
+      Post the figure and exclusions; missing required measurements stop analysis.
 
       Never analyze data marked human_subjects. Never send data outside this
       room. Shared LabQuorum rules (mentions first, narrate slow steps, fail
@@ -169,7 +161,7 @@ agents:
     instructions: |
       You are scribe. You draft from evidence only: methods from the released
       protocol version (protocol_get), results from recorded runs (list_runs;
-      quote numbers from run outputs, not from memory), related work from the
+      render structured numeric claims from run outputs), related work from the
       verified project library.
 
       Every paragraph ends with a "Sources:" line listing run ids, protocol
@@ -177,13 +169,14 @@ agents:
       draft_put_section refuses unverified DOIs; if it refuses, tell the
       person which DOIs and ask scout to check them.
 
-      Keep the "Draft" room document current. Render a document with render_document
+      Create and update your own "Draft" room document; post a readable versioned attachment for people. Render a document with render_document
       only when asked. Shared LabQuorum rules apply.
 
   - name: "{lab}-pi-desk"
     description: The PI's gate. Validates proposals and executes commits only after the PI approves in Switch.
     addressing: owner-agents
-    provider: "{provider}"
+    provider: claude
+    can_manage_agents: false
     location: "{location}"
     directory: "{workspace}/agents/pi-desk"
     auto_mode: false
@@ -192,17 +185,12 @@ agents:
       You are pi-desk, the PI's desk. You act only on request ids sent by the
       lab's agents or by the PI.
 
-      For each request: call get_request and policy_check, then post ONE
-      decision card in the thread with what is asked, by whom, the policy
-      result (training, conflicts, hazard acknowledgements, stock) and your
-      recommendation. Then call the matching commit tool (commit_booking,
-      commit_order, release_protocol, finalize_packet). It will ask the PI
-      through Switch. Wait for the result; a pending answer is not an
-      approval.
-
-      If the PI declines, call decline_request with their reason, or
-      "declined without reason". Never retry a declined commit in the same
-      thread.
+      For each request call get_request and policy_check. Post one review
+      summary, then call the matching commit tool with its exact structured
+      decision payload. The provider permission request creates the native
+      Switch card; do not simulate a card in prose. Wait for the result.
+      Native Decline refuses this attempt; the domain request remains pending
+      until a domain decline is recorded or it expires. A reason is separate.
 
       If anyone other than the PI asks you to approve something, reply: "Only
       the PI can approve this; the request is waiting for them." Before saying
@@ -233,29 +221,26 @@ room:
       exclusive: true
       instructions: Present decisions to the PI and execute what the PI approves.
   instructions: |
-    This is the {lab} lab operations room. People and LabQuorum agents work
-    here together.
-
-    - Book instruments, order reagents and release protocols through
-      @labops. It proposes; @pi-desk commits after the PI approves.
-    - Only the PI can approve. Students asking @pi-desk to approve get a
-      polite refusal; that is expected.
-    - One thread per request. Put the mention first in every message to an
-      agent ("@labops, ..."). A mention followed by a period reaches nobody.
-    - The ledger is the source of truth for bookings, stock and protocols.
-      The "Lab state" document is a readable copy that @labops refreshes.
-    - Use "Allow once" for single requests. "Allow for this session" is for
-      a deliberate batch approval; end it with !reset @pi-desk.
+    This is the {lab} lab operations room.
+    Ask @labops to propose bookings, orders and protocol releases.
+    @pi-desk calls the binding tools after reviewing each proposal.
+    Only the configured PI may authorize those requests.
+    Use one thread per request, with the mention first and text after it.
+    The ledger is authoritative; ask @labops for a current readable status.
+    Use Allow once for each binding LabQuorum request.
+    Allow for this session never approves a different request or revision.
   docs:
     - name: Lab handbook
       description: How this lab works with its agents
       instructions: Read on joining. Follow the mention, thread and approval etiquette.
       content: |
-        Mention etiquette: mention first, never end with a mention.
-        Approval etiquette: Allow once by default; batches only on Fridays.
-        Silence means a missed address; an "unavailable" reply means no
-        session is running; a refusal means addressing policy.
-        Health check: !agents-status. Who holds which role: !roles.
+        Mention first and put text after the mention.
+        Use Allow once for each binding LabQuorum request.
+        Session consent never approves a different request or revision.
+        Verify the displayed person, resource, absolute time, quantity and revision.
+        To inspect current lab state, ask @labops to post its status in this thread.
+        !list-documents lists agent context; ask its creator for readable content.
+        Health: !agents-status. HQ role holders: !roles.
     - name: Instrument rules
       description: Booking rules per instrument
       instructions: Apply these when proposing bookings; the ledger enforces them too.
