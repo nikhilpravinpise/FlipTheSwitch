@@ -81,7 +81,7 @@ How the pieces connect (grounded in the Switch source and docs):
 | **pandas and matplotlib; scipy and statsmodels only for separately validated future recipes** | R | Golden-testable, the agent never writes the statistics in the MVP |
 | **structlog JSON lines** | print | Correlated logs per request id |
 | **Pandoc if present, else Markdown + PNG** | A full TeX install | TeX on Windows is a time sink; `render_document` says "pandoc not found" loudly |
-| **No web dashboard** | Streamlit, Next.js, a Jinja dossier | A second UI competes with Switch and weakens the 30% criterion; room documents are the dashboard |
+| **No web dashboard** | Streamlit, Next.js, a Jinja dossier | A second UI competes with Switch for the 30% criterion; readable chat snapshots expose ledger state; room documents provide agent context and metadata |
 
 ## 3.2 The two-layer approval model
 
@@ -89,7 +89,7 @@ This is the heart of the product and the biggest technical risk, so it has a pri
 
 **Layer 1, Switch and provider (who decided):** Switch resolves the human identity and checks addressing. The native card is an externally enforced provider boundary; the ledger does not receive an authenticated approval receipt. Direct same-OS-user invocation is outside this prototype's boundary. An unprompted in-scope commit is a release blocker. The MVP uses one authorized human, not a multi-person quorum.
 
-**Layer 2, ledger (what is executed):** Every gated call carries request id, revision, hash and canonical structured `decision` containing action, requester, resource, absolute interval or quantity, and relevant protocol/run fingerprint. The transaction compares the whole decision and canonical hash with stored bytes, checks pending state, expiry and current policy, then commits once. Keep serialized input below 900 characters and verify every critical field on the real card; if it cannot fit, use a deterministic versioned review attachment and explicit reference. A model summary is not evidence of what was approved. A changed quantity produces a new revision and fresh decision. Final release additionally binds the current packet fingerprint.
+**Layer 2, ledger (what is executed):** Every gated call carries request id, revision, hash and canonical structured `decision` containing action, requester, resource, absolute interval or quantity, and relevant protocol/run fingerprint. The transaction compares the whole decision and canonical hash with stored bytes, checks pending state, expiry and current policy, then commits once. Keep serialized input below 900 characters and verify every critical field on the real card; if it cannot fit or a critical field is truncated, refuse the commit. An attachment is not an approved fallback in the core: its visibility and binding are unverified. A model summary is not evidence of what was approved. A changed quantity produces a new revision and fresh decision. Final release additionally binds the current packet fingerprint.
 
 | Guard | Required real-runtime test |
 | --- | --- |
@@ -102,7 +102,7 @@ This is the heart of the product and the biggest technical risk, so it has a pri
 | Decline | Native Decline refuses the attempt; the domain request stays pending until independently recorded declined or expired. Kill session before follow-up on 3 runs: no execution without fresh authorized decision. |
 | Injection | Mediated commits require an authorized human; proposals and summaries can still be corrupted. Test six argument/handoff attacks including instrument, quantity and evidence substitutions plus legitimate controls; report actual effects, not a universal security rate. |
 
-Record Console/server/Claude CLI versions, OS, hook, effective settings hashes and revision, room/tool-use IDs, request revision/hash, card and ledger outcome in ADR-000 and `docs/test-evidence.md`. Untested tuples fail preflight. The provider must be recertified after changes. Native card flow ships only after S2/S3a-c, bypass, failure and restart tests pass.
+Record Console/server/Claude CLI versions, OS, hook, effective settings hashes and revision, room/tool-use IDs, request revision/hash, card and ledger outcome in ADR-000 and `docs/test-evidence.md`. Untested tuples fail preflight. The provider must be recertified after changes. Native card flow ships only after S2/S3a-d, bypass, failure and restart tests pass. Certification is UNEXECUTED: reserve a separate 2-hour maximum after building the behavioral-red harness; capture the tuple, full card screenshots, identities and ledger outcomes. Pass only if every guard above passes, including three repeated same-session pairs and zero unauthorized commits. On any failure, timeout or missing evidence disable commits and use proposal-only, unless a separately scheduled and fully certified steward passes. This cap is an estimate, not measured runtime; record elapsed time.
 
 ### Decision rules after the spikes
 
@@ -158,7 +158,7 @@ erDiagram
 | `dataset_version` | `dataset_id`, `version`, `path`, `sha256`, `bytes`, `schema_json`, `sensitivity` (internal, unpublished, human_subjects), `registered_by`, `supersedes` | Raw bytes immutable; `human_subjects` cannot be staged |
 | `analysis_run` | `inputs` (dataset version hashes), `recipe` + `recipe_version` or `script_sha256`, `env_lock_sha256` or image digest, `params_json`, `outputs_json` (with hashes), `status`, `stale_reason` | Outputs referenced by drafts must exist with matching hashes; status CURRENT -> STALE, never silently back |
 | `paper` / `citation_check` | DOI (lowercase), OpenAlex/S2/arXiv/PMID ids, `is_retracted`, `retraction_doi`, `version_of_record_doi`; verdict enum, `evidence_json`, `checked_utc` | Verdicts are computed only by `verify.py`, never by an agent |
-| `draft_section` | `text`, `cited_dois`, `run_ids`, `protocol_version_ids`, `parents_fingerprint`, `status` (current, stale) | `draft_put_section` refuses unverified DOIs and stale or missing runs |
+| `draft_section` | `text`, structured `library_entry_ids`, numerical claims with `run_id`, `metric_path`, `value`, `unit`, `rounding`, `protocol_version_ids`, `parents_fingerprint`, `status` (current, stale) | Render numerical claims from run JSON; reject missing or stale evidence; bibliographic match and human claim-support review are separate |
 | `approval_request` | `id` (`AR-0042`), `kind`, `payload_json`, `revision`, `content_hash`, `requested_by_agent`, `requested_for_handle`, `room`, `thread_ref`, `status` (pending, committed, declined, expired), `expires_utc`, `decided_utc` | Lifecycle only pending -> committed / declined / expired; idempotent commit; revision and hash must match; the human identity of the approver is Switch's record (the ledger stores the thread permalink, never trusts a claimed name) |
 | `audit_event` | `seq`, `ts_utc`, `actor_agent`, `tool`, `args_json`, `result_json`, `prev_hash`, `hash` | Append-only; `hash = sha256(prev_hash + canonical_json(row))`; `lq audit verify` detects unrechained edits, not recomputed chains or truncation |
 
@@ -198,7 +198,7 @@ Each node records its parents' fingerprints. Registering a corrected dataset (a 
 | [PubMed E-utilities](https://www.ncbi.nlm.nih.gov/books/NBK25497/) | Stretch | 3 rps without key, 10 rps with key | 2.5 rps keyless |
 | [Unpaywall](https://unpaywall.org/api/v2) | Stretch | Email required, under 100,000 calls/day; the search endpoint was retired Sep 18, 2026 (DOI lookup still works) | Only for library papers; never circumvent paywalls |
 
-Client rules: 10 s per-request timeout; max 3 attempts for safe GETs with exponential backoff, jitter and `Retry-After`; 5 consecutive 5xx open a 60 s circuit and return `UNREACHABLE`; a single tool call making more than 50 HTTP requests fails with `BUDGET_EXCEEDED`; cache TTLs 7 days for search, 30 days for DOI metadata, 1 day for retraction status; every response shown with `checked_at`; cached results labeled with their age. Queries over 300 characters are refused; this is a size limit, not a privacy guarantee. Restrict the prototype to declared synthetic/public data. Optional 1.5-2 h source-flow guard: server labels public-library and private-dataset records; scholarly adapter accepts only public identifiers/metadata and rejects private or mixed-source IDs. This does not track arbitrary model text. Test short private, mixed, and public queries. We fetch metadata and open-access links, never paywalled PDFs.
+Client rules: 10 s per-request timeout; max 3 attempts for safe GETs with exponential backoff, jitter and `Retry-After`; 5 consecutive 5xx open a 60 s circuit and return `UNREACHABLE`; a single tool call making more than 50 HTTP requests fails with `BUDGET_EXCEEDED`; cache TTLs 7 days for search, 30 days for DOI metadata, 1 day for retraction status; every response shown with `checked_at`; cached results labeled with their age. Queries over 300 characters are refused; this is a size limit, not a privacy guarantee. Restrict the prototype to declared synthetic/public data. Roadmap, 1.5-2 h only if separately scheduled and tested: source-flow guard: server labels public-library and private-dataset records; scholarly adapter accepts only public identifiers/metadata and rejects private or mixed-source IDs. This does not track arbitrary model text. Test short private, mixed, and public queries. We fetch metadata and open-access links, never paywalled PDFs.
 
 ## 3.5 The deterministic citation verifier
 
@@ -232,7 +232,7 @@ Every run records recipe name and version (or script hash), input hashes, output
 | Figures | PNG (300 dpi) + SVG | Switch `send_attachment` into the thread (certify installed outbound cap; inbound host cap is 10 MiB in reviewed version) |
 | Statistics | Markdown table in the message (Mattermost renders tables) + CSV | Message + attachment |
 | Draft | Creator-owned room document plus versioned Markdown | Scribe posts readable attachment; listing documents exposes metadata only |
-| Results packet | Minimal release record is conditional on the full tested stale-release cycle; optional ZIP includes input data, exact recipe source, lockfile, parameters, runtime versions, outputs, tolerances and tested reproduction command, plus sanitized decision/run timeline and synthetic label | Attachment after `finalize_packet` |
+| Results packet | Minimal release record is conditional on the full tested stale-release cycle; optional ZIP includes input data, exact recipe source, lockfile, parameters, runtime versions, outputs, tolerances and tested reproduction command, plus sanitized decision/run timeline and synthetic label | Attachment after `finalize_packet`; acceptance requires unpacking in a clean environment, running the included command, comparing every reported number to its declared tolerance, and checking failed/rejected runs and exclusions in the timeline |
 | Lab state digest | Creator-owned room document and readable status | `@labops` posts current snapshot in chat |
 
 ## 3.8 Observability, secrets, threat model
@@ -249,7 +249,7 @@ Every run records recipe name and version (or script hash), input hashes, output
 | Concern | Plan |
 | --- | --- |
 | Switch Console | Windows build from release `switch-console-v0.40.1` (2026-10-21) ([releases](https://github.com/sandbox-quantum/switch/releases/latest)); early access |
-| Server | Path A: fresh Console native server plus Docker Mattermost. Path B: preflight a separate pinned Linux Docker Compose self-hosted server, then Console Connect to an existing server; verify health, bridge URL, PI ownership and one reply. Follow [self-host guide](https://github.com/sandbox-quantum/switch/blob/main/docs/official/deploy/self-hosting.md); issue [#1335](https://github.com/sandbox-quantum/switch/issues/1335) affects native initialization. Box native debugging at 90 min and allocate 60-90 min separately for B; no assumed toggle. |
+| Server | Path A: fresh Console native server plus Docker Mattermost. Path B: preflight a separate pinned Linux Docker Compose self-hosted server, then Console Connect to an existing server; verify health, bridge URL, PI ownership and one reply. Follow [self-host guide](https://github.com/sandbox-quantum/switch/blob/main/docs/official/deploy/self-host.md); issue [#1335](https://github.com/sandbox-quantum/switch/issues/1335) affects native initialization. Box native debugging at 90 min and allocate 60-90 min separately for B; no assumed toggle. |
 | Mattermost | Docker Desktop (WSL2) with 4 GB RAM; "Also run Mattermost" is on when Docker runs ([smoke test](https://github.com/sandbox-quantum/switch/blob/main/docs/official/getting-started/smoke-test.md)) |
 | Claude Code spawn | The adapter handles `claude.cmd` on Windows |
 | Paths and encodings | `pathlib`; argument arrays, never shell-built JSON; UTF-8 files; `.gitattributes` `* text=auto eol=lf`, `*.ps1 eol=crlf`; repo at a short path (`C:\Dev\labquorum`); `git config core.longpaths true` |
@@ -264,11 +264,11 @@ Every run records recipe name and version (or script hash), input hashes, output
 | Switch feature | How LabQuorum uses it | In the video |
 | --- | --- | --- |
 | Rooms on bridged chat apps | HQ and project rooms in Mattermost; `#bench` in Telegram (polish) | Yes |
-| Templates with agents, rooms, documents, roles, aliases, kickoffs, agent-typed params | One lab template, one re-runnable project template | Yes (5 s in Console) |
+| Templates with agents, rooms, documents, roles, aliases and kickoffs | Core: four agents, one room; five-agent and two-room templates are optional | Import time UNMEASURED; certify in S4 |
 | Multiple providers | Claude Code everywhere; Codex for `@analyst` if S5 passes | Polish |
 | @mentions and aliases | `@labops` instead of `@rao-labops` | Yes |
 | Addressing policies | `anyone` for helpers, `owner-agents` for `@pi-desk` | Yes (the refusal) |
-| Approval cards with Allow once / Allow for this session / Decline and "Chosen by" | Every commit | **Yes, the hero shot** |
+| Approval cards with Allow once / Allow for this session / Decline and "Chosen by" | Every native-branch commit; a certified steward uses its own identity check | Conditional hero shot |
 | Agent-to-agent handoff (`send_targeted_message`) | `@labops` hands AR-0042 to `@pi-desk`; `@scribe` asks `@scout` to verify | Yes |
 | Roles | HQ: `librarian`, `bench-manager`, `approver`; run `!roles` in HQ | Yes (2 s) |
 | Room instructions | Lab and project briefs | Briefly |
@@ -286,7 +286,7 @@ Every run records recipe name and version (or script hash), input hashes, output
 | No rooms | The agents are private terminal sessions on one laptop; the student cannot reach any of them |
 | No addressing | No way to say "anyone may ask `@labops`, only the PI may instruct `@pi-desk`" |
 | No identity claims | No way to know the click came from `prof-rao` and not `maya`; the ledger deliberately trusts the Switch card for that |
-| No approval cards | Commit tools either run unasked (unsafe) or block forever in a terminal nobody watches; the approval loop, which is the product, disappears |
+| No approval cards | Disable native commits; a separately certified steward may provide approval, otherwise demonstrate proposal-only |
 | No handoff | `@labops` cannot pass a request to `@pi-desk`; a human copy-pastes between chats |
 | No room documents | No shared, agent-maintained lab state that every new person and agent reads on joining |
 | No bridges | No phone at the bench, no meeting the lab where it already talks |
@@ -303,10 +303,13 @@ For crash recovery stage and hash files, atomically rename on the same filesyste
 
 Optional after the full cycle: 1.5-2 h for a base [RO-Crate 1.2](https://www.researchobject.org/ro-crate/specification/1.2/) metadata view of the existing packet, resolving every file and linking inputs, recipe and outputs; store the human decision separately with its authority limitations. Validate a pinned version; do not claim ARC/ISA compliance. Capability-scoped delegation remains roadmap (3-4 h and trusted independent receipt required): action, resource, project, revision, expiry, session, revocation and one-use tests must pass before claiming it.
 
-Switch already supplies rooms, roles and addressing ([payments example](https://github.com/sandbox-quantum/switch/blob/main/docs/official/building/payments-room.md)); neither specialist agents nor card routing is novel here. The two domain consequences to demonstrate are a rejected conflicting booking and correction-bound release/reapproval. Measure actual capacity after both templates and three takes: HQ plus R projects can yield 3 + 5R sessions; stop old sessions, serialize tests, bind each active room to its ledger before starting MCP processes, and require 20% RAM headroom.
+Switch already supplies rooms, roles and addressing ([payments example](https://github.com/sandbox-quantum/switch/blob/main/docs/official/building/payments-room.md)); neither specialist agents nor card routing is novel here. The core consequence to demonstrate is a rejected conflicting booking. Correction-bound release and reapproval require a separately implemented and tested cycle; otherwise show stale detection only. Measure actual capacity after both templates and three takes: HQ plus R projects can yield 3 + 5R sessions; stop old sessions, serialize tests, bind each active room to its ledger before starting MCP processes, and require 20% RAM headroom.
 
 **Operational preflight:** Record the actual uv interpreter's `sqlite3.sqlite_version`; multi-connection WAL requires SQLite 3.51.3 or a documented fixed backport, otherwise use tested rollback journaling. Doctor rejects vulnerable WAL versions ([SQLite advisory](https://sqlite.org/wal.html#the_wal_reset_bug)). Serialize scholarly calls through one shared host limiter and enforce per-task hop/time/call budgets; two concurrent processes against a fake server must stay under the aggregate rate.
+
+The per-profile rate guards are additional limits, not independent host allowances. Before provider tests, choose and record a global spend ceiling, track aggregate usage across sessions, and stop all runs at the ceiling; provider-side enforcement and actual spend are UNVERIFIED. Path B self-hosting is also UNVERIFIED: within its separate 60-90 minute preflight, record the pinned image digest, Compose version, start command, actual health endpoint and bridge URL, then prove Console connection, PI ownership and one room reply. If any is missing or fails, Path B is unavailable; use proposal-only or stop.
 
 Spike the real Switch attachment path: constrain accepted staging roots, copy and hash the CSV within the MCP service, return an authorized generated PNG path for `send_attachment`, and compare SHA-256 at each boundary; reject unsupported paths. Before each E2E run restart relevant agent MCP processes with an absolute test ledger path; the four profile markers and inspector marker must agree before any mutation.
 
 `revise_request` creates a new immutable revision and hash and invalidates old consent; `register_dataset` explicitly supersedes the previous version and marks computational descendants stale. A packet proposal records its current artifact and citation-check fingerprints; `finalize_packet` requires that exact pending revision and a fresh decision. A changed policy or quantity cannot be silently substituted.
+

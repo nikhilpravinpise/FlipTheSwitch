@@ -7,7 +7,7 @@ Back to the [master plan](README.md). Event facts are in [`../flip-the-switch-ha
 | Prize | Evidence we submit | Award signal | Priority |
 | --- | --- | --- | --- |
 | **Track 1: Best Business Workflow** | Real room workflow, human gate, completed outputs, reproducible repo, video | $2,000 cash (main page) | Highest |
-| **Code with Wispr** | Voice used for prompts, agent instructions, docs and a voice-first product feature; Insights screenshot; voice log | $500 cash | High: nearly all effort compounds with the build |
+| **Code with Wispr** | Voice used for prompts, agent instructions, docs and documentation; Insights screenshot; voice log | $500 cash | High: nearly all effort compounds with the build |
 | **Best Blog** | First-timer guide to Switch approvals with exact steps and screenshots | AirPods 5: one advertised on main page; DTA differs | High after the core works |
 | **#HowISwitch** | Short honest clips and the final video | Logitech keyboards: 5 advertised on main page; DTA differs | Medium, low effort |
 | Core Contribution | Skipped solo ([08](08-build-schedule.md#84-core-contribution-pr)) | $100/PR | Skip solo for this submission |
@@ -38,13 +38,13 @@ Target opening, publish only after the stated behaviors pass:
 > # LabQuorum
 > Request lab work in a Switch room. Approve the exact request. See what becomes invalid when data changes.
 >
-> A student asks `@labops` for an instrument; it proposes an available slot and hands the request to `@pi-desk`. Switch checks who may answer and records the decision. LabQuorum rechecks the request revision and lab rules before committing. Corrected data marks dependent outputs stale; release is refused and a new decision required only if that path passed its tests.
+> A student asks `@labops` for an instrument; it proposes an available slot and hands the request to `@pi-desk`. On the certified native configuration, Switch and the provider restrict who may answer and record the decision. LabQuorum rechecks the request revision and lab rules before committing. Corrected data marks dependent outputs stale; release is refused and a new decision required only if that path passed its tests.
 >
 > Watch the demo, inspect a sample output, or follow the tested Windows setup. Data are synthetic; the builder plays both labeled personas. Cached scholarly responses are labeled with retrieval dates.
 
 First screenful or one click: refusal/acceptance GIF, video, sample output folder and one tested reproduction path. Include installed versions, provider and API prerequisites, measured setup time, rooms, bridge, exact first message, expected output, current data/run/draft references and shipped/simulated/roadmap labels. Attribute routing and permission primitives to Switch; LabQuorum adds lab state and evidence-version consequences. Link test evidence, limitations, voice reel and full Insights image; put planner provenance in acknowledgments. Budget 0.5 hour; a reader must find one current output and its inputs within 60 seconds. Metadata checks establish identity/retraction signals, not whether a claim is supported.
 
-Summarize five installed-version invariants with actual traces: PI accepted, student refused with no change, changed revision rejected, session choice followed by a fresh card, disconnect produced no offline commit. This 0.5-hour summary reuses required tests; 5/5 pass before advertising the native gate. If the steward is selected, replace all card-as-decision wording with the authenticated revision-bound message and its own passing tests.
+Summarize five installed-version invariants with actual traces: PI accepted, student refused with no change, changed revision rejected, session choice followed by a fresh card, disconnect produced no offline commit. This 0.5-hour summary reuses required tests; 5/5 pass before advertising the native gate. If the steward is selected, replace the second sentence with: "Switch routes the request; the separately tested steward checks the sender and binds the PI message to the request revision." Publish that wording only after wrong-person, replay, expiry, changed-revision and recovery tests pass with zero unauthorized commits. Both branches exclude direct invocation by the same OS user. If neither passes, describe proposals only.
 
 ## 9.4 Blog (Best Blog: clarity for a first-time Switch user)
 
@@ -52,21 +52,21 @@ Title: "One corrected CSV invalidated our results: a first-time Switch build wit
 
 ## 9.5 #HowISwitch
 
-Reuse 20-30 seconds of genuine refusal, accepted decision and stale-release refusal, if implemented. Spend <=15 extra minutes; side-award odds are unknown. Draft for the builder to post: "A corrected CSV should invalidate its figure and draft. LabQuorum shows the change and refuses release until a new run and PI decision. Switch carries the agents, handoff and human approval in team chat. Synthetic demo, built with Wispr Flow. Demo: <link> Code: <link> #HowISwitch". Remove any unproven clause. If an already-reachable participant is available after the core is green, spend <=0.5 hour asking them uncoached to find a protocol, approver and figure provenance; record success, active time and wait time separately. One labeled observation is not a demand estimate.
+Reuse 20-30 seconds of genuine refusal and accepted decision, plus stale detection if implemented. Spend <=15 extra minutes; side-award odds are unknown. Draft for the builder to post: "A shared lab booking needs a clear decision. LabQuorum proposes a slot in Switch, shows a refused request from the wrong person and records an eligible decision before booking. Synthetic demo, builder-played roles, built with Wispr Flow. Demo: <link> Code: <link> #HowISwitch". Remove any unproven clause. If an already-reachable participant is available after the core is green, spend <=0.5 hour asking them uncoached to find a protocol, approver and figure provenance; record success, active time and wait time separately. One labeled observation is not a demand estimate.
 
 ## 9.6 Judging scorecard self-assessment
 
-These are subjective projections, not measured marks or winning probabilities. [Published rubric](https://www.devtoolsacademy.com/hackathons/flip-the-switch): 30/25/25/20. Planned test IDs are not passed tests; every improved score requires a link to actual footage, output, test result or clean-clone transcript.
+No score is earned yet: the product, evidence and runtime boundary are UNBUILT / UNVERIFIED. These are subjective scenario projections, not measured marks or winning probabilities. [Published rubric](https://www.devtoolsacademy.com/hackathons/flip-the-switch): 30/25/25/20. Planned test IDs are not passed tests; every improved score requires a link to actual footage, output, test result or clean-clone transcript.
 
-| Criterion | Current plan /10 (weighted) | Improved /10 (weighted) | Evidence gate and reason |
+| Criterion | Baseline scenario /10 (weighted) | Unfunded stretch scenario /10 (weighted) | Evidence gate and reason |
 | --- | --- | --- | --- |
 | Use of Switch, 30% | 8.0 (24.00) | 9.0 (27.00) | Handoff, wrong-person refusal, accepted decision and actual workflow stops without Switch; platform primitives credited. |
 | Technical execution, 25% | 6.5 (16.25) | 8.0 (20.00) | Fixed fixtures, pinned versions, meaningful tests passed, real E2E and clean clone. Counts of planned tests alone earn no points. |
 | Creativity and impact, 25% | 6.5 (16.25) | 7.5 (18.75) | Demonstrated stale-release block and new decision plus one labeled usability observation; no assumed ROI. A stale badge alone supports less. |
 | Presentation, 20% | 6.0 (12.00) | 8.5 (17.00) | Early Switch proof, legible upload, honest timing/fixture labels, runnable README and current output. |
-| Total | **68.50/100** | **82.75/100** | Improved score is conditional on every gate, not a forecast of an award. |
+| Total | **68.50/100** | **82.75/100** | Baseline assumes a certified real decision, working booking and stale detection, reproducible setup and legible demo; stretch additionally assumes the unscheduled release gate and user observation. Neither is an earned score or award forecast. |
 
-Reduced-build independent estimate: Switch 7.5, technical 6.5, creativity 5.5, presentation 7.0 = 22.5 + 16.25 + 13.75 + 14 = **66.5/100**, assuming real decision and stale detection but no release block or user observation. A three-agent build can score higher if it proves the full gates; agent count is not a rubric. Retraction beat scores 4/8 versus refusal/commit 7/8 and stale block/new decision 7/8 on Switch specificity, consequence, novelty and clarity (0-2 each); allocate screen time accordingly.
+Reduced-build scenario projection: Switch 7.5 for a real routed decision; technical 6.5 for a tested booking; creativity 5.5 for a bounded lab workflow; presentation 7.0 for readable proof and setup = 22.5 + 16.25 + 13.75 + 14 = **66.5/100**, assuming certification, booking, stale detection and presentation all pass, but no release block or user observation. A booking-only cut has no stated numeric score. A three-agent build can score higher if it proves the full gates; agent count is not a rubric. Retraction beat scores 4/8 versus refusal/commit 7/8 and stale block/new decision 7/8 on Switch specificity, consequence, novelty and clarity (0-2 each); allocate screen time accordingly.
 
 ## 9.7 Risks
 
@@ -82,10 +82,10 @@ Reduced-build independent estimate: Switch 7.5, technical 6.5, creativity 5.5, p
 | Scope creep | High | High | Cut lines A-D; freeze Fri 22:45 |
 | Solo fatigue | High | High | Scheduled sleep |
 | Overclaiming (privacy, compliance, IRB, Wispr API) | Medium | High | Limits section in README; honest labels |
-| Submit form surprises | Low-medium | High | S8 on Wednesday; submit five hours early |
+| Submit form surprises | Low-medium | High | S8 at the next available session before packaging; submit 4 h 59 min early |
 
 **Operational ownership and costs:** For the solo demonstration the builder operates and backs up the standalone ledger, verifies restore, reconciles any external record manually, and monitors the PI queue. The PI is the planned decision owner; a named real human fallback must be agreed before any real deployment, otherwise requests remain pending or expire. No external purchasing is performed. Estimate total cost as hosting + model/API usage + storage/backups + operator and PI time + reconciliation and recovery; all components and actual demand remain unmeasured. For an illustrative monthly cost, assuming $0 hosting, $10 model/API, $2 backup storage, two operator hours and 10 PI minutes at an assumed $20/hour, total is 0 + 10 + 2 + (2 + 10/60) x 20 = $55.33; replace every assumption with observed values, including reconciliation and recovery time. Do not equate self-hosting with free operation. If 0.5-0.75 h remains after core and delivery are green, test whether lineage is readable in the existing room message; record active task and wait separately.
 
-## 9.8 Questions for the organizers (WeMakeDevs Discord, Wednesday)
+## 9.8 Questions for the organizers (WeMakeDevs Discord, next available session)
 
 Bundle into one concise request, <=15 minutes excluding form inspection: Can one entrant receive the main award and side awards together? What form fields, media formats, video length/hosting requirements and evidence-link methods apply? Resolve the conflicting core-prize count only if relevant. The event already permits Wispr and Blog entries alongside a track; simultaneous awards are UNVERIFIED. Ask about synthetic role-play and labeled API replay only if the form or rules make them unclear. Continue building and package honestly while awaiting replies; none is a prerequisite for the authorized submission.

@@ -1,6 +1,6 @@
 # 5. Wispr Flow everywhere
 
-Back to the [master plan](README.md). Goal: win **Code with Wispr** ($500) honestly while making voice a real product feature, not decoration. Event requirement: build by voice (prompts, agent instructions, docs) and submit a screenshot of the Wispr Flow usage scorecard from **Insights** in the desktop app ([event page](https://www.wemakedevs.org/hackathons/switch)).
+Back to the [master plan](README.md). Goal: win **Code with Wispr** ($500) honestly with authentic voice-assisted build evidence. Event requirement: build by voice (prompts, agent instructions, docs) and submit a screenshot of the Wispr Flow usage scorecard from **Insights** in the desktop app ([event page](https://www.wemakedevs.org/hackathons/switch)).
 
 **Status (Wed 22:20 IST): the event's Flow Pro offer is redeemed.** Active paid plans and trials are exempt from the free weekly allowance; Windows defaults warn after 2,000 words and block above 5,000, subject to account allowances ([free tier](https://docs.wisprflow.ai/articles/4760791189)). Verify the active plan and configured shortcuts in the app.
 
@@ -9,7 +9,7 @@ Back to the [master plan](README.md). Goal: win **Code with Wispr** ($500) hones
 | Capability | What it does | Source | Boundary |
 | --- | --- | --- | --- |
 | Flow dictation | System-wide dictation into any text field; Windows default push-to-talk **Ctrl+Win** | [IDE guide](https://docs.wisprflow.ai/articles/6434410694-use-flow-with-cursor-vs-code-and-other-ides), [terminal guide](https://docs.wisprflow.ai/articles/6478598909-using-flow-with-linux-wsl-and-terminal-applications) | Text entry, not an audio SDK; review before sending |
-| IDE and terminal support | Variable recognition in VS Code, Cursor, Windsurf (VS Code needs Screen Reader Optimized mode); file tagging in Cursor/Windsurf chat; on Windows pastes with Shift+Insert in IDEs; terminals get no variable formatting | [IDE guide](https://docs.wisprflow.ai/articles/6434410694-use-flow-with-cursor-vs-code-and-other-ides), [variable recognition](https://docs.wisprflow.ai/articles/8554805225-variable-recognition) | Dictate prose prompts, not shell syntax |
+| IDE and terminal support | Variable recognition in VS Code, Cursor, Windsurf (supported IDEs need Screen Reader Optimized mode); file tagging in Cursor/Windsurf chat; on Windows pastes with Shift+Insert in IDEs; terminals get no variable formatting | [IDE guide](https://docs.wisprflow.ai/articles/6434410694-use-flow-with-cursor-vs-code-and-other-ides), [variable recognition](https://docs.wisprflow.ai/articles/8554805225-variable-recognition) | Dictate prose prompts, not shell syntax |
 | Command Mode | Select text, hold the Command Mode shortcut (Windows default Ctrl+Win+Alt), speak an edit; enable in Settings > Experimental; Pro | [Command Mode](https://docs.wisprflow.ai/articles/4816967992-how-to-use-command-mode) | Never use it on data values, DOIs, paths, commands or quoted evidence |
 | Dictionary | Custom words and spoken-to-written replacements | [dictionary](https://docs.wisprflow.ai/articles/9639977157-view-shared-dictionary-words-and-snippets-in-the-admin-portal) | Corrects vocabulary, does not validate a number |
 | Snippets | A spoken cue expands to saved text | [snippets](https://docs.wisprflow.ai/articles/5784437944-create-and-use-snippets) | Text only; never an "approve" snippet |
@@ -28,7 +28,7 @@ Back to the [master plan](README.md). Goal: win **Code with Wispr** ($500) hones
 | Test design | Given/When/Then for every E2E and the edge-case catalogue | Flow, then Command Mode "turn this into Given When Then" | Documents |
 | Agent instructions and room briefs | The five agents' instructions, `Lab handbook`, project charters in the templates | Flow + Command Mode tightening | Documents |
 | Room messages to agents | Manually authored messages to `@scout`, `@labops`, `@analyst`, `@scribe`, `@pi-desk`; automated E2E sends text programmatically and is not voice evidence | Flow; dictionary for handles | Work messages |
-| Bench logging (product feature) | Observations with sample, time, value, unit, deviation | Flow desktop in Mattermost; tested iPhone keyboard or Android bubble in Telegram (polish) | Work messages / mobile |
+| Bench logging (roadmap; not in core) | Observations with sample, time, value, unit, deviation | Flow desktop in Mattermost; tested iPhone keyboard or Android bubble in Telegram (polish) | Work messages / mobile |
 | ADRs, spike results, decisions log | `docs/adr/*.md` | Flow | Documents |
 | README narrative, blog, video script, voice log | All prose (commands are pasted, not dictated) | Flow + Command Mode | Documents |
 | Commit messages, PR and issue text | Every commit body (dictate in the editor `git commit` opens) | Flow | Other / documents |
@@ -66,9 +66,9 @@ Wispr can add punctuation. A trailing period may become part of the Switch menti
 3. EDGE-01/EDGE-02 and M-01: period yields 0 addressed events; comma and colon each yield 1. Recreate the room and repeat. Card-answer yes/no follows a separate request-answer path.
 4. In 10 minutes test Windows Terminal, VS Code and Mattermost: dictate a handle, sample ID, decimal and unit; verify each paste, routing and observed category.
 
-## 5.5 Voice-first product feature: bench notes with read-back
+## 5.5 Roadmap: bench notes with read-back
 
-At the bench, a person dictates: "at labops log plate 3, well C5, OD was 0.830, typo in the export". `@labops` calls `bench_log_draft`, which parses deterministically and returns:
+This unscheduled path is not a shipped feature or demo claim. If later implemented and tested, a person could dictate: "at labops log plate 3, well C5, OD was 0.830, typo in the export". `@labops` calls `bench_log_draft`, which parses deterministically and returns:
 
 ```text
 Draft OBS-014: PRJ egcg / plate 3 / C5 / OD590 = 0.830 (no unit expected)
@@ -76,7 +76,7 @@ Deviation: transcription error in export. Protocol: PRT-007 v3.
 Confirm with: @labops confirm OBS-014 K7P2
 ```
 
-Only `bench_log_confirm` with the matching, unexpired token writes the entry; a changed draft invalidates the token; corrections append, never overwrite; the original transcript is kept; `observed_at` and `confirmed_at` are separate. Numbers outside plausible ranges or without units get one clarifying question. Honest framing: **voice-assisted, not hands-free** (Flow needs a focused text field and the send is deliberate); we cannot know a message came from Wispr, so there is no "voice-verified" label; we never process or store audio.
+Only `bench_log_confirm` with the matching, unexpired token writes the entry; a changed draft invalidates the token; corrections append, never overwrite; the original transcript is kept; `observed_at` and `confirmed_at` are separate. Numbers outside plausible ranges or missing required units get one clarifying question; dimensionless OD requires no unit. Honest framing: **voice-assisted, not hands-free** (Flow needs a focused text field and the send is deliberate); we cannot know a message came from Wispr, so there is no "voice-verified" label; we never process or store audio.
 
 Prior voice ELN work includes [LabTablet](https://doi.org/10.1145/2948992.2948998); the proposed contribution is revision-bound capture and downstream correction in team chat, not voice logging itself. Run ten matched voice and typed notes with four critical fields each (40 checks per modality); report pre-confirmation and final errors, corrections and active time. Target zero uncorrected critical-field errors; one builder is only a usability probe.
 
@@ -89,4 +89,4 @@ Prior voice ELN work includes [LabTablet](https://doi.org/10.1145/2948992.294899
 
 ## 5.7 Showing voice in the video
 
-Use short authentic excerpts from the three build clips and link the full evidence reel and unaltered scorecard from the README. Product dictation is a fourth example, not a substitute for build evidence. Do not infer that generated code was dictated or promise a time saving without a measurement.
+Use one short authentic excerpt in the main video and link the full three-clip reel and unaltered scorecard from the README. Actual clips and artifact links are UNVERIFIED until captured: for each, log the prompt, resulting artifact path and time, then check that the clip shows listening, text, deliberate send/save and the resulting artifact. Roadmap bench dictation is not build evidence. Do not infer that generated code was dictated or promise a time saving without a measurement.

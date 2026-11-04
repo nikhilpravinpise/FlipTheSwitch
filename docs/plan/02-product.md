@@ -12,9 +12,9 @@ All names are fictional. In the demo, Nikhil plays the PI and the student in two
 | **PhD student**, Maya Iyer (`maya`) | A clear next step; resources on time | Separate Switch user with a claimed Mattermost account (spike S1) | `@scout`, `@labops`, `@analyst`, `@scribe` | No: visible refusal | Approve her own booking; mark exploratory analysis as prespecified |
 | **Postdoc**, Dr. Lena Okafor (`lena`) | Unblock students, check rigor | Same as student | Same as student | No; action-scoped delegation is roadmap | Self-approve without delegation |
 | **Research assistant**, Dev Sharma (`dev`) | Log bench work without losing detail | Telegram-linked Switch user (polish) or Mattermost | All helpers present in his room | No | Book an instrument with expired training |
-| **Lab manager** | No conflicts, no untrained use, stock on hand | Same as student | `@labops` | Stretch: owns an `@ops-desk` gate for inventory orders | Approve scientific conclusions by owning equipment |
+| **Lab manager** | No conflicts, no untrained use, stock on hand | Same as student | All `anyone` helpers present | Stretch: owns an `@ops-desk` gate for inventory orders | Approve scientific conclusions by owning equipment |
 | **External collaborator**, Jonas Weber (`jonas`, Europe/Berlin) | Review a limited evidence package | Not admitted to MVP internal rooms | None in internal rooms | No | Access internal room content; sanitized external room is roadmap |
-| **Safety officer** | See every hazard release | Member of HQ | `@labops` | Stretch: owns a `@safety-desk` gate for hazard acknowledgements | Be replaced by an agent-issued "certificate" |
+| **Safety officer** | See every hazard release | Member of HQ | All `anyone` helpers present | Stretch: owns a `@safety-desk` gate for hazard acknowledgements | Be replaced by an agent-issued "certificate" |
 
 Two Switch facts the design rests on:
 
@@ -33,7 +33,7 @@ All run on **Claude Code** via Switch Console (`@analyst` may run on Codex if sp
 | `rao-scribe` (`@scribe`) | Methods and results drafts from released protocols and recorded runs, related work from the verified library | `anyone` | `writer`: `draft_get`, `draft_put_section`, `verify_bibliography`, `list_runs`, `protocol_get`, `render_document` | Bash, Write, Edit denied | None: it cannot finalize |
 | `rao-pi-desk` (`@pi-desk`) | The gate: validate, present one decision, commit after the PI approves | `owner-agents` (protocol value `owner_and_owner_agents`): the PI plus the PI's agents | `approver`: `get_request`, `policy_check`, `lab_state`, `decline_request`, and the gated `commit_booking`, `commit_order`, `release_protocol`, `finalize_packet` | Unapproved tools denied after effective inventory | Each gated call requires a fresh decision on a certified runtime; see 3.2 |
 
-**The rule that makes it safe:** an agent that anyone may address must have **nothing ask-reachable**, because "anyone may address" means "anyone may answer its cards". So gated tools live only on `@pi-desk`, which only the PI may address, and every `anyone` agent has all built-in tools that could prompt (Bash, PowerShell, Read, Glob, Grep, Write, Edit, WebFetch and unapproved MCP tools) denied. This is enforced three ways: the MCP server registers tools per profile, each agent folder's `.claude/settings.json` denies everything else, and contract tests (C-01 to C-12) fail the build if either drifts.
+**Required boundary, UNVERIFIED until certification:** an `anyone` helper must have nothing ask-reachable; gated calls belong only to owner-scoped `@pi-desk`. Profile registration and folder settings are proposed controls, not proof of effective permissions. On the recorded runtime tuple, inventory native, MCP and plugin tools; test policy widening, failure modes and repeated same-session calls (I-23, S3d and 3.2). Any failed or unexecuted test disables commits; static C-01 to C-12 alone cannot certify the boundary.
 
 The four-agent core omits `@scribe`; the five-agent configuration below is roadmap. Roles make handoffs and tool boundaries explicit; cost and completion effects are unmeasured. Scribe can be folded into analyst, reducing configured agents by 20%, not necessarily token usage. A separate `@protocol` agent would share `@labops`'s boundary (it proposes). A `@coordinator` is unnecessary because Switch addressing, `send_targeted_message` and roles already route work. S6 measures the actual room-attending sessions, not just configured identities.
 
@@ -49,11 +49,11 @@ The four-agent core omits `@scribe`; the five-agent configuration below is roadm
 8. Never post a message that is only "yes" or "no" (those words alone can answer approval cards).
 9. Physical work is done by people. Never state that an experiment was performed unless a confirmed bench entry says so.
 
-### Core instructions (full text in [`templates/labquorum-lab.template.yaml`](templates/labquorum-lab.template.yaml))
+### Core instructions (core draft in [`templates/labquorum-core.template.yaml`](templates/labquorum-core.template.yaml); broader roles in the lab template)
 
 `@labops`:
 
-> You coordinate the lab's instruments, inventory, protocols and bench log. You can only PROPOSE changes. For a booking: check training, availability and maintenance; if the slot conflicts, propose the nearest free slot of the same length and name the conflicting booking's owner. Call `propose_booking`, post a 4-line summary (who, what, when, why), then hand the request id to @pi-desk with `send_targeted_message`. For reagents, compare the protocol's required amounts with stock; if stock is below need plus the reorder threshold, call `propose_order`. For protocols, run `protocol_hazard_scan`; list any toxic, carcinogen, BSL-2 or higher, or human-subjects flag in your summary, and send releases to @pi-desk. For bench notes, call `bench_log_draft`, read the structured result back (sample, time, value, unit, deviation) and wait for the person to confirm with the token before `bench_log_confirm`. Ask one clarifying question if a number has no unit.
+> You coordinate the lab's instruments, inventory, protocols and bench log. You can only PROPOSE changes. For a booking: check training, availability and maintenance; if the slot conflicts, propose the nearest free slot of the same length and name the conflicting booking's owner. The demo requests 60 minutes within 14:00-17:00; the expected alternative is 15:45-16:45 after the 15-minute gap. Call `propose_booking`, post a 4-line summary (who, what, when, why), then hand the request id to @pi-desk with `send_targeted_message`. For reagents, compare the protocol's required amounts with stock; if stock is below need plus the reorder threshold, call `propose_order`. For protocols, run `protocol_hazard_scan`; list any toxic, carcinogen, BSL-2 or higher, or human-subjects flag in your summary, and send releases to @pi-desk. For bench notes, call `bench_log_draft`, read the structured result back (sample, time, value, unit, deviation) and wait for the person to confirm with the token before `bench_log_confirm`. Ask one clarifying question if a number has no unit.
 
 `@pi-desk`:
 
@@ -69,7 +69,7 @@ The four-agent core omits `@scribe`; the five-agent configuration below is roadm
 
 `@scribe`:
 
-> You draft from evidence only: methods from the released protocol version, results from recorded run outputs (render structured numbers from the run JSON, never from memory), related work from the verified library. End every paragraph with a "Sources" line of run ids, protocol versions and verified DOIs. `draft_put_section` refuses unverified DOIs and stale runs; report what it refused instead of working around it.
+> You draft from evidence only: methods from the released protocol version, results from recorded run outputs (render structured numbers from the run JSON, never from memory), related work from the verified library. End every paragraph with a "Sources" line of run ids, protocol versions and verified DOIs. `draft_put_section` requires structured library IDs, separate human claim-support review, and run ID, metric path, value, unit and rounding rendered from run JSON; it refuses unverified citations and stale runs; report what it refused instead of working around it.
 
 ## 2.3 Rooms, roles and documents
 
@@ -82,13 +82,13 @@ The solo core uses one room with `labops`, `scout`, `pi-desk`, and `analyst`. Th
 | `#bench` | Telegram group adopted by Switch | RA and student phones, `@labops` | Hands-busy bench logging from a phone with the iPhone Flow keyboard or Android Flow bubble on a tested device | none | Polish |
 
 - Room instruction for HQ: "This is the Rao Lab operations room. Book instruments and order reagents through @labops; approvals come from @pi-desk and only Prof. Rao can grant them. One thread per request."
-- Room instruction for a project: "Project: How does synthetic crystal-violet absorbance vary across the listed EGCG doses? Every claim needs a verified citation or a run id. Data in this room are synthetic for the demo."
+- Room instruction for a project: "Project: How does synthetic crystal-violet absorbance vary across the listed EGCG doses? Citations require verified library IDs and separate human claim-support review; numerical claims require structured run metrics. Data in this room are synthetic for the demo."
 - **Roles** (defined only in HQ, because an agent holds at most one role lease globally across rooms; [hand off work](https://github.com/sandbox-quantum/switch/blob/main/docs/official/using/hand-off-work.md)): `librarian` (`@scout`), `bench-manager` (`@labops`), `approver` (`@pi-desk`). Roles are addresses, never authority: addressing `@approver` reaches `@pi-desk`, whose addressing policy still decides. Critical paths use exact names or aliases.
 - **Why Telegram for the bench:** the local Switch server binds to this computer only, so a phone cannot reach the bundled Mattermost without extra networking, while the Telegram bridge connects outbound and the bot needs no admin rights ([Telegram bridge](https://github.com/sandbox-quantum/switch/blob/main/docs/official/deploy/messaging-apps/telegram.md)). Gotchas: create the group by hand, turn off Group Privacy in BotFather first, and a person can link their account only after posting in the group.
 - Context does not cross rooms ([shared context](https://docs.switchagents.ai/switch-rooms/using/shared-context)), so anything both rooms need lives in the ledger and room documents, never in chat memory.
 - Switch has **no scheduler** ([work in a room](https://docs.switchagents.ai/switch-rooms/using/work-in-a-room)). Rituals are triggered by a person (a Wispr snippet makes it one phrase). Mattermost scheduled posts are a stretch experiment, tested before being relied on.
 
-Templates (two, because a template that creates agents refuses to run again once the names exist): [`labquorum-lab.template.yaml`](templates/labquorum-lab.template.yaml) runs once per lab (five agents, HQ room, handbook, roles, aliases); [`labquorum-project.template.yaml`](templates/labquorum-project.template.yaml) runs once per project, per demo take and per E2E run (takes the five agents as `type: agent` params). Both are drafts until spike S4 imports them on the pinned Console release.
+Roadmap templates (two, because a template that creates agents refuses to run again once the names exist): [`labquorum-lab.template.yaml`](templates/labquorum-lab.template.yaml) runs once per lab (five agents, HQ room, handbook, roles, aliases); [`labquorum-project.template.yaml`](templates/labquorum-project.template.yaml) runs once per project, per demo take and per E2E run (takes the five agents as `type: agent` params). Both are drafts until spike S4 imports them on the pinned Console release.
 
 ## 2.4 Scope across the research lifecycle
 
@@ -170,7 +170,7 @@ These are hypotheses with a measurement plan; the README presents them that way.
 
 1. Clone, `uv sync`, `lq init` (creates the ledger under `%LOCALAPPDATA%\LabQuorum`, `.env` from `.env.example`), `lq seed --example` (2 min).
 2. `lq doctor` (30 s): Python, uv, ledger path not in OneDrive, each agent folder's `.mcp.json` resolves, API keys present, Docker up, agent settings have Auto mode and Bypass off.
-3. In Switch Console, import `labquorum-lab.template.yaml` (set `workspace` to the clone path), then `labquorum-project.template.yaml` for the first project (3 min).
+3. In Switch Console, import `labquorum-core.template.yaml` with `workspace` set to the clone path (3 min estimate, unmeasured). Create distinct PI and Maya accounts, add Maya to the private room, and verify that she can post before testing approval refusal; account linking and authorization are separate checks.
 4. Link your Mattermost account to your Switch user (1 min).
 5. In HQ: `!agents-status`, then "@labops, what instruments do we have?" (1 min).
 6. Edit `seed/lab.yaml` with your real instruments and stock, `lq seed --apply` (3 min).

@@ -1,6 +1,6 @@
 # 7. Edge cases and failure modes (120)
 
-Back to the [master plan](README.md). Each row has detection, handling, what the user sees, and a planned test or explicitly manual check from [06](06-testing.md) (or the rehearsal/manual step). Unsupported paths are rejected clearly rather than half-implemented.
+Back to the [master plan](README.md). Each row has detection, handling, what the user sees, and a planned test from [06](06-testing.md) (or the rehearsal/manual step). Unsupported paths are rejected clearly rather than half-implemented.
 
 ## 7.1 Switch and agent runtime (R, 22)
 
@@ -13,20 +13,20 @@ Back to the [master plan](README.md). Each row has detection, handling, what the
 | R05 | Trailing period after mention | No addressed event | Mention-first convention, style check | Silence | EDGE-01, EDGE-02 |
 | R06 | Thread reply without mention | Follow-ups off and no assigned agent verified in each room | Repeat the mention; `!follow-ups` documented | Silence | EDGE-05 |
 | R07 | Role with no holder | `!roles` | Kickoff re-takes roles; critical paths use names | Characterized reply | EDGE-06 |
-| R08 | Agent holds a role in another room | Role take refused | Roles only in HQ | Agent explains | Manual |
+| R08 | Agent holds a role in another room | Role take refused | Roles only in HQ | Agent explains |Manual; M-05 |
 | R09 | Card never answered | Pending past hold | Lazy expiry; PI can `!interrupt @pi-desk` | "AR-0042 expired" | E2E-10 |
 | R10 | Wrong person clicks Allow | Switch refuses (addressing) | Nothing in our code | Refusal, card stays open | E2E-03 |
 | R11 | PI picks Allow for this session | Next commit | `ask` rule plus gate hook force a fresh card | New card per request | E2E-11 |
 | R12 | Agent posts bare "yes" under a card | Card state | Rule 8; inbound-only answers | Card stays open | E2E-12 |
 | R13 | PI account not linked to Switch owner | `@pi-desk` refuses PI | README setup step; spike S1 | Refusal: account not linked | EDGE-04 |
 | R14 | Student account unclaimed | Open policy accepts unclaimed user | Claim only the actual PI identity for owner-scoped approval | Helper replies; owner policy refuses unclaimed PI | EDGE-04 |
-| R15 | Same agent in two rooms | Sessions share nothing | Truth in ledger; room docs are local context | Verify both sessions, or leave unsupported | Manual |
-| R16 | Event gap after server restart | Gap notice | Agent re-reads context | "Missed messages; re-reading" | Manual |
+| R15 | Same agent in two rooms | Sessions share nothing | Truth in ledger; room docs are local context | Verify both sessions, or leave unsupported |Manual; M-05 |
+| R16 | Event gap after server restart | Gap notice | Agent re-reads context | "Missed messages; re-reading" |Manual; M-05 |
 | R17 | Long-day context growth | Slower turns | `!compact` ritual; compact tool results | None | C-14 |
 | R18 | Agent loops on a tool | Rate guard | `RATE_LIMITED` | Agent reports throttling | EV-12 |
 | R19 | Agent claims a tool result it never got | Unresolvable ids | Sources lines; scribe drafts only from ids | Obvious missing id | I-31 |
 | R20 | Mattermost container down | Doctor; page error | README troubleshooting | Mattermost error | I-11 |
-| R21 | Console early-access Windows bug | Repro | File upstream issue with repro | n/a | Manual |
+| R21 | Console early-access Windows bug | Repro | File upstream issue with repro | n/a |Manual; M-05 |
 | R22 | Console Auto mode or Bypass enabled on pi-desk | Doctor checks effective local or managed revision | Unknown or bypass fails; supported fail-closed hook tested with failures | Doctor error | I-13, I-14 |
 
 ## 7.2 Concurrency and consistency (K, 12)
@@ -96,10 +96,10 @@ Back to the [master plan](README.md). Each row has detection, handling, what the
 | S04 | Untrained user books | Training check | No proposal | Expiry date, who re-certifies | U-B06, EV-02 |
 | S05 | Training expires before slot | Check at start time | Rejected; standup warns 7 days ahead | Warning | U-B06 |
 | S06 | Dual-use request | Denylist + model refusal are incomplete | Refuse matched requests, notify PI | "Needs biosafety committee review" | U-P07 |
-| S07 | Agent suggests unsafe deviation | Hazard scan on deviations | Flag to PI | Flag | Manual |
+| S07 | Agent suggests unsafe deviation | Hazard scan on deviations | Flag to PI | Flag |Manual; M-05 |
 | S08 | Instrument locked out | Status | Reject bookings | "Down until ..." | U-B05 |
 | S09 | Agent claims an experiment was done | No confirmed bench entry | Rule 9; drafts need runs | No claim accepted | I-31 |
-| S10 | Agent approval mistaken for IRB approval | Wording | Never called signature or IRB | README limits | Manual |
+| S10 | Agent approval mistaken for IRB approval | Wording | Never called signature or IRB | README limits |Manual; M-05 |
 
 ## 7.6 Security, cost and abuse (X, 12)
 
@@ -110,26 +110,26 @@ Back to the [master plan](README.md). Each row has detection, handling, what the
 | X03 | Secret pasted in chat | Heuristic detector; prior exposure to chat/provider cannot be undone | Reject detected secrets | "Looks like a secret; not saved" | U-G04 |
 | X04 | Cost runaway | Rate and HTTP budgets | `RATE_LIMITED`, `BUDGET_EXCEEDED` | Throttle message | U-G01, U-G02 |
 | X05 | Ledger tampering | Hash chain detects unsophisticated edits, not a same-writer rewrite or truncation | Report limited assurance | CLI output | U-L02 |
-| X06 | `.env` or Switch credentials committed | gitleaks | CI fails | n/a | CI |
-| X07 | External collaborator in HQ | Not a member | n/a | n/a | Manual |
+| X06 | `.env` or Switch credentials committed | gitleaks | CI fails | n/a |CI; M-05 |
+| X07 | External collaborator in HQ | Not a member | n/a | n/a |Manual; M-05 |
 | X08 | Display name spoofing ("Prof. Rao") | Switch identity, not names | Card authority by id | Refusal | E2E-03 |
 | X09 | Path traversal in attachment names | Resolve under root | Reject | "Invalid file path" | I-27 |
-| X10 | Malicious CSV content in rendered tables | Escaping | Inert | Escaped text | U-D09, I-27 |
-| X11 | Same-user malicious process | Out of scope | Documented threat model | README | Manual |
-| X12 | Secrets in video or screenshots | Recording review | Redact, rotate if leaked | n/a | Rehearsal step 9 |
+| X10 | Malicious CSV content in rendered tables | Escaping | Inert | Escaped text | U-D09, I-31 |
+| X11 | Same-user malicious process | Out of scope | Documented threat model | README |Manual; M-05 |
+| X12 | Secrets in video or screenshots | Recording review | Redact, rotate if leaked | n/a |Rehearsal step 9; M-05 |
 
 ## 7.7 Voice (V, 8)
 
 | ID | Case | Detect | Handle | User sees | Test |
 | --- | --- | --- | --- | --- | --- |
 | V01 | "fifteen" heard as "fifty" | Range checks + read-back | Confirm token | Parsed value shown | U-V02 |
-| V02 | Unit missing | Parser | One question | "Units for 0.83?" | U-V02 |
+| V02 | Unit missing | Parser | Ask only when a unit is required; OD is dimensionless | "Units for 5?" | U-V02 |
 | V03 | Wrong text field focused | User sees | Flow history / paste last; never auto-send | n/a | M-01 |
 | V04 | Microphone or Flow unavailable | No transcript | Typed path is first-class | n/a | M-01 |
-| V05 | Confidential dictation | Policy | Synthetic demo data; Privacy Mode note | README | Manual |
+| V05 | Confidential dictation | Policy | Synthetic demo data; Privacy Mode note | README |Manual; M-05 |
 | V06 | Period after mention | No reply | Mention first | Silence | EDGE-01 |
 | V07 | Stale confirmation token | Token check | Refreshed preview | "Draft changed; new token" | U-V04 |
-| V08 | Command Mode rewrites a value | Policy | Never on data, DOIs, commands | n/a | Manual |
+| V08 | Command Mode rewrites a value | Policy | Never on data, DOIs, commands | n/a |Manual; M-05 |
 
 ## 7.8 Time (T, 6)
 
@@ -149,27 +149,27 @@ Back to the [master plan](README.md). Each row has detection, handling, what the
 | W01 | Ledger in OneDrive | Doctor | `%LOCALAPPDATA%` default | Warning | I-11 |
 | W02 | `uv` not on PATH for Console sessions | MCP fails to start | `lq setup` absolute paths | "Lab tool unavailable" | I-32 |
 | W03 | CRLF inputs | Parser | Both accepted | None | U-D01 |
-| W04 | Path over 260 chars | Git errors | `core.longpaths`, short repo path | n/a | Manual |
+| W04 | Path over 260 chars | Git errors | `core.longpaths`, short repo path | n/a |Manual; M-05 |
 | W05 | Orphan processes on timeout | Process list | `taskkill /T /F` | None | U-D06 |
-| W06 | Docker out of memory | Mattermost unhealthy | 4 GB in README | Error page | Manual |
-| W07 | Defender slows installs | Timing | Optional exclusion | n/a | Manual |
+| W06 | Docker out of memory | Mattermost unhealthy | 4 GB in README | Error page |Manual; M-05 |
+| W07 | Defender slows installs | Timing | Optional exclusion | n/a |Manual; M-05 |
 | W08 | Shift+Insert paste in terminals | Paste mismatch | Use Windows Terminal | n/a | M-01 |
-| W09 | Native server path fails (issue #1335) | Spike S0 | Separate pinned Linux Compose server, then Connect to existing server | n/a | S0 |
+| W09 | Native server path fails (issue #1335) | Spike S0 | Separate pinned Linux Compose server, then Connect to existing server | n/a |S0; M-05 |
 | W10 | Port conflict | Health probe | Name the port | Doctor error | I-32 |
-| W11 | Room placements exhaust RAM | Spike S6 measurement | Cut `@scribe`; cheap model in dev | n/a | S6 |
-| W12 | Relative `.mcp.json` path fails under Console | Spike S2 | Generated absolute `.mcp.json` | n/a | S2 |
+| W11 | Room placements exhaust RAM | Spike S6 measurement | Stop unused sessions; retain tested core and require 20% RAM headroom | n/a |S6; M-05 |
+| W12 | Relative `.mcp.json` path fails under Console | Spike S2 | Generated absolute `.mcp.json` | n/a |S2; M-05 |
 
 ## 7.10 Process, demo and submission (P, 8)
 
 | ID | Case | Detect | Handle | Test |
 | --- | --- | --- | --- | --- |
-| P01 | Live agent misbehaves while recording | Rehearsal | Segment retakes; baseline video | Rehearsal |
-| P02 | API outage during recording | UNREACHABLE | Labeled replay mode | Rehearsal |
-| P03 | Submit form rejects a field or link | Dry run | Submit Saturday 19:00, five hours early; keep receipt | Checklist |
-| P04 | Video link private or region-blocked | Incognito check | Public or unlisted link verified logged out | Checklist |
+| P01 | Live agent misbehaves while recording | Rehearsal | Segment retakes; baseline video |Rehearsal; M-05 |
+| P02 | API outage during recording | UNREACHABLE | Labeled replay mode |Rehearsal; M-05 |
+| P03 | Submit form rejects a field or link | Dry run | Submit Saturday 19:00, five hours early; keep receipt |Checklist; M-05 |
+| P04 | Video link private or region-blocked | Incognito check | Public or unlisted link verified logged out |Checklist; M-05 |
 | P05 | README steps drift from reality | Clean-room run | Fix every gap Saturday morning | M-03 |
-| P06 | Scope creep | Cut lines | Feature freeze Fri 22:45 | Schedule |
-| P07 | Fatigue | Schedule | Scheduled sleep, no work after 00:30 | Schedule |
-| P08 | Wispr screenshot shows unrelated private app names | Review | Crop identifying details, keep stats | Checklist |
+| P06 | Scope creep | Cut lines | Feature freeze Fri 22:45 |Schedule; M-05 |
+| P07 | Fatigue | Schedule | Scheduled sleep, no work after 00:30 |Schedule; M-05 |
+| P08 | Wispr screenshot shows unrelated private app names | Review | Crop identifying details, keep stats |Checklist; M-05 |
 
-That is 120 planned cases, not evidence of executed coverage. Manual and rehearsal references require recorded observations; unsupported capabilities remain unshipped.
+The catalogue contains 22 + 12 + 16 + 14 + 10 + 12 + 8 + 6 + 12 + 8 = 120 planned cases; referenced manual, CI, spike and rehearsal checks require recorded evidence. That is 120 planned cases, not evidence of executed coverage. Manual and rehearsal references require recorded observations; unsupported capabilities remain unshipped.
