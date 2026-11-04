@@ -4,7 +4,7 @@
 
 Flip the Switch hackathon (WeMakeDevs x DevTools Academy x Switch), **Track 1: Best Business Workflow**, stacked with **Code with Wispr**, **Best Blog** and **#HowISwitch**.
 Builder: Nikhil, solo, Windows 11, AI-assisted (Claude Code, Codex), voice-first with Wispr Flow.
-Plan written 2026-11-04 (Wednesday) about 20:00 IST. **Hard cutoff: Saturday 2026-11-07 23:59 IST (18:29 UTC).** Target submission: Saturday 19:00 IST.
+Plan written 2026-11-04 (Wednesday) about 20:00 IST. **Hard cutoff: Saturday 2026-11-07 23:59 IST (18:29 UTC).** Target submission: Saturday 19:00 IST through the Submit form on the hackathon website.
 
 This plan merges two independent, deeply researched plans: one by Claude Opus 5.5 (high effort) and one by Codex `gpt-6.1-sol` (high effort). Both are kept unedited in [`../inputs/`](../inputs/README.md). Where they disagreed, the decision and its evidence are in [Decisions](#decisions-where-the-two-planners-disagreed) below. I checked the decisive facts against the Switch source code and the Claude Code docs myself; the evidence column says which ones.
 
@@ -18,11 +18,11 @@ This plan merges two independent, deeply researched plans: one by Claude Opus 5.
 | 3 | [Architecture and Switch centrality](03-architecture.md) | Components, the two-layer approval model, data model, MCP tool profiles, scholarly APIs, citation verifier, analysis sandbox, stale cascade, Windows, "pull the plug" |
 | 4 | [End-to-end demo](04-demo.md) | The 3:50 video script, seed data, rehearsal, fallbacks |
 | 5 | [Wispr Flow everywhere](05-wispr-flow.md) | Every place voice is used, the mention/punctuation trap, the scorecard plan |
-| 6 | [Test strategy and test catalogue](06-testing.md) | Test-first workflow, about 190 test IDs written before code, real E2E against Switch and Mattermost, LLM evals, CI, flake policy |
+| 6 | [Test strategy and test catalogue](06-testing.md) | Test-first workflow, 173 test IDs written before code, real E2E against Switch and Mattermost, LLM evals, CI, flake policy |
 | 7 | [Edge cases and failure modes](07-edge-cases.md) | 120 cases with detection, handling, what the user sees and the covering test |
 | 8 | [Build schedule](08-build-schedule.md) | Day-1 spikes with go/no-go rules, hour-by-hour plan to Saturday, cut lines |
 | 9 | [Submission, prizes, scorecard, risks](09-submission-and-risks.md) | README, video, blog, social, Core PR call, judging self-assessment, risks, organizer questions |
-| T | [`templates/`](templates/) | Draft Switch templates (lab and project), agent folder settings, seed data |
+| T | [`templates/`](templates/README.md) | Draft Switch templates (lab and project) and demo seed data |
 
 Event facts (rules, prizes, judging, Switch essentials) are in [`../flip-the-switch-hackathon.md`](../flip-the-switch-hackathon.md).
 
@@ -101,17 +101,17 @@ Why this is safe by construction, not by prompt:
 
 | Item | Value |
 | --- | --- |
-| Time left at plan completion | about 75 hours, about 45 focused working hours after sleep and meals |
+| Time left at plan completion | about 73 hours from Wed 22:30, about 45 focused working hours after sleep and meals |
 | Agents | 5 Switch agents (4 MVP-critical), on Claude Code; `@analyst` optionally on Codex |
 | Rooms | `#rao-lab-hq` (operations), one `#rao-proj-<slug>` per project; `#bench` Telegram room as polish |
-| Tests written before code | about 190 test IDs (unit, property, contract, integration, live evals, real E2E) |
+| Tests written before code | 173 test IDs: 79 unit, 8 property, 16 contract, 22 integration, 6 citation golden groups, 12 live evals, 26 real E2E, 4 manual hardware checks |
 | Edge cases catalogued | 120, each mapped to a test or a rehearsal step |
-| Day-1 spikes | 9 time-boxed spikes with go/no-go rules, Wednesday night and Thursday morning |
+| Day-1 spikes | 11 time-boxed checks (S0-S8, S3 split in three) with go/no-go rules, Wednesday night and Thursday morning |
 | Video | 3:50, two "wow" moments (retracted citation caught; student cannot approve her own booking) plus the stale cascade |
-| Self-assessed score | about 87/100 if everything ships; 78-82 for the reduced build (see [09](09-submission-and-risks.md#judging-scorecard-self-assessment)) |
+| Self-assessed score | about 88/100 if everything ships; 78-82 for the reduced build (see [09](09-submission-and-risks.md#96-judging-scorecard-self-assessment)) |
 
-## The first three actions (tonight)
+## The first actions (tonight)
 
-1. **Redeem the Wispr Flow event Pro offer before dictating a single word**, take the baseline Insights screenshot, load the dictionary and snippets ([05](05-wispr-flow.md)).
-2. **Ask the organizers the submission-route questions** in the WeMakeDevs Discord ([09](09-submission-and-risks.md#questions-for-the-organizers)).
-3. **Run spikes S0 to S4** ([08](08-build-schedule.md#day-1-spikes-with-go-no-go-rules)): a real agent answering in Mattermost, a second user, an `ask`-gated MCP tool raising a Switch card, a non-PI click being refused, and "Allow for this session" not leaking to the next request. Nothing else matters until those are green or their fallbacks are chosen.
+1. ~~Redeem the Wispr Flow event Pro offer~~ (done Wed 22:20). Take the baseline Insights screenshot and load the dictionary and snippets ([05](05-wispr-flow.md)).
+2. Open the website's Submit form and record its fields (spike S8); submission is through that form. Post the remaining organizer questions in the WeMakeDevs Discord ([09](09-submission-and-risks.md#98-questions-for-the-organizers-wemakedevs-discord-wednesday)).
+3. Run spikes S0, S1 and start S2 tonight; S2 to S6 first thing Thursday ([08](08-build-schedule.md#81-day-1-spikes-with-go-no-go-rules)). Nothing else matters until the approval path (S2, S3a-c) is green or its fallback is chosen.
