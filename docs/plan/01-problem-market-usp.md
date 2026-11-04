@@ -6,166 +6,107 @@ Back to the [master plan](README.md). Sources are linked inline. "UNVERIFIED" me
 
 | # | Pain | Evidence | What it means for LabQuorum | What the evidence does not prove |
 | --- | --- | --- | --- | --- |
-| P1 | Researchers lose a large share of research time to administration | Federal Demonstration Partnership faculty workload surveys: about **42%** of PIs' federally funded research time goes to pre- and post-award administration, nearly unchanged 2005 to 2012 ([NAS FDP 2012 report PDF](https://sites.nationalacademies.org/cs/groups/pgasite/documents/webpage/pga_087667.pdf), [Berkeley summary](https://news-rac.berkeley.edu/2007/04/fdp-issues-report-on-faculty-burden.html)) | The legwork (scheduling, ordering, chasing, formatting) is what agents can draft, as long as a human still decides | US federally funded faculty only; not a 2026 measurement |
-| P2 | Reproducibility is broken, partly because records are bad | Nature's 2016 survey of 1,576 researchers ([Baker 2016, Nature 533:452](https://www.nature.com/articles/533452a)). Opus read the figures (over 70% failed to reproduce others' work, over half their own) from the PDF; Codex found the page paywalled | Bench entries tied to protocol versions, dataset hashes, script hashes, stale-on-change | Quote the numbers only with the citation; they are a survey of perceptions |
-| P3 | AI is everywhere in research, ungoverned and fragmented | Wiley ExplanAItions 2025 (2,430 researchers): 84% use AI (57% in 2024); 80% use mainstream chatbots, 25% use research assistants; 57% cite lack of guidelines; hallucination concern rose from 51% to 64% ([Wiley press release](https://newsroom.wiley.com/press-releases/press-release-details/2025/AI-Adoption-Jumps-to-84-Among-Researchers-as-Expectations-Undergo-Significant-Reality-Check/default.aspx)) | The gap is shared, governed, auditable AI with lab rules, not more private chatbots | Self-reported, publisher-run survey |
-| P4 | LLMs fabricate citations | GPT-4o mental-health reviews: nearly 20% of 176 references fabricated, about two thirds fabricated or erroneous ([summary of the JMIR Mental Health study](https://www.gigazine.net/gsc_news/en/20251207-ai-generated-citations-fabrication-errors)); deep research agents hallucinate URLs at higher rates ([arXiv 2604.03173](https://arxiv.org/html/2604.03173v1)) | Citation checking must be deterministic code, not a prompt. Cheapest, most demonstrable trust feature | Rates depend on model and domain |
-| P5 | Retracted papers keep being cited | Retraction Watch data is open through Crossref; the REST API exposes retractions in `update-to` with source `publisher` or `retraction-watch`, updated each working day ([Crossref blog](https://www.crossref.org/blog/retraction-watch-retractions-now-in-the-crossref-api/)) | A free, authoritative signal checked on every citation | Coverage is incomplete: "no retraction found" is not "never retracted" |
-| P6 | Literature work is a weekly time sink | Elsevier survey coverage: about 4 h/week locating articles and 5 h reading ([phys.org](https://phys.org/news/2019-08-results-impact-volumes-workload.html)) | `@scout` cuts locating time and leaves reading to people | 2019 numbers; 2026 figures UNVERIFIED |
-| P7 | Shared instruments are underused and hard to share | CU BioCore consolidation freed 2,115 sq ft of underused instruments; researchers avoid sharing due to training, scheduling, repair and contamination concerns ([CU submission](https://www.cu.edu/controller/i-e-awards/past-submissions/cu-ie-submission-establishing-multi-departmental-shared)) | Booking with training checks, maintenance status and a fair approval loop addresses the stated reasons | No hard utilization percentage found |
-| P8 | ELN adoption fails on usability and workflow fit | 2026 single-institution study: barriers were insufficient user-friendliness (69%), familiarization effort (60%), technical difficulties (56%), workflow integration (46%) ([Jager et al., PLOS One](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0355558)); institution-wide ELN rollouts report cost, training and policy concerns ([PMC9014952](https://pmc.ncbi.nlm.nih.gov/articles/PMC9014952/)) | Do not build another app to adopt; meet the lab in its chat; export to the ELN it already has | One institution |
-| P9 | Typing at the bench conflicts with lab work | A Nature Protocols ELN review names typing while wearing PPE as a usability issue ([Nature Protocols review PDF](https://www.nature.com/articles/s41596-021-00645-8.pdf)) | Voice-assisted bench logging with read-back ([05](05-wispr-flow.md)) | Voice is not right for every clean room or noisy space |
-| P10 | Pressure and hierarchy undermine rigor | Wellcome survey of 4,000+ researchers: 23% of junior researchers reported pressure to produce a particular result ([Wellcome](https://wellcome.org/insights/reports/what-researchers-think-about-research-culture)) | Make decisions, exclusions and negative results explicit; never optimize for a positive finding | A tool does not fix culture |
-| P11 | Core-facility tools exist but are institutional and heavyweight | iLab: enterprise scheduling, billing, inventory across 170+ institutions ([Agilent flyer](https://www.agilent.com/cs/library/flyers/public/iLab%20Solutions_5991-7935EN_Flyer_LR.pdf)); PPMS similar ([UC Davis PPMS](https://ppms.ucdavis.edu)) | A single lab's own instruments usually live in a spreadsheet. That is our wedge | |
-| P12 | Labs are still mostly not digital | Cenevo's survey of 150+ labs: only 15% fully digitalized, 50% still rely on manual processes ([Lab Manager](https://www.labmanager.com/cenevo-introduces-new-ai-agents-to-reduce-manual-lab-work-34935)) | Plenty of room for a lightweight layer | Vendor-run survey |
+| P1 | Research administration consumes time | FDP's 2018 survey reports 44.3% of federally funded research time on requirements rather than active research ([primary report](https://thefdp.org/wp-content/uploads/FDP-FWS-2018-Primary-Report.pdf)). | Test a bounded coordination task. | Historical US faculty survey; it does not quantify addressable booking, inventory or correction work. |
+| P2 | Researchers report difficulty reproducing results | [Baker 2016, Nature](https://www.nature.com/articles/533452a). | Test links between inputs and outputs. | Survey experience does not establish a causal share due to bad records or a product benefit. |
+| P3 | Researchers report using AI | Among 2,430 respondents in August 2025, 84% used AI overall, 62% for research/publication, and 57% cited missing guidelines and training ([Wiley](https://newsroom.wiley.com/press-releases/press-release-details/2025/AI-Adoption-Jumps-to-84-Among-Researchers-as-Expectations-Undergo-Significant-Reality-Check/default.aspx)). | Test a shared policy workflow. | Publisher-run survey; 22 percentage points separate overall from research use. It does not measure fragmented lab chats. |
+| P4 | Generated references can be fabricated or erroneous | Six GPT-4o mental-health reviews yielded 35 fabricated citations of 176, plus 64 real citations with errors: 99/176 = 56.25% ([JMIR](https://mental.jmir.org/2025/1/e80371/)). A separate [2026 preprint](https://arxiv.org/html/2604.03173v1) studies URL fabrication. | Check metadata and indexed retraction signals in code. | One model, domain and prompt setting; the article's verbal combined-error approximation differs from its counts. Fabrication, errors, URL failure and claim support are distinct. |
+| P5 | Retraction signals are available but must be checked | [Crossref](https://www.crossref.org/blog/retraction-watch-retractions-now-in-the-crossref-api/) exposes publisher and Retraction Watch updates. | Show sources and checked_at with each verdict. | Coverage and freshness are limited; no signal found is not proof of no retraction. |
+| P6 | Literature work takes time | [2019 secondary reporting](https://phys.org/news/2019-08-results-impact-volumes-workload.html) of a publisher survey reports about 4 h/week locating and 5 h reading. | Compare the same task with and without assistance. | Not a baseline for this lab or a measure of avoidable time; exclude from savings claims. |
+| P7 | Instrument sharing has practical obstacles | [CU BioCore](https://www.cu.edu/controller/i-e-awards/past-submissions/cu-ie-submission-establishing-multi-departmental-shared) describes training, scheduling, repair and contamination concerns. | Test a booking with explicit policy checks. | One case; no transferable utilization or software savings estimate. |
+| P8 | ELN users report usability barriers | A single-institution [2026 study](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0355558) reports 69% user-friendliness, 60% familiarization, 56% technical difficulties and 46% workflow integration as barriers, with item-specific denominators. | Treat chat usability as a hypothesis to test. | 55 analyzable responses; no chat-versus-ELN comparison. |
+| P9 | Typing at the bench can be difficult | An [ELN review](https://www.nature.com/articles/s41596-021-00645-8.pdf) discusses typing in PPE. | Test voice-assisted logging with read-back. | Neither safe in every lab nor proven faster; [voice ELN prior work](https://doi.org/10.1145/2948992.2948998) exists. |
+| P10 | Research pressure can undermine rigor | [Wellcome's 2020 survey](https://wellcome.org/insights/reports/what-researchers-think-about-research-culture) reports 23% of junior researchers/students felt supervisor pressure for a particular result. | Record exclusions and negative results. | A tool does not fix culture or prove stronger PI control improves rigor. |
+| P11 | Coordination across tools may leave gaps | [Calira](https://calira.co/pricing/academia) and [LabArchives](https://www.labarchives.com/pricing) already offer small-lab scheduling. | Hypothesis: some groups lack a shared decision trail across resources and results. | Reproduce the task in the user's existing scheduler first; only retain the wedge if a failure remains. |
+| P12 | Digitization varies in a vendor sample | [Cenevo's January 2025 survey](https://www.cenevo.com/press/lab-digitization-data-challenges-insights) reports 155 life-sciences respondents, 21% academic; 15% fully digitalized and half heavily reliant on manual processes. | Test whether a lightweight prototype fits one group. | Vendor sample, roughly 33 academic respondents; not an estimate for academic labs. |
+### The pain in one story (illustrative scenario)
 
-### The pain in one story (used in the video voice-over)
-
-Maya, a second-year PhD student, needs the plate reader Thursday afternoon for a biofilm assay. She checks the shared spreadsheet (stale), messages the lab manager on WhatsApp (busy), discovers on Thursday that crystal violet is nearly out, runs the assay a week late, pastes OD values into Excel, asks a chatbot for "three papers showing EGCG inhibits biofilm", and puts one in her committee report. It turns out to be retracted. Two weeks later she fixes a mislabelled well, but the figure in her draft still shows the old numbers. Nothing in that story needed a new model. It needed the existing people, tools and AI in one room, with rules.
+This fictional demo is not an observed incident; target-lab demand is UNVERIFIED. Maya, a second-year PhD student, needs the plate reader Thursday afternoon for a biofilm assay. She checks the shared spreadsheet (stale), messages the lab manager on WhatsApp (busy), discovers on Thursday that crystal violet is nearly out, runs the assay a week late, pastes OD values into Excel, asks a chatbot for "three papers showing EGCG inhibits biofilm", and puts one in her committee report. It turns out to be retracted. Two weeks later she fixes a mislabelled well, but the figure in her draft still shows the old numbers. The proposed workflow tests whether a shared decision and dependency trail helps with this scenario.
 
 ### The job to validate
 
 "When a project changes between a meeting and the bench, help us discover what is now invalid, get the right decision from the right person, and produce a result someone else can reproduce."
 
-Validation plan (do not invent interviews): on Thursday, ask one reachable researcher for a 15-minute walkthrough of their last experiment (where was the question recorded, what changed, who approved it, where are raw data and exclusions, which tool would they refuse to replace). On Friday, ask them to try one LabQuorum task. Record only what actually happened. Success signals: completes without coaching; finds the current protocol in under 30 s; can name the approver of a booking; can trace a figure to its input data.
+Validation plan (0.75-1 h; no invented interviews): ask one reachable researcher about their last correction or conflict, current tool, actual approver, time lost, and what cannot move. Determine who approves routine bookings, spending and results; the PI-only gate is a demo policy, not a universal requirement. On Friday, ask them without coaching to find the current protocol, identify the approver, trace a figure, identify stale evidence and recover after correction. Record participant role, success, errors, clarifications, active time, model wait and PI wait separately; target current protocol under 30 s, median active decision under 30 s and zero mistaken approvals in this tiny pilot. Compare one identical task with existing tools and the prototype (0.5-0.75 h), including setup, maintenance and failures; do not generalize one observation. If no researcher is available, label any nonresearcher usability session and the demand hypothesis unvalidated. Do not delay the build to recruit. Ten people x two approvals/day x 30 s = 10 PI minutes/day before interruptions; test whether the actual operator accepts that queue and its fallback owner.
+## 1.2 Competitor and incumbent landscape
 
-## 1.2 Competitor landscape (35 products)
+Vendor descriptions are claims from the linked sources, not independent performance tests. Prices are observed USD signals on 2026-11-04 where stated; currency, seats and billing period matter. "Not established" means the reviewed pages do not establish a behavior, not that it is absent. The five closest alternatives are Scispot, Cenevo, Edison, Calira and the existing chat-plus-files stack.
 
-The "misses" column is our reading of each product's public scope, not proof a vendor lacks a feature. Most incumbents are integration targets, not enemies.
-
-### ELN, LIMS and lab operations
-
-| Product | What it does | Price signal | What it misses for an academic PI group |
+| Product | What it does | Price signal | Comparison and inclusion metric |
 | --- | --- | --- | --- |
-| [Benchling](https://www.benchling.com/ai) | R&D platform: notebook, molecular biology, registry, inventory. Benchling AI agents Deep Research, Compose, Data Entry and Ask went GA in Feb 2026; AI edits are labeled in audit logs (June 2026) ([release notes vol 1 2026](https://help.benchling.com/hc/en-us/articles/44313208618893-Release-Notes-Volume-1-2026)) | Academic notebook free ([academic](https://www.benchling.com/academic)); paid tiers sales-gated, third-party estimates $15k+/yr | Agents live inside Benchling's UI, not the team's chat; no identity-bound approval loop for a lab's own instruments; academic tier excludes inventory. **Strongest warning against an "AI notebook" pitch** |
-| [LabArchives](https://www.labarchives.com/pricing) | ELN plus inventory and scheduler add-ons | Official: Professional academic $330/user/yr; ELN + Inventory $360; Scheduler add-on $35 | Forms, no agents in chat, scheduler with no conflict-resolution help |
-| [Labguru (Cenevo)](https://www.labguru.com/) | ELN, LIMS, inventory, equipment, automation; Labguru Assistant; two agents (protocol conversion, automation) launched Feb 2026 ([R&D World](https://www.rdworldonline.com/cenevo-launches-two-ai-agents-for-lab-protocol-conversion-and-workflow-automation/)) | Quote; third-party $1,000-1,500/user/yr | Already spans the lifecycle, but enterprise-priced; AI is in-platform assistance, not a team of addressable agents with approvals |
-| [LabVantage CORTEX](https://www.drugdiscoverynews.com/labvantage-rolls-out-ai-platform-to-modernize-laboratory-data-management-17053) | Agentic AI platform inside LabVantage LIMS (Mar 2026) | Enterprise | Regulated industrial LIMS; not an academic lab's chat |
-| [eLabFTW](https://doc.elabftw.net/) | Free AGPL ELN with scheduler, inventory, API; Docker self-host | Free | Excellent record system, no agents, no chat. **Natural export target** (stretch) |
-| [SciNote](https://www.scinote.net/) | Cloud ELN, inventory, compliance, reporting | Free individual; Premium by quote (third-party) | Team features are paid; no chat-native agents |
-| [RSpace](https://www.researchspace.com/pricing) | Open-source (AGPL since 2024) research data platform with many integrations | Third-party academic team ~$5,000/yr (UNVERIFIED) | Slack/Teams integration is notifications, not acting agents |
+| [Scispot Scibot](https://www.scispot.com/scibot) | Specialist scientific/operational agents with governed data, workflow state, approved actions and human oversight. | Current comparable academic price not verified; consultation-led. | Direct governance/specialist alternative. Include because at least five pitch concepts overlap; compare exact corrected-input/release semantics. |
+| [Sapio Elain / ELN](https://www.sapiosciences.com/news/sapio-sciences-introduces-worlds-first-3rd-generation-eln/) | Agentic ELN announced 2025-09-16 for experiment planning, design and analysis. | Current academic deployment price not verified. | Existing lab platform, not a passive-forms straw man. Include because it falsifies the category-wide no-agent claim. |
+| [Edison Kosmos](https://edisonscientific.com/) | Research investigations with literature, analysis, mid-run steering and advertised Slack/Teams/email collaboration. | Current small-lab tariff not verified; do not reuse $200/run. | Direct chat/research competitor. Differentiate a demonstrated local operational transition, not chat availability. |
+| [Cenevo Labguru / Mosaic](https://www.cenevo.com/ai/ai-agents) | Protocol conversion, automation, inventory/order assistance; human review and governed [MCP access](https://www.cenevo.com/ai/mcp-servers). | Academic price by quote; seat tariff UNVERIFIED. | Broad domain overlap. Include if comparing operational records or governance; exact revision-release semantics remain unverified. |
+| [Benchling](https://www.benchling.com/ai) | Scientific-context AI in its notebook, traceable output and explicit confirmation for writes/actions; external-system MCP support. February GA is historical. | [Academic notebook/molecular tools free](https://www.benchling.com/academic); industry Registry/Inventory distinct; paid price by quote. | Strong existing records/AI option. Do not infer absence of approval from a notebook UI. Include as a benchmark for the claimed trust loop. |
+| [Calira](https://calira.co/pricing/academia) | Academic equipment booking; Premium adds rules, AI workflows, extraction and maintenance; sequential equipment booking advertised. | Core annual flat fee, exact quote needed; Premium/Enterprise minimum ten seats. | Direct scheduling alternative. Differentiator must survive a booking-conflict comparison and concern evidence/release behavior beyond a calendar. |
+| [LabArchives](https://www.labarchives.com/pricing) | Notebook, inventory and scheduler; Scheduler has a free small-team tier. | Academic ELN $330/user/year; ELN+Inventory $360/user/year; Scheduler $35/user/year, with free <=5 users and <=5 resources. | Affordable existing resource system. Ten scheduler seats = $350/year list, so price alone cannot establish an underserved market. |
+| [RSpace](https://www.researchspace.com/pricing) | Open-source research platform plus managed services, integrations and support. | Academic managed Team minimum EUR5,000 / USD6,000 annually; self-hosted code separate. | Compare same hosting/support scope. Include if considering record-system integration; managed service and self-hosting are different cost scopes. |
+| [Quartzy](https://www.quartzy.com/pricing) | Inventory and procurement requests; approvals already part of its product family. | Academia $50/month annual billing, three users included; extra-user tariff to verify. | $600/year entry plan, not a ten-person quote. Compare request status/record connectivity without invented "nobody reads it" behavior. |
+| [Elicit](https://elicit.com/pricing) | Research Agent, reports/reviews and collaboration on higher tiers. | Basic free; displayed Plus $11/user/month billed $132 annually, audience-dependent; collaboration has separate tiers. | Search/review alternative with team capability. Include because "single-user" fails its published live-editing test. |
+| [Consensus](https://help.consensus.app/en/articles/10087865-subscription-plans) | Evidence-oriented research and Deep reviews, API/MCP allowances; Teams for groups/labs. | Pro $20/month or $144/year; Teams pricing varies. | Source-oriented alternative; operational state not established. Team availability prevents a category-wide solo-only claim. |
+| [scite](https://scite.ai/pricing) | Citation context and research assistant with MCP on Basic; API on Pro. | Annual-billed Basic $12/month with 250 MCP credits; Pro $40/month with 2,500 MCP credits. | Reusable evidence signal. Do not spend Pro-tier integration cost if Basic's documented MCP allowance meets the task. |
+| [Undermind](https://www.undermind.ai/) | Search, full-text library, writing, workspaces and external-agent connections. | Free; Pro $16/month billed annually, official page. | Does more than end at a report. Compare downstream operational decisions, not absence of collaboration or drafting. |
+| [ResearchRabbit+](https://learn.researchrabbit.ai/en/articles/12454495-what-is-researchrabbit) | Citation discovery, projects and advanced filters, including retractions. | Core free; RR+ $12.50/month or $120/year, eligible country discounts. | Retraction discovery is not new. Include if claiming novelty from citation status, and show a later release consequence. |
+| [Gemini Notebook](https://support.google.com/gemininotebook/answer/16213268) | Source-grounded notebooks, sharing and higher limits through eligible AI/Workspace plans. | Standard free; paid-plan local prices not verified. | Source-workbench alternative; lab-specific transaction rules not established. Sharing is documented. |
+| [Gemini Deep Research API](https://ai.google.dev/gemini-api/docs/deep-research) | Cited asynchronous research, collaborative planning and external tools through MCP in preview. | API billing is distinct from consumer Google AI subscriptions; exact current rate UNVERIFIED. | Compare API and consumer access separately. |
+| [Potato](https://www.potato.ai/) | Connected scientific methods/protocol/design and plate-assay workflows. | [Individual/team offerings](https://www.potato.ai/pricing/); no comparable deployed-lab quote verified here. | More task-specific overlap than "protocol generation". PI approval and resource semantics not established; do not assert absence. |
+| [LabVantage CORTEX](https://www.labvantage.com/press-release/labvantage-solutions-introduces-labvantage-cortex-advancing-its-lims-platform-for-ai-driven-laboratory-operations/) | AI/analytics/automation extension of LIMS announced 2026-03-05. | Quote; academic suitability not established. | Institutional alternative, not evidence that all academic labs need an entirely new record system. |
+| [Slack](https://slack.com/pricing) and [Teams Approvals](https://learn.microsoft.com/en-us/power-automate/teams/native-approvals-in-teams) | Existing chat, agents/apps, scopes and approval surfaces; custom lab invariants still need implementation. | Slack Free 90-day history; Pro $7.25/user/month annual or $8.75 monthly in displayed USD pricing. Teams entitlements depend on tenant. | Practical build/configure alternative. Compare exact lab rules and setup effort, not whether chat agents or approvals exist. |
+| [Zotero](https://www.zotero.org/storage) | Reference manager, shared libraries, existing retraction alerts; arbitrary pasted-claim support not guaranteed. | Attachment storage 300 MB free; 2 GB $20/year; unlimited $120/year. | Complement, not empty baseline. Pre-draft comparison and release linkage must add value beyond [existing warnings](https://www.zotero.org/blog/retracted-item-notifications/). |
+| [Paperpal](https://paperpal.com/pricing) and [SciSpace](https://scispace.com/pricing) | Writing/research tools with broader features than language-only descriptions; relevant limits depend on plan. | Exact individual amounts UNVERIFIED. | Keep only if they alter the writing-tool choice. No speculative price comparison or claim that a research agent is merely grammar correction. |
 
-### Equipment booking, core facilities, inventory
 
-| Product | What it does | Price signal | What it misses |
-| --- | --- | --- | --- |
-| [Agilent iLab](https://help.ilab.agilent.com/en_US/45530-managing-a-core-overview/271614-managing-a-core-overview) | Core scheduling, booking rules by user type and training, billing, service requests | Institutional, quote | Built for core facilities, not a lab's bench instruments; no agents |
-| [Stratocore PPMS](https://www.stratocore.com/) | Reservations, training requests, incidents, billing, utilization | Quote | Same: institutional forms |
-| [Calira (formerly Clustermarket)](https://calira.co/blog/clustermarket-is-now-calira) | Equipment booking and lab operations | Third-party academic ~$150/yr (UNVERIFIED) | A booking calendar, not a coordinator; no literature or analysis loop |
-| [Quartzy](https://www.quartzy.com/pricing) | Inventory, purchasing requests and approvals | Academia $50/month billed annually (official page) | Purchase approvals live in a separate app nobody reads in chat |
-
-### Literature AI
-
-| Product | What it does | Price signal | What it misses |
-| --- | --- | --- | --- |
-| [Elicit](https://elicit.com/pricing) | Search, screening, extraction, systematic-review workflows, research agent | Basic free; Plus $11/user/month annual (official, audience toggle matters) | Single-user; results do not flow into a protocol, booking or PI-approved draft |
-| [Consensus](https://help.consensus.app/en/articles/10087865-subscription-plans) | Evidence-grounded answers, Deep reviews | Free; Pro $20/month or $144/yr (official) | Q&A, not a team workflow |
-| [SciSpace](https://scispace.com/pricing) | PDF chat, literature review, writing, agents | Paid tiers; amounts UNVERIFIED | Individual workspace; credits |
-| [scite](https://scite.ai/pricing) | Smart Citations (supporting / contrasting / mentioning), Assistant, MCP and API on higher tier | Basic $12/month, Pro $40/month billed yearly (official) | Great signal, not woven into a lab's drafting and approval loop |
-| [Semantic Scholar](https://www.semanticscholar.org/product/api) | Free discovery and graph APIs; unauthenticated pool shared at 1,000 RPS; keys start at 1 RPS | Free | A data source; we use it (polish) |
-| [ResearchRabbit (Litmaps)](https://learn.researchrabbit.ai/en/articles/12454495-what-is-researchrabbit) | Citation-graph discovery, collections | Free; RR+ paid by country | Discovery only |
-| [Undermind](https://www.undermind.ai/) | Deep agentic search, reports, shared workspaces, agent connections | Free; Pro ~$16/month annual | Already collaborative; ends at a report, no downstream lab action |
-| [NotebookLM / Gemini Notebook](https://support.google.com/gemininotebook/answer/16213268) | Source-grounded research notebooks | Free; higher limits on Google AI plans | Personal notebooks; no lab state. Re-check branding before the blog |
-| [Gemini Deep Research](https://testingcatalog.com/google-debuts-deep-research-agents-on-ai-studio-and-apis/) and other deep-research modes | Cited multi-step reports, API with MCP | Google AI plans | General web research with URL hallucination risk |
-
-### Writing
-
-| Product | What it does | Price signal | What it misses |
-| --- | --- | --- | --- |
-| [Overleaf (with Writefull, AI Assist)](https://www.overleaf.com/user/subscription/plans) | Collaborative LaTeX, history, AI features | Free; Standard $25/month or $199/yr | Edits text; does not know which results were approved, which data produced them, or whether a citation is retracted. We export to it |
-| [Paperpal](https://paperpal.com/pricing) | Academic editing, submission checks | Third-party Prime ~$19/month | Language quality is not experimental correctness |
-| [Writefull](https://www.writefull.com/) | Language feedback widgets | Group licenses | Complementary copyediting |
-
-### "AI scientist" systems
-
-| System | What it does | Signal | What it misses for a real lab today |
-| --- | --- | --- | --- |
-| [Sakana AI Scientist v2](https://arxiv.org/pdf/2504.08066) | End-to-end computational ML research; one paper passed an ICLR 2025 workshop review then was withdrawn as planned ([TechCrunch](https://techcrunch.com/2025/03/12/sakana-claims-its-ai-paper-passed-peer-review-but-its-a-bit-more-nuanced-than-that)) | Open research system | Computational only; autonomy, not PI governance, is the design center |
-| [Google AI co-scientist](https://research.google/blog/accelerating-scientific-breakthroughs-with-an-ai-co-scientist/) | Multi-agent hypothesis generation and ranking | Limited access | Hypotheses only; no bench, instruments or lab chat |
-| [Edison Scientific Kosmos (FutureHouse spinout)](https://edisonscientific.com/) | Autonomous discovery runs with code- and citation-linked conclusions; $70M seed ([SiliconANGLE](https://siliconangle.com/2025/12/18/edison-scientific-raises-70m-build-autonomous-ai-scientists-research)) | Third-party ~$200/run (UNVERIFIED) | A batch "run", not daily coordination. FutureHouse itself notes no system has cleared a strong autonomous-discovery bar ([FutureHouse](https://www.futurehouse.org/ai-scientist)) |
-| [Agent Laboratory](https://github.com/SamuelSchmidgall/AgentLaboratory) | Specialist agents for literature, experiments, reports (EMNLP 2025 Findings) | Open source | Strong conceptual overlap in role names; a pipeline, not a governed team space with physical resources |
-| [Biomni / Phylo](https://phylo.bio/announcement) | General biomedical agent, 300+ tools, $13.5M seed Feb 2026 | Pharma deals | Computational biology workspace, not the lab's operational coordinator |
-| [Potato](https://www.biopharmatrend.com/post/1213-potato-grows-45m-to-automate-lab-work-with-ai-and-robots) | AI co-scientist for protocols, analysis, automation scripts | Startup | Protocol generation without a lab-wide approval and resource layer |
-| [Lila Sciences](https://www.lila.ai/tech) | Scientific models and autonomous "AI Science Factories"; ~$550M raised 2025 | Industrial | Replaces the lab rather than helping the lab that exists |
-| [Periodic Labs](https://periodic.com/) | Autonomous materials labs; $300M seed | Industrial | Same |
-| [DOE FORUM-AI (LBNL)](https://www.labmanager.com/doe-launches-agentic-ai-platform-to-accelerate-energy-materials-discovery-34920) | Government agentic platform for materials research with inspectable reasoning traces (Feb 2026) | Public research | National-lab infrastructure, not a university PI group's daily tool |
-
-### What labs actually use
-
-| Tool | Role | Price signal | What it misses |
-| --- | --- | --- | --- |
-| Slack | De facto lab chat; free plan keeps 90 days ([plans](https://slack.com/pricing)) | Pro ~$7.25/user/month (third-party) | Bots are not addressable, policy-bound team members with approvals. Switch bridges Slack later |
-| Notion | Wikis, booking and inventory databases ([plans](https://www.notion.com/pricing)) | Free and paid seats | The lab must invent and enforce its own state transitions |
-| Google Sheets | Booking and inventory sheets ([product](https://workspace.google.com/products/sheets/)) | Free / Workspace | No conflict, training or approval rules unless hand-built |
-| [Zotero](https://www.zotero.org/storage) | Reference manager; 300 MB free, 2 GB $20/yr, unlimited $120/yr | Official | No verification of what an AI pasted; we export BibTeX/CSL JSON into it |
-| WhatsApp / Telegram groups | Where coordination actually happens on phones | Free | No structure. Switch bridges Telegram, which we use for the bench room (polish) |
+Other relevant alternatives: [eLabFTW](https://doc.elabftw.net/) is a free self-hosted AGPL ELN with scheduler, inventory and API; compare its existing records before proposing an export. [Agent Laboratory](https://aclanthology.org/2025.findings-emnlp.320/) supports specialist research phases and human co-pilot feedback. [Virtual Lab](https://www.nature.com/articles/s41586-025-09442-9?error=cookies_not_supported) uses human-guided research meetings. [Google AI co-scientist](https://arxiv.org/html/2502.18864v1) uses expert feedback in hypothesis generation. These three precedents defeat any claim that scientist supervision or specialist roles are novel. [Sakana AI Scientist v2](https://arxiv.org/html/2504.08066v1) reports one workshop-reviewed submission above the acceptance threshold, subsequently withdrawn; workshop review is not main-conference acceptance. [FORUM-AI](https://eta.lbl.gov/news/berkeley-lab-leads-effort-build-ai-assistant-energy-materials-discovery) is a developing materials-research platform, while [LILA](https://www.lila.ai/tech) and [Periodic](https://periodic.com/) develop autonomous-lab infrastructure; small-lab deployment comparability is not established. Funding figures do not measure task fit.
 
 ## 1.3 Gap analysis
 
-| Capability | ELN/LIMS | Booking/core | Literature AI | AI scientists | Chat + sheets | **LabQuorum** |
-| --- | --- | --- | --- | --- | --- | --- |
-| Lives in the team's existing chat | No | No | No | No | Yes | **Yes (Switch bridges Mattermost, Slack, Teams, Discord, Telegram)** |
-| Several specialist agents, each addressable with its own policy | No | No | No | Internal only | No | **Yes** |
-| Human approval bound to an identity, visible to the team | Partial (sign-off) | Partial | No | No | No | **Yes (Switch approval cards, "Chosen by")** |
-| Approval bound to an exact revision; changes invalidate it | Partial | No | No | No | No | **Yes (revision + hash; stale cascade)** |
-| Deterministic citation and retraction verification before drafting | No | No | Partial | Partial | No | **Yes, enforced in code** |
-| Lab-scale resources: instruments, training, inventory, hazards | Partial | Yes | No | No | No | **Yes** |
-| Analysis with provenance (recipe or script hash, data hash) | Partial | No | No | Yes | No | **Yes** |
-| Cost for a 10-person lab | $$$ | $$$ | $ per seat | $$$ | $ | **Free and self-hosted (plus the lab's AI subscriptions)** |
+The comparison concerns one task: correct an input, identify affected artifacts, refuse release until a current authorized decision, and reproduce the result. Incumbent cells describe only what the linked public materials establish; LabQuorum cells are planned, not shipped or tested.
 
-```mermaid
-quadrantChart
-    title Where research tools sit (interpretive, not measured)
-    x-axis "Individual tool" --> "Team-native"
-    y-axis "Records and forms" --> "Agents that act"
-    quadrant-1 "Team plus governed acting agents"
-    quadrant-2 "Personal AI assistants"
-    quadrant-3 "Personal records"
-    quadrant-4 "Team records and forms"
-    "LabQuorum": [0.88, 0.8]
-    "Benchling AI": [0.62, 0.6]
-    "Labguru agents": [0.6, 0.52]
-    "AI scientists": [0.2, 0.92]
-    "Elicit / Consensus / SciSpace": [0.18, 0.62]
-    "NotebookLM": [0.15, 0.45]
-    "LabArchives / eLabFTW": [0.66, 0.15]
-    "iLab / PPMS": [0.78, 0.22]
-    "Quartzy": [0.6, 0.2]
-    "Slack + spreadsheets": [0.8, 0.08]
-    "Zotero": [0.3, 0.1]
-```
+| Alternative | Documented overlap | Correction-to-release invariant | Decision metric |
+| --- | --- | --- | --- |
+| [Scispot Scibot](https://www.scispot.com/scibot) | Specialist agents, governed data, approved digital work | Not established from reviewed page | Compare the same corrected-input release task; at least five pitch concepts overlap. |
+| [Cenevo](https://www.cenevo.com/ai/ai-agents) | Lab agents and human review; [MCP](https://www.cenevo.com/ai/mcp-servers) access | Not established from reviewed pages | Compare review and release on a changed record, not agent count. |
+| [Edison](https://edisonscientific.com/) | Research investigations and Slack/Teams collaboration | Not established from reviewed page | Compare a local resource and result-release transition. |
+| [Calira](https://calira.co/pricing/academia) | Small-lab booking, rules and AI workflows | Not established from reviewed page | Try the same resource conflict; booking alone is not novel. |
+| [Slack](https://slack.com/help/articles/33076000248851-Work-with-AI-agents-in-Slack), [Teams approvals](https://learn.microsoft.com/en-us/power-automate/teams/native-approvals-in-teams) and files | Chat agents and approval surfaces | Requires task-specific configuration; behavior not established here | Time setup and the same correction task before claiming an advantage. |
+| LabQuorum | Planned local Mattermost + Switch, ledger and dependency checks | Planned: reject stale release and require a fresh decision | Show wrong-person decision has zero effects; corrected input blocks release; current result receives a new decision. |
 
-No claim of an empty quadrant or a durable moat: Benchling, Labguru and LabVantage all shipped in-platform agents in 2026. Our position is **high accountability with bounded autonomy, inside the chat the lab already uses, at academic cost.**
+No LabQuorum software license charge is proposed. Provider usage, machine/uptime, storage and backups, support and lab data maintenance are extra; total cost is unmeasured. TCO = provider + hosting + storage/backup + operator hours x hourly value. For illustration, 2 h/month at $25/h is $600/year before compute. Name a deployment and backup owner and compare against the marginal cost of any existing campus license.
+
+### Related work and what is new
+
+Scientific agent teams and human guidance are established prior work: [Agent Laboratory](https://aclanthology.org/2025.findings-emnlp.320/) supports co-pilot operation, [AI co-scientist](https://arxiv.org/html/2502.18864v1) uses expert feedback, and [Virtual Lab](https://www.nature.com/articles/s41586-025-09442-9?error=cookies_not_supported) models human-guided meetings. Neither specialist role names nor a scientist in the loop is our invention.
+
+Traceable reports also predate this project: [Kosmos](https://arxiv.org/html/2511.02824v1) links statements to analyses or literature; [CiteCheck](https://arxiv.org/html/2605.27700v1) studies citation integrity and [ALCE](https://aclanthology.org/2023.emnlp-main.398/) separates citation quality from answer correctness. A resolving DOI is a bibliographic signal, not evidence of claim support.
+
+[CaMeL](https://arxiv.org/html/2503.18813v1), [AgentCap](https://arxiv.org/html/2611.00729v1) and [CapScope](https://arxiv.org/html/2609.08371v1) study enforcement and scoped authority; [build systems](https://simon.peytonjones.org/assets/pdfs/build-systems-original.pdf), [PROV-O](https://www.w3.org/TR/prov-o/) and [workflow-run RO-Crate](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0309210) establish dependency and provenance concepts. LabQuorum claims no new security or provenance algorithm. An optional base RO-Crate view is contingent on core checks and 1.5-2 h slack; no workflow-run profile compliance is claimed without validation.
+
+The proposed contribution is an application-level combination: a student and agents prepare a lab action in a Switch room, an eligible human authorizes its exact revision, and changed evidence blocks current release while exposing the needed review or recomputation. [Switch's payments room](https://docs.switchagents.ai/switch-rooms/building/payments-room) already supplies collaboration, role routing and restricted agents; Switch supplies identity and approval delivery, while LabQuorum proposes the lab ledger, dependencies and release invariants. We do not claim to be first or unique. Test wrong-person refusal with zero effects, changed evidence preventing release until a new decision, and reproduction from included inputs, code and parameters. Also test harmless data reordering, missing evidence and reversed evidence ([counterfactual evaluation](https://arxiv.org/html/2610.04915v1)); these are local acceptance tests, not general scientific correctness guarantees.
 
 ## 1.4 Unique selling point
 
-**"Agents do the legwork in the room; the PI's click makes it real."** Four differentiators, each demonstrated on camera:
+**When a lab corrects an input, LabQuorum aims to show affected outputs and decisions, then route a new release decision through Switch.** Booking is a prerequisite scenario; an approved purchase request stays in the demo ledger and places no real order. No receipt means no stock increase. Synthetic single-run results are descriptive, with no biological efficacy inference.
 
-1. **The workspace is the lab's chat.** Mattermost today; Slack, Teams, Discord or Telegram via the same Switch bridges. The new behavior is "add an @mention", not "adopt an app".
-2. **Authority is structural, not prompted.** Proposer agents physically lack commit tools. The gate agent's commit tools raise Switch approval cards that only the PI may answer. A prompt injection cannot click a button.
-3. **Consent is bound to exactly what was approved.** An approval covers one request revision and hash. Change the data and every dependent figure, paragraph and packet goes stale until re-run and re-approved (the "consequence-aware" lab).
-4. **Trust is computed, not asserted.** Citations pass a deterministic verifier (DOI resolves; title, first author and year match; not retracted; version of record noted) before any draft accepts them. Numbers in drafts come from recorded runs.
+1. **Shared context:** the demo uses local Mattermost. Existing-chat adoption and other bridges are hypotheses or platform capabilities until tested. Time a clean install, account linking and data entry separately; the existing onboarding steps alone total 10.5 minutes.
+2. **Bounded authority:** proposer tools and the gate are separated. Under the tested configuration, a permitted linked human answers through Switch, by card or supported text. S2, S3b and S3c must prove wrong-person refusal, a fresh decision after session permission and no agent self-approval before any guarantee. Prompt injection immunity is not claimed.
+3. **Revision and consequence:** a canonical decision snapshot must show meaningful action details and match the ledger revision and hash. Changed dependencies make affected outputs stale; release through LabQuorum is planned to refuse them until recomputed and newly approved. Historical artifacts remain readable; no claim is made about exports outside the system.
+4. **Bounded evidence:** the verifier aims to reject known fixture fabrications, mismatches and indexed retractions; unresolved cases remain unresolved. Wording: "Metadata matched; no retraction signal found in the checked sources as of DATE. Claim support not established." Drafts link to runs; interpretation needs human review. Only claim numeric enforcement after altered n, effect, CI and p are each rejected or regenerated (4/4). Four known retraction fixtures cannot establish population recall.
 
-### Why chat-native multi-agent plus human approvals is the right shape
-
-- **Labs already coordinate in chat.** The PI, student and lab manager negotiate changes together and each can see why work stopped.
-- **Several narrow agents beat one omnipotent agent** for least privilege, for cost (cheap agents for cheap jobs) and for legibility (the room shows who did what). Switch addressing makes "the others do not act" a platform guarantee.
-- **Approvals belong where the context is.** The PI sees the request, the justification, the conflict and the alternative in the same thread they click Allow in, and the lab sees the outcome.
-- **AI-scientist systems aim to remove humans; academic labs are required to keep them** (PI responsibility, biosafety, IRB). Governance is the feature.
+Narrow agents make tool boundaries and handoffs explicit, but cost, latency and completion benefits are unmeasured. Retain the proposer/gate separation; the optional scribe is first to cut. If both configurations already work, spend at most 0.5 h comparing the same tasks with four versus five agents, including calls, provider use, latency and completion; one fewer agent reduces configured count by 20%, not necessarily cost by 20%. Human supervision already exists in prior systems; actual institutional approval duties and roles must be supplied by the lab.
 
 ### What we deliberately do NOT build
 
 | Not building | Why |
 | --- | --- |
-| A full ELN, LIMS, or 21 CFR Part 11 compliance | Incumbents do it; we export (eLabFTW stretch) |
+| A full ELN, LIMS, or 21 CFR Part 11 compliance | Incumbents cover these needs; eLabFTW export is an unimplemented stretch |
 | Our own chat client, web dashboard or dossier app | Switch plus Mattermost is the UI; a second UI dilutes "would it stop working without Switch" |
 | Autonomous experiment execution or robot control | Unsafe, out of scope; physical work stays human |
-| Our own model, fine-tuning, vector database | Bring-your-own provider via Switch; structured ledger beats embeddings here |
-| Institutional procurement, billing, iLab/PPMS integration | Institution-specific; we draft orders and never claim to book a real core resource |
-| Storing human-subjects data | Blocked by policy in the ledger ([07](07-edge-cases.md)) |
+| Our own model, fine-tuning, vector database | Bring-your-own provider via Switch; a structured ledger supports the explicit dependency tests |
+| Institutional procurement, billing, iLab/PPMS integration | Institution-specific; the demo records purchase requests and does not place orders or book a real core resource |
+| Storing human-subjects data | Synthetic or public nonsensitive data only; a policy check is not an institutional confidentiality guarantee ([07](07-edge-cases.md)) |
 | A custom scheduler, control plane, multi-tenant SaaS, SSO | Not needed for the workflow; manual rituals first |
 | A Wispr speech pipeline | Wispr Flow is the user's dictation layer; we never process audio |
 
 ### Long-term hypothesis (not in the pitch as fact)
 
-A lightweight coordination layer a PI or department adopts on top of the chat and records systems it already has. Pricing and willingness to pay are UNVERIFIED; no revenue projections appear in the submission.
+A lightweight coordination layer is a hypothesis, not a demonstrated integration with existing records; data may need manual reconciliation. Pricing and willingness to pay are UNVERIFIED. Future paid hosting or support substantially dependent on Switch requires a separate [license assessment](https://github.com/sandbox-quantum/switch/blob/main/LICENSE); no paid-pilot or revenue claim is made.
