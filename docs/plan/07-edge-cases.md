@@ -154,7 +154,7 @@ Back to the [master plan](README.md). Each row has detection, handling, what the
 | W06 | Docker out of memory | Mattermost unhealthy | 4 GB in README | Error page |Manual; M-05 |
 | W07 | Defender slows installs | Timing | Optional exclusion | n/a |Manual; M-05 |
 | W08 | Shift+Insert paste in terminals | Paste mismatch | Use Windows Terminal | n/a | M-01 |
-| W09 | Native server path fails (issue #1335) | Spike S0 | Separate pinned Linux Compose server, then Connect to existing server | n/a |S0; M-05 |
+| W09 | Native server path fails (issue #1335) | Spike S0 | Preflight separate Linux Compose server and pin actual artifacts before Connect to existing server; unavailable if unverified | n/a |S0; M-05 |
 | W10 | Port conflict | Health probe | Name the port | Doctor error | I-32 |
 | W11 | Room placements exhaust RAM | Spike S6 measurement | Stop unused sessions; retain tested core and require 20% RAM headroom | n/a |S6; M-05 |
 | W12 | Relative `.mcp.json` path fails under Console | Spike S2 | Generated absolute `.mcp.json` | n/a |S2; M-05 |
@@ -173,3 +173,4 @@ Back to the [master plan](README.md). Each row has detection, handling, what the
 | P08 | Wispr screenshot shows unrelated private app names | Review | Crop identifying details, keep stats |Checklist; M-05 |
 
 The catalogue contains 22 + 12 + 16 + 14 + 10 + 12 + 8 + 6 + 12 + 8 = 120 planned cases; referenced manual, CI, spike and rehearsal checks require recorded evidence. That is 120 planned cases, not evidence of executed coverage. Manual and rehearsal references require recorded observations; unsupported capabilities remain unshipped.
+

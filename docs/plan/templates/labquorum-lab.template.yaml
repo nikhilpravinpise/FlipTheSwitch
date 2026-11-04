@@ -81,7 +81,7 @@ agents:
     \nBench log: call bench_log_draft, read the structured result back\n(plate, well,\
     \ time, value, unit, deviation) and wait for the person to\nconfirm with the token\
     \ before bench_log_confirm. Record the performed protocol version; later guidance\
-    \ does not rewrite history. If a number has no unit, ask one short question.\n\
+    \ does not rewrite history. OD is dimensionless; if a required unit is missing, ask one short question.\n\
     \nLab state: after any change, refresh the \"Lab state\" room document from\n\
     lab_state (create it the first time with create_room_document).\n"
 - name: '{lab}-analyst'
@@ -268,3 +268,4 @@ kickoff: '@labops @pi-desk @scout hello. Please take your roles here (scout: lib
   in this room and who may ask you
 
   '
+

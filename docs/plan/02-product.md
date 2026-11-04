@@ -53,7 +53,7 @@ The four-agent core omits `@scribe`; the five-agent configuration below is roadm
 
 `@labops`:
 
-> You coordinate the lab's instruments, inventory, protocols and bench log. You can only PROPOSE changes. For a booking: check training, availability and maintenance; if the slot conflicts, propose the nearest free slot of the same length and name the conflicting booking's owner. The demo requests 60 minutes within 14:00-17:00; the expected alternative is 15:45-16:45 after the 15-minute gap. Call `propose_booking`, post a 4-line summary (who, what, when, why), then hand the request id to @pi-desk with `send_targeted_message`. For reagents, compare the protocol's required amounts with stock; if stock is below need plus the reorder threshold, call `propose_order`. For protocols, run `protocol_hazard_scan`; list any toxic, carcinogen, BSL-2 or higher, or human-subjects flag in your summary, and send releases to @pi-desk. For bench notes, call `bench_log_draft`, read the structured result back (sample, time, value, unit, deviation) and wait for the person to confirm with the token before `bench_log_confirm`. Ask one clarifying question if a number has no unit.
+> You coordinate the lab's instruments, inventory, protocols and bench log. You can only PROPOSE changes. For a booking: check training, availability and maintenance; if the slot conflicts, propose the nearest free slot of the same length and name the conflicting booking's owner. The demo requests 60 minutes within 14:00-17:00; the expected alternative is 15:45-16:45 after the 15-minute gap. Call `propose_booking`, post a 4-line summary (who, what, when, why), then hand the request id to @pi-desk with `send_targeted_message`. For reagents, compare the protocol's required amounts with stock; if stock is below need plus the reorder threshold, call `propose_order`. For protocols, run `protocol_hazard_scan`; list any toxic, carcinogen, BSL-2 or higher, or human-subjects flag in your summary, and send releases to @pi-desk. For bench notes, call `bench_log_draft`, read the structured result back (sample, time, value, unit, deviation) and wait for the person to confirm with the token before `bench_log_confirm`. OD is dimensionless; ask one clarifying question only when a required unit is missing.
 
 `@pi-desk`:
 
@@ -92,7 +92,7 @@ Roadmap templates (two, because a template that creates agents refuses to run ag
 
 ## 2.4 Scope across the research lifecycle
 
-The binding solo scope is one room, four agents (`labops`, `scout`, `pi-desk`, `analyst`), one booking request, one pinned citation fixture, one synthetic CSV, a descriptive figure and a small stale check. The broader lifecycle below is roadmap unless explicitly included in that core; protocol release, inventory orders, general bench parsing, external rooms and other providers are roadmap. Release refusal and fresh reapproval are conditional on the complete tested cycle. Cut literature and assay if the critical path slips.
+The funded solo baseline is one room, four agents (`labops`, `scout`, `pi-desk`, `analyst`) and one booking request. Citation, synthetic analysis and stale detection are deferred unless separately scheduled and tested. The broader lifecycle below is roadmap; protocol release, inventory orders, general bench parsing, external rooms and other providers are roadmap. Release refusal and fresh reapproval are conditional on the complete tested cycle.
 
 | Stage | What LabQuorum does | Agent | Tier |
 | --- | --- | --- | --- |
@@ -106,7 +106,7 @@ The binding solo scope is one room, four agents (`labops`, `scout`, `pi-desk`, `
 | Bench log | Draft from text or dictation, structured read-back, token confirmation, linked to the released protocol version | labops | Roadmap |
 | Data capture | CSV attached in chat; `register_dataset` (SHA-256, schema, sensitivity); strict validation with row-level errors | analyst | Core: one synthetic CSV |
 | Analysis | `run_analysis` descriptive recipe for one synthetic plate; inferential recipes and `run_script` are roadmap | analyst | MVP (one recipe) |
-| Results review and stale cascade | Every run, figure and draft section records its parents' hashes; a changed dataset or recipe marks computational descendants stale; critical protocol changes require review without rewriting performed history | analyst, scribe, pi-desk | Core stale detection; release enforcement conditional |
+| Results review and stale cascade | Every run, figure and draft section records its parents' hashes; a changed dataset or recipe marks computational descendants stale; critical protocol changes require review without rewriting performed history | analyst, scribe, pi-desk | Deferred stale detection; release enforcement conditional |
 | Approvals | Certified fresh Switch decision per gated call; ledger lifecycle with revision, hash, hold expiry | pi-desk | **MVP** |
 | Paper drafting | Methods from the protocol version, results from runs, related work from the library; Markdown; PDF via Pandoc if installed | scribe | Fixed results paragraph only; methods and PDF roadmap |
 | Results packet | `finalize_packet`: minimal currentness check and exact-revision release decision; ZIP formatting is polish | pi-desk | Conditional roadmap |
@@ -183,3 +183,4 @@ The listed estimates sum to at least 10.5 minutes before troubleshooting; time a
 **Review metric:** one uncoached participant locates the current protocol, understands one decision, identifies stale evidence and recovers after correction; record active PI seconds, clarifications and completion. A hypothetical 20 decisions/day at 60 seconds costs 20 minutes/day, not a measured workload. Room documents brief agents; creators update their own documents, and agents post readable status or versioned Markdown attachments. Test current protocol discovery in under 30 seconds.
 
 For mention-routing tests, after each room creation run and verify `!follow-ups off` and `!unassign-agent` where supported; an assigned main agent or enabled follow-ups can receive unmentioned messages. In a quiet unassigned room without a mention pill, test trailing period gives zero addressed events while comma and colon each give one; recreate and repeat. Human approval-answer routing is a separate path.
+

@@ -1,44 +1,44 @@
 # LabQuorum: master plan
 
-Request a shared lab resource in a Switch room, review the exact proposal, and see which results become stale after corrected data. The target is a solo Windows build using Wispr Flow Pro. Submission is through the website Submit form by Saturday 2026-11-07 23:59 IST (18:29 UTC); target 19:00 IST, leaving 4 h 59 min. Inspect the form manually before relying on its fields.
+A researcher asks for a shared instrument in a Switch room; the agent proposes a conflict-free slot and an eligible human reviews the exact decision. This is a solo Windows build with Wispr Flow Pro redeemed. Submit through the website by Saturday 2026-11-07 23:59 IST; the working target is 19:00 IST, leaving 4 h 59 min contingency. Inspect the authenticated form in the next available session before packaging.
 
-## Pitch and mechanism
+## Mechanism and scope
 
-A student asks `@labops` for a plate-reader slot. It checks the seeded rules and hands a proposal to `@pi-desk`. Switch and the provider enforce the eligible human decision on the certified installed runtime; the ledger compares the visible canonical decision payload and revision in its transaction and enforces lab invariants. The builder plays both student and PI. If the native gate fails certification, use a separately tested steward or disable binding commits. Direct invocation by the same OS user is outside this boundary; a ledger hash is not an authenticated human receipt. Each binding request needs its own decision; use Allow once.
+`@labops` checks seeded booking rules and routes a proposal to `@pi-desk`. A native Switch permission card is usable for a binding booking only after the installed runtime passes the identity, effective-tool, repeated-consent and full-card tests. The transaction compares the canonical action-specific payload, hash and revision and enforces booking invariants. Use Allow once for each decision; fail closed on truncated or oversized cards. A ledger hash is not an authenticated human receipt, and a malicious process running as the same OS user is outside this boundary. If certification fails, disable binding commits and show a proposal-only workflow; a separately tested steward is currently unfunded. See [architecture](03-architecture.md) and [tests](06-testing.md).
 
-The four-agent, one-room core is `@labops`, `@scout`, `@pi-desk` and `@analyst`: a booking, a pinned citation fixture, a synthetic CSV, a descriptive figure and a small stale check. Helpers can record observations and drafts. Booking is the only binding core action; local purchase-request approval, protocol release and final research release are roadmap and would require a permitted linked human decision through the tested gate. A local purchase request does not place an order or change stock. If the schedule slips, cut literature and assay first. If implemented and tested, changed evidence blocks release through LabQuorum until a fresh eligible-human decision on current artifacts; stale artifacts remain readable. Otherwise demonstrate stale detection only. Citation metadata and retraction signals do not establish claim support.
+The funded baseline is booking only, in one room with `@labops`, `@scout`, `@pi-desk` and `@analyst`. Literature, synthetic analysis, stale detection, inventory and release are deferred until separately scheduled and tested. The builder plays the student and PI using distinct accounts. An expanded demo may show stale descendants after a correction; claiming blocked release and renewed approval requires the complete, separately tested cycle. Citation metadata and retraction signals do not prove claim support. See [scope](02-product.md) and [demo](04-demo.md).
 
-## What is new
+## What could be new
 
-Switch already supports agent rooms, routing and approvals; human review in scientific agents is also prior art ([Switch](https://github.com/sandbox-quantum/switch/blob/main/docs/official/using/hand-off-work.md), [Agent Laboratory](https://arxiv.org/html/2501.04227v1)). The proposed contribution is their lab-specific combination: a visible eligible-human decision bound to a revision plus a dependency trail that can make a corrected dataset invalidate its downstream result. Its advantage over existing tools is a hypothesis, not measured demand or a proven unique feature; see the [bounded comparison](01-problem-market-usp.md). Crossref supplies indexed retraction signals, not a complete guarantee of correctness ([Crossref](https://www.crossref.org/blog/retraction-watch-retractions-now-in-the-crossref-api/)).
+Switch already provides agent rooms and routing, and scientific-agent systems already use human feedback ([Switch](https://github.com/sandbox-quantum/switch/blob/main/docs/official/using/hand-off-work.md), [Agent Laboratory](https://aclanthology.org/2025.findings-emnlp.320/)). The hypothesis is a lab-specific combination of a decision bound to a revision and a dependency trail connecting corrected evidence to a later release decision. This combination is proposed, not established as unique or superior; the funded booking prototype does not demonstrate that full loop. The [market comparison](01-problem-market-usp.md) describes the evidence and its limits. Crossref exposes retraction signals, whose absence does not prove a source reliable ([Crossref](https://www.crossref.org/blog/retraction-watch-retractions-now-in-the-crossref-api/)).
 
 ## Decisions
 
-| Decision | Selected | Detail |
+| Decision | Choice | Detail |
 | --- | --- | --- |
-| Human gate | Certified native card; separately tested steward or proposal-only fallback | [Architecture](03-architecture.md) |
-| Scope | One room and four agents; fifth agent and second room are roadmap | [Product](02-product.md) |
-| Execution | Claude Code, Python, SQLite; fixed descriptive analysis | [Architecture](03-architecture.md) |
-| Evidence | OpenAlex and Crossref; pinned labeled fixture, human claim review | [Testing](06-testing.md) |
-| Demo | 3:50 target, 4:00 internal ceiling; truthful conditional stale sequence | [Demo](04-demo.md) |
-| Delivery | Friday baseline, Saturday clean room and final recording, submit by 19:00 | [Schedule](08-build-schedule.md) |
-| Tradeoffs | Explicit weighted alternatives, costs, risks and revisit triggers | [Decision record](10-decision-record.md) |
+| Approval | Certified native card; proposal-only if certification fails; steward unfunded | [Architecture](03-architecture.md) |
+| Scope | One room, four agents, booking-only funded baseline | [Product](02-product.md) |
+| Build | Claude Code, Python, SQLite and MCP, with gate-only CLI fallback only if separately tested | [Architecture](03-architecture.md) |
+| Research evidence | OpenAlex and Crossref, pinned labeled fixtures and separate human claim review; deferred | [Testing](06-testing.md) |
+| Demo | Booking-only cut; expanded evidence and stale sequence only if built and tested | [Demo](04-demo.md) |
+| Delivery | Friday baseline; Saturday clean room, recording and website submission | [Schedule](08-build-schedule.md) |
+| Alternatives | Weighted choices and revisit triggers | [Decision record](10-decision-record.md) |
 
 ## Numbers and first actions
 
-The Thu 00:20 reforecast is 38 h 10 min scheduled work including 1 h 55 min defect slack and 30 min submission; rebase on the actual clock. Full scope is estimated at 71-109 h. The proposed catalogue has 186 planned test IDs and 120 planned edge cases, not executed results. The schedule has S0-S8 with S3 split into four checks, 12 named checks in total; S5 is deferred. A 3:50 video is the target, not a published event limit. The scorecard is 68.5/100 baseline and 82.75 only after all evidence gates; reduced scope is independently estimated at 66.5 under its stated assumptions ([09](09-submission-and-risks.md)).
+The Thu 00:20 booking-only forecast is 38 h 10 min including 1 h 55 min defect slack and 30 min submission; literature and assay are deferred. Rebase on the actual clock; elapsed time cannot be recovered. Full scope was estimated at 71-109 h. The catalogue contains 187 planned test IDs and 120 planned edge cases, not executed results. The 3:50 expanded video and 2:00 booking-only cut are internal targets, not published limits. The unbuilt plan has no earned score; conditional baseline, unfunded stretch and reduced scenario projections are 68.5, 82.75 and 66.5 respectively under the explicit assumptions in [submission and risks](09-submission-and-risks.md). The booking-only cut has no numerical projection.
 
-1. Wispr Flow Pro is redeemed. Capture a baseline Insights screenshot and test mention-first dictation; final Insights by Saturday 18:00, attach and check by 18:30. Free Windows defaults warn above 2,000 and block above 5,000 weekly words, subject to account/platform changes ([Wispr](https://docs.wisprflow.ai/articles/4760791189)).
-2. Manually inspect the Submit form and record actual fields; verify time remaining. Run S0 and identity checks, then certify effective provider tools, permissions and fresh decisions on the installed versions. Record actual failures and timings.
-3. Build and test the booking loop first. Record one causal baseline Friday, preserve the submission buffer, and label synthetic data, builder-played personas and replayed API responses.
+1. Inspect the Submit form and record its actual fields and limits. Capture the Wispr Insights baseline and test mention-first dictation; capture final Insights by Saturday 18:00 and attach and check by 18:30.
+2. Rebase the [schedule](08-build-schedule.md), run server, identity and permission spikes, build the behavioral red harness, and record versions, results and timings. The self-host fallback remains unavailable until its separate preflight succeeds.
+3. Implement and test the booking loop and the mandatory decision gates. Record a causal Friday baseline, label synthetic material and role-play, and preserve the submission window. If the gate fails, demonstrate proposals only.
 
 ## Plan index
 
 | File | Contents |
 | --- | --- |
-| [01](01-problem-market-usp.md) | Competitor and incumbent landscape and bounded comparison |
+| [01](01-problem-market-usp.md) | Market, prior art and bounded claims |
 | [02](02-product.md) | People, agents, scope and cut lines |
-| [03](03-architecture.md) | Authority boundary, data model, APIs and analysis |
+| [03](03-architecture.md) | Authority boundary, state, APIs and analysis |
 | [04](04-demo.md) | Script, evidence and fallbacks |
 | [05](05-wispr-flow.md) | Voice workflow and evidence |
 | [06](06-testing.md) | Planned tests and evaluation |
@@ -47,4 +47,4 @@ The Thu 00:20 reforecast is 38 h 10 min scheduled work including 1 h 55 min defe
 | [09](09-submission-and-risks.md) | Submission, scoring and risks |
 | [10](10-decision-record.md) | Weighted decision record |
 | [Templates](templates/README.md) | Draft templates and fixtures |
-| [Reviews](../review/round1/) | Findings, editor changes and integration log |
+| [Reviews](../review/) | Findings, editor changes and integration logs |

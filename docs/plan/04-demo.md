@@ -4,7 +4,7 @@ Back to the [master plan](README.md).
 
 ## 4.1 The story
 
-Rao Lab, recording day. Maya wants to know whether green-tea catechin EGCG reduces E. coli biofilm across illustrative concentration levels. A 3:50 edited video targets a real Switch decision, a booking, a planted citation check, synthetic analysis and stale descendants after a correction. Release blocking and renewed PI approval appear only if implemented and tested. Citation identity and retraction signals do not establish claim support.
+Rao Lab, recording day. Maya wants to know whether green-tea catechin EGCG reduces E. coli biofilm across illustrative concentration levels. The funded booking-only cut targets a real Switch decision and booking. A 3:50 expanded video adds a planted citation check, synthetic analysis and stale descendants only if separately built and tested. Release blocking and renewed PI approval appear only if implemented and tested. Citation identity and retraction signals do not establish claim support.
 
 Honesty rules, visible on screen and in the README:
 
