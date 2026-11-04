@@ -1,93 +1,75 @@
 # 8. Build schedule
 
-Back to the [master plan](README.md). All times IST. Starts Wednesday 22:30, ends at the hard cutoff **Saturday 7 Nov 23:59**. About 45 focused hours; sleep is scheduled, not optional. Every build block is test-first: the listed tests are written and seen red before the code. Every decision goes into `docs/adr/` (dictated).
+Back to the [master plan](README.md). All times IST; hard cutoff **Saturday 7 Nov 23:59**. The brief's starting assumption is Wed 4 Nov 22:45; the review checkpoint was Thu 5 Nov 00:20. Rebase each remaining block on the actual clock and record actual time; past slots are not available. Sleep and breaks are excluded from productive hours. The original blocks total 40.75 hours from 22:45, not 45; full scope is estimated at 71-109 hours ([engineering review](../review/round1/engineering.md)). Estimates below are assumptions, not measured velocity.
 
 ## 8.1 Day-1 spikes with go/no-go rules
 
-Each spike is time-boxed, produces a screenshot and a one-paragraph result in `docs/adr/000-spikes.md`, and has a pre-decided fallback.
+Record installed versions, effective configuration hashes/revision, room/session/tool-call IDs, request revision/hash, displayed decision and ledger outcome in `docs/adr/000-spikes.md` and `docs/test-evidence.md`. Build the minimal two-person Playwright harness and observe a behavioral red before binding commit implementation (EN-03). Each box includes its result; stop on failure.
 
-| Spike | Question | Pass | Fail -> decision | Box |
-| --- | --- | --- | --- | --- |
-| **S0** Server path | Does Console on Windows run a local server with bundled Mattermost and a Claude Code agent that answers in a room? | Official smoke test passes | Switch between the native and Docker-backed paths (issue [#1335](https://github.com/sandbox-quantum/switch/issues/1335)); after 90 min on one path, try the other; last resort WSL2 or a small Linux VM as the agent host | 90 min |
-| **S1** Second person | Can a second Mattermost user address an `anyone` agent, with and without a Switch claim? | Claimed user is answered | Create a Switch user plus claim for every persona; document in README | 30 min |
-| **S2** Folder MCP + ask | Do an agent folder's `.mcp.json` (toy `ping`, `commit_ping`) and `.claude/settings.json` `ask` rule apply under Console, raising a Switch card? Is `auto_mode: false` honored? | Card appears for `commit_ping` only | CLI variant with `Bash(uv run lq commit:*)` in `ask`; then the steward fallback ([03](03-architecture.md#decision-rules-after-the-spikes)) | 60 min |
-| **S3a** Wrong clicker | What happens when a non-owner clicks the card? | Refused, card stays open (pin exact text) | Escalate to organizers; steward fallback; never claim a guarantee we lack | 15 min |
-| **S3b** Session allow | After "Allow for this session" on one call, does the next `commit_ping` raise a fresh card? | Fresh card | Add the gate hook returning `ask`; retest; if still leaking, steward fallback for commits | 30 min |
-| **S3c** Agent "yes" | Does an agent's bare "yes" in the card thread settle the card? | Card stays open | Strengthen rule 8, report upstream, steward fallback | 15 min |
-| **S4** Templates | Do the lab and project templates import (group, aliases, roles, docs, kickoffs, agent-typed params, placeholders in `directory`)? | Both create what they declare | Set aliases, roles and docs by hand after creation; simplify the template; document | 45 min |
-| **S5** Codex on Windows | Does a Codex `@analyst` run and call MCP tools? | Works | Claude Code for all five | 20 min |
-| **S6** Capacity | RAM, CPU and token use of five concurrent sessions plus Docker Mattermost on this laptop | Fits with headroom | Cut line A (drop `@scribe`); cheaper model in development | 20 min |
-| **S7** Scholarly access | OpenAlex key (starts new-account pacing), Crossref polite pool, pick and pin the retracted DOI and 6-8 real EGCG papers | Pinned in fixtures | Use cassettes recorded with whatever access works | 30 min |
-| **S8** Submission form | Open the website's Submit form: which fields (repo, video, README, track, Wispr screenshot, blog, social)? limits? | Field list in `docs/adr/000-spikes.md` | Ask in WeMakeDevs Discord | 10 min |
+| Spike | Box | Pass / decision |
+| --- | ---: | --- |
+| S0 server | 90 min native + separately budgeted 60-90 min fallback if needed | Path A: fresh Windows Console native server and Docker Mattermost; run the installed Console smoke flow and verify one agent replies. Path B: follow the pinned [self-host guide](https://github.com/sandbox-quantum/switch/blob/main/docs/official/deploy/self-host.md) for a separate Linux/Docker Compose server and Mattermost, verify health, bridge URL and PI ownership, then Console **Connect to an existing server** and get one reply. Preflight B before relying on it; the precise installed commands/health URL are UNVERIFIED until recorded. No native/Docker toggle is assumed. If neither passes, stop binding demo. |
+| S1 identity | 20 min | Open/unclaimed helper allowed, unclaimed owner-scoped PI refused, claimed owner allowed (EDGE-04). |
+| S2 MCP and settings | 60 min | Separately test MCP discovery and effective permission enforcement. If only MCP launch fails and enforcement passes, try a separate gate-only CLI settings profile without blanket Bash deny and rerun the entire approval suite. If settings enforcement fails, CLI is not a remedy; select steward or disable commits. [Permission precedence](https://code.claude.com/docs/en/permissions) checks deny first. |
+| S3a-c approval | 60 min | Wrong person refused, two same-session calls each gated, agent yes ignored; inject hook missing/crash/bad JSON/timeout/bypass and unknown mode. Record card and ledger separately. |
+| S3d boundary | 75 min | Inventory effective offered tools and policies; reproduce then block same-owner policy widening, unexpected native and MCP tools, forbidden read/shell/attachment; 0 unauthorized changes or commits. Include real runtime mode test. |
+| S4 templates | 30 min | Import the one-room MVP template, check members and manual fallback; defer the second template. |
+| S5 Codex | 0 min | Deferred: use one verified provider; optional only after all gates and deliverables. |
+| S6 capacity | 20 min | Measure actual session and MCP process count, peak RAM and latency with active rooms and after three takes; stop old sessions, serialize tests, require >=20% RAM headroom. Two rooms may create 3 + 5R placements, not merely five. |
+| S7 literature | 20 min | Pin only the chosen real, retracted and intentionally fabricated fixtures, label each; otherwise omit citation beat. |
+| S8 submission | 10 min | Inspect website Submit form, record actual fields, limits and screenshot route; unknown fields remain UNVERIFIED. |
+
+Decision by end of S3: native card only if all installed-runtime gates pass. A trusted steward is an alternative only if its identity, replay, revision, expiry, gap and outbox tests pass; allocate 3-5 hours from optional work and rewrite every affected deliverable. Otherwise disable binding mutations and explicitly present a proposal-only demo. A same-OS-user direct invocation is outside the native boundary; record the probe and do not claim ledger-authenticated approval.
 
 ## 8.2 Hour by hour
 
-### Wednesday 4 Nov
+Reforecast at Thu 00:20 checkpoint: 38 h 40 min scheduled work including 1 h 55 min defect slack and 30 min submission; 4 h 59 min later calendar contingency remains after the target submission. The schedule is contingent on S0 path A; path B costs 60-90 min and consumes defect slack or displaces the citation beat. No unpaid overlap between tasks. Windows are illustrative and must be shifted if the actual start differs.
 
-| Time | Work | Done when |
-| --- | --- | --- |
-| 22:30-23:00 | Wispr baseline Insights screenshot; load dictionary and snippets ([05](05-wispr-flow.md)); S7 OpenAlex key; S8 inspect the Submit form; star the Switch repo | Dictating into VS Code and Mattermost |
-| 23:00-00:15 | **S0**: Docker Desktop (4 GB), Switch Console v0.40.1, local server with Mattermost, `claude auth login`, smoke test | An agent answers in a room |
-| 00:15-01:00 | **S1**, start **S2** with a toy MCP server | Results written |
-| 01:00-08:00 | Sleep | |
+| IST | Work and checkable exit | Hours |
+| --- | --- | ---: |
+| Thu 00:20-01:00 | S8, baseline Wispr screenshot, begin S0 | 0.67 |
+| Thu 01:00-08:00 | Sleep | 0 |
+| Thu 08:00-09:30 | Finish S0 and S1; one responding agent and identity table | 1.5 |
+| Thu 09:30-11:30 | S2 and S3a-c, build minimal browser harness and red test | 2 |
+| Thu 11:30-12:45 | S3d permission boundary; ADR choice | 1.25 |
+| Thu 12:45-13:30 | Lunch | 0 |
+| Thu 13:30-16:30 | Minimal booking rules, transactional store and race test | 3 |
+| Thu 16:30-18:30 | MCP profiles, real proposal, wrong-person and PI decision end to end | 2 |
+| Thu 18:30-19:30 | Break | 0 |
+| Thu 19:30-22:30 | S4, seed, basic UI and initial evidence; critical loop green | 3 |
+| Thu 22:30-Fri 07:00 | Sleep | 0 |
+| Fri 07:00-10:00 | Minimal citation verifier and pinned fixtures (S7); cut if core loop not green | 3 |
+| Fri 10:00-12:00 | Synthetic descriptive assay, one corrected well and stale flag, reproducible output; no biological inference | 2 |
+| Fri 12:00-12:45 | Lunch | 0 |
+| Fri 12:45-15:45 | Selected end-to-end tests, recorded models, clean fixture reset; S6 | 3 |
+| Fri 15:45-17:45 | README, setup and test evidence | 2 |
+| Fri 17:45-18:45 | Break | 0 |
+| Fri 18:45-20:45 | Baseline rehearsal and recording with future valid slot | 2 |
+| Fri 20:45-22:45 | Blog, voice log, submission draft; feature freeze | 2 |
+| Fri 22:45-Sat 07:00 | Sleep | 0 |
+| Sat 07:00-09:00 | Run actual MVP gate, record timings and failures | 2 |
+| Sat 09:00-10:00 | Clean-room setup against README | 1 |
+| Sat 10:00-12:00 | Final takes or keep baseline | 2 |
+| Sat 12:00-12:45 | Lunch | 0 |
+| Sat 12:45-14:45 | Edit, caption, upload and verify logged out | 2 |
+| Sat 14:45-16:00 | README, blog and links | 1.25 |
+| Sat 16:00-17:55 | Defect and overrun slack, no features | 1.92 |
+| Sat 17:55-18:30 | Final Wispr Insights screenshot, package and link audit | 0.58 |
+| Sat 18:30-19:00 | Submit via website Submit form and save confirmation | 0.5 |
+| Sat 19:00-23:59 | Submission contingency only | 0 |
 
-### Thursday 5 Nov
-
-| Time | Work (tests first) | Milestone |
-| --- | --- | --- |
-| 08:00-09:45 | Finish **S2**, **S3a-c**, **S4**, **S5**, **S6**; ADR-000 go/no-go; ADR-001 architecture; ADR-002 approval model | Approval path decided |
-| 09:45-10:30 | Repo skeleton: `uv init`, ruff, pyright, pytest, pre-commit, gitleaks, em-dash check, CI workflow, `.gitattributes`, `.env.example`; first red test | CI green on the skeleton |
-| 10:30-13:00 | Domain: U-B01..12, U-I01..06, U-A01..10, U-L03..04, P-01..06 | Domain green |
-| 13:00-13:45 | Lunch; 15-minute researcher walkthrough if someone is reachable | |
-| 13:45-15:30 | Store and audit (U-L01..02, I-01 x50 on Windows), MCP server and profiles (C-01..C-10, C-13, I-02, I-03), gate hook (C-12) | Contracts green |
-| 15:30-18:00 | Agent folders and settings, `lq doctor` (C-11, I-11, I-13), lab and project templates; write E2E-02..04 first, then make the first live loop pass: `@labops` proposes, `@pi-desk` raises a card, Maya refused, PI commits | **M1 / cut line A** |
-| 18:00-19:00 | Break, walk | |
-| 19:00-21:45 | Scholarly: HTTP client (limiter, cache, retries, circuit), OpenAlex, Crossref, dedupe, verifier, golden set (U-C01..12, I-04..07, G-01..06) | Verifier thresholds met |
-| 21:45-23:00 | `@scout` live: search, verify, retraction catch (E2E-07); #HowISwitch clip of the first approval card; voice-log entry | Scout segment works |
-| 23:00-07:00 | Sleep | |
-
-### Friday 6 Nov
-
-| Time | Work (tests first) | Milestone |
-| --- | --- | --- |
-| 07:00-09:00 | Protocols, hazards, ethics (U-P01..07), bench notes with read-back (U-V01..06, I-21, I-22), `Lab state` document | |
-| 09:00-11:30 | Data and analysis: CSV, profile, PII, recipe goldens, stale cascade (U-D01..10, U-S01..06, I-09, I-15, I-16); demo seed and `make_plate.py` | **M2: reproducible analysis + stale** |
-| 11:30-12:15 | Lunch. **Cut line B:** `run_script` only if ahead, otherwise roadmap | |
-| 12:15-14:00 | `@analyst` and `@scribe` live; draft refusal; stale cascade live (E2E-08, E2E-09, E2E-14) | Full story works once. **Cut line D at 13:30** |
-| 14:00-17:00 | Playwright harness and remaining specs E2E-01..20, EDGE-01..06; evals EV-01..12 with the cheap model | E2E green once |
-| 17:00-18:00 | Fix defects only; pixel pass on agent message formats | |
-| 18:00-19:00 | Break | |
-| 19:00-20:30 | Full rehearsal, then record the **baseline video**; Telegram `#bench` only if ahead (**cut line C at 20:00**) | Baseline footage saved |
-| 20:30-22:45 | Dictate README, blog draft, video script, voice log | Drafts exist |
-| 23:00 | **Feature freeze** | |
-| 23:00-06:30 | Sleep | |
-
-### Saturday 7 Nov
-
-| Time | Work | Milestone |
-| --- | --- | --- |
-| 06:30-08:30 | E2E-01..14 three consecutive green runs; evals with the demo model; fix defects only | Gate passed |
-| 08:30-09:00 | Breakfast, microphone check | |
-| 09:00-10:30 | Clean-room reproduction (M-03): new Windows user, fresh clone, README only; fix every gap | README proven |
-| 10:30-12:30 | Rehearsal checklist, then three full takes; segment retakes | Raw footage |
-| 12:30-13:15 | Lunch | |
-| 13:15-15:15 | Edit, captions, export 1080p, upload, verify the link logged out | Video link |
-| 15:15-17:00 | README final (video, GIF, diagrams, test evidence); publish the blog; #HowISwitch post | Links live |
-| 17:00-18:30 | Final Insights screenshot; package audit: gitleaks, em-dash check, licenses, all links in incognito | Package ready |
-| 18:30-19:00 | **Submit through the website's Submit form**; screenshot the confirmation | **Submitted** |
-| 19:00-23:59 | Buffer only: fix broken links or upload problems; no features | |
+Bottom-up forecast within the above blocks: setup, proof and harness 5.42 h; minimum domain/store/MCP loop 5 h; integration, seed and evidence 3 h; optional literature and descriptive assay 5 h; testing/capacity 5 h; docs/clean room 6.25 h; recording/edit 6 h; final package 0.58 h; defect slack 1.92 h; submission 0.5 h. These categories total 38.67 h, so they exceed the listed 38.67 h blocks by 0 h; actual durations and remaining available hours must be recalculated at each checkpoint. Critical path: S0 -> S1/S2/S3 -> red harness -> transactional booking -> real decision -> MVP gate -> baseline -> edit -> Submit. MVP target is one room and four agents: `labops`, `scout`, `pi-desk`, and `analyst` (also writes the fixed results paragraph), one booking kind, one citation fixture, one synthetic CSV, a descriptive figure and a stale check. Cut literature and assay only if the core path slips, and disclose the reduced demo. Protocol release, inventory orders, general bench parsing and external rooms are roadmap.
 
 ## 8.3 Escalation rules
 
 | Trigger | Decision |
 | --- | --- |
-| S0 not green by Thu 08:00 | Everything else waits; try the other server path, then a Linux host |
-| M1 not reached by Thu 18:00 | Cut line A; spend the evening on the approval loop, not the verifier |
-| Verifier not at thresholds by Thu 23:00 | Ship VERIFIED / NOT_FOUND / RETRACTED only; notes become polish |
-| No full story by Fri 13:30 | Feature freeze on new behavior (cut line D) |
-| An authorization or data-integrity test is red | Stop; fix the root cause or remove the capability. Never demo around an unsafe path |
-| Behind on Sat 12:30 | Use the Friday baseline video and spend the time on the package |
+| S0 fails after 90 min | Spend 60-90 min on separately preflighted path B; cut optional work to pay for it. |
+| Approval boundary unproven | No binding mutation; use a fully tested steward only if its 3-5 h fits, otherwise proposal-only. Never simulate a human authorization. |
+| Critical loop late | Cut literature, analysis and extra agents first; preserve testing, evidence, baseline and submission. |
+| Authorization or integrity red | Fix or remove affected capability; record failure. |
+| Saturday recording late | Use Friday baseline; preserve final screenshot and Submit window. |
 
 ## 8.4 Core Contribution PR
 
-Skipped by default: lowest expected value per hour for a solo builder, judged after the event with heavy competition. If a teammate joins, they own issue [#807 (agent controller guide)](https://github.com/sandbox-quantum/switch/issues/807) from Thursday morning; a maintainer comment on that issue says the guide goes in `docs/agent-controller-guide.md`. Any Windows Console bug we hit gets a normal upstream issue with a reproduction regardless.
+Skipped by default: solo time is consumed by the critical path. Only consider after submission; the impact and remaining hours are otherwise unverified.
