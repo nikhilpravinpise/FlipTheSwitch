@@ -58,6 +58,8 @@ class FakeMattermostState:
     delay_channel_posts: float = 0.0
     auto_reply: tuple[str, str] | None = None
     deleted_post_ids: set[str] = field(default_factory=set)
+    system_admins: set[str] = field(default_factory=set)
+    direct_post_reads: list[str] = field(default_factory=list)
 
     def add_post(
         self,
@@ -146,6 +148,15 @@ def fake_mattermost() -> Any:
 
         def do_GET(self) -> None:
             parsed = urlsplit(self.path)
+            if parsed.path.startswith("/api/v4/posts/"):
+                post_id = parsed.path.removeprefix("/api/v4/posts/")
+                state.direct_post_reads.append(post_id)
+                post = state.posts.get(post_id)
+                if post is None:
+                    self._send(404, {"message": "post not found"})
+                else:
+                    self._send(200, post)
+                return
             if parsed.path.startswith("/api/v4/channels/") and parsed.path.endswith("/posts"):
                 if state.delay_channel_posts:
                     time.sleep(state.delay_channel_posts)
@@ -153,7 +164,7 @@ def fake_mattermost() -> Any:
                 include_deleted = parse_qs(parsed.query).get("include_deleted") == ["true"]
                 if include_deleted:
                     token = self.headers.get("Authorization", "").removeprefix("Bearer ")
-                    if state.tokens.get(token) != "prof-rao":
+                    if state.tokens.get(token) not in state.system_admins:
                         self._send(403, {"message": "system admin required"})
                         return
                 posts = {
@@ -491,7 +502,7 @@ def test_card_discovery_does_not_treat_private_props_as_session_id() -> None:
 
 
 @pytest.mark.block_network(allowed_hosts=[r"^127\.0\.0\.1$"])
-def test_settled_card_can_be_read_after_switch_deletes_it(
+def test_settled_card_can_be_read_by_id_without_system_admin_permission(
     fake_mattermost: tuple[str, FakeMattermostState],
 ) -> None:
     base_url, state = fake_mattermost
@@ -514,6 +525,7 @@ def test_settled_card_can_be_read_after_switch_deletes_it(
 
     assert "Decline" in settled_text
     assert actor == "prof-rao"
+    assert state.direct_post_reads == [card_post["id"]]
 
 
 def test_ledger_inspector_reads_pending_rows_and_audit_chain(tmp_path: Path) -> None:
