@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+import pytest
 
 from labquorum.domain.canonical import content_hash
 from labquorum.e2e.cards import ApprovalCard
@@ -18,7 +19,12 @@ from labquorum.e2e.ledger import (
     RequestRecord,
 )
 from labquorum.e2e.mattermost import MattermostClient, MattermostPost
-from scripts.demo.record_demo import DemoRecorder, inject_caption, select_student_credentials
+from scripts.demo.record_demo import (
+    DemoRecorder,
+    DemoRecordingError,
+    inject_caption,
+    select_student_credentials,
+)
 
 
 @dataclass
@@ -264,6 +270,25 @@ def test_E2E_02_proposal_only_writes_honest_end_card_and_edit_list(
     assert "under 3:00" in edit_list
     assert student_page.overlays[-1]["end_card"] == result["end_card"]
     assert pi_page.overlays[-1]["end_card"] == result["end_card"]
+
+
+def test_E2E_02_proposal_only_aborts_when_the_real_thread_has_an_approval_card(
+    tmp_path: Path,
+) -> None:
+    recorder, student, _, _, _, _ = _make_recorder(tmp_path, proposal_only=True)
+    student.get_channel_posts = lambda _channel_id: [
+        MattermostPost(
+            post_id="card-1",
+            channel_id="room-1",
+            user_id="switch",
+            message="Reply with A1 and your choice\n1. Allow once",
+            create_at=2,
+            root_id="student-post-1",
+        )
+    ]
+
+    with pytest.raises(DemoRecordingError, match="approval card"):
+        recorder.run()
 
 
 def test_E2E_02_student_persona_can_be_selected_by_username() -> None:
