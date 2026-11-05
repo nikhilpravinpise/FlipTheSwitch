@@ -13,3 +13,12 @@
 | tests/unit/test_p3_auditfix.py | Assert the launcher uses a PowerShell-compatible path API for its process working directory after the live run exposed an unsupported `Split-Path` parameter set. |
 | tests/unit/test_p3_auditfix.py | Preserve the orchestrator's P2 certify probe using only its disposable `labquorum-p2-*\g.sqlite` ledger, while rejecting other temporary ledger paths. |
 | tests/unit/test_p3_auditfix.py | Keep the P3 one-commit limiter out of the P2-only disposable ledger so its tampered-decision check reaches booking validation. |
+| tests/unit/test_p3_fix2.py | Added requester-handle, synthetic Darshan seed, labops instructions, and generated Codex approval-mode regressions. |
+| tests/contract/test_p2_contract.py | Added explicit `requester_handle` arguments to existing MCP proposal contract and conflict tests. |
+| tests/contract/test_p2_audit_fix.py | Added explicit Maya requester handles to existing proposal-bound, untrusted-text, and bounded-result tests. |
+| tests/contract/__snapshots__/test_p2_contract.ambr | Updated only the `propose_booking` C-01 description, requester_handle property, and required fields. |
+| tests/contract/p2_probe_args.json | Added `requester_handle` to the existing P3 gate proposal probe input. |
+| tests/unit/test_p3_auditfix.py | Fixed the Windows TOML path replacement to quote the executable path, so the existing worktree rejection test changes its input as intended. |
+| tests/unit/test_p3_auditfix.py | Added coverage that only the P2 gate's isolated temporary ledger path is accepted for certify mode while arbitrary `certify` directories remain rejected. |
+| tests/unit/test_p3_setup.py | Updated the existing commit limiter test so a changed retry for the same request reaches ledger validation, while a distinct request remains blocked. |
+| tests/fixtures/p2_replay.json | Added the requester's handle to the recorded proposal input and updated the seed people count for synthetic Darshan. |

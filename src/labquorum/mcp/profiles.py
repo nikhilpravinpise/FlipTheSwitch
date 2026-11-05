@@ -40,10 +40,11 @@ _TOOL_DESCRIPTIONS: dict[str, str] = {
         "names the committed booking owner and gives the nearest free interval of the same length."
     ),
     "propose_booking": (
-        "Create a pending booking proposal for the seeded requester Maya. Supply an instrument "
-        "ID, project text, and ISO 8601 start and end datetimes with explicit offsets. The result "
-        "is the complete flat argument set to echo to commit_booking, including instrument and "
-        "requester names, local weekday/time/zone, UTC instants, revision, and content hash. "
+        "Create a pending booking proposal for the requester identified by requester_handle, "
+        "which must match a person in the ledger. Supply an instrument ID, project text, and ISO "
+        "8601 start and end datetimes with explicit offsets. The result is the complete flat "
+        "argument set to echo to commit_booking, including instrument and requester names, local "
+        "weekday/time/zone, UTC instants, revision, and content hash. "
         "Project text is returned in project_untrusted_text. Conflicts include the owner and nearest slot."
     ),
     "cancel_my_proposal": (

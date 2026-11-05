@@ -206,6 +206,29 @@ def _load_booking_context(
     return _BookingContext(policy, training, bookings, owners)
 
 
+def _resolve_requester_id(connection: sqlite3.Connection, requester_handle: str) -> str:
+    normalized_handle = requester_handle.strip()
+    if not normalized_handle:
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            "Requester handle must contain at least one non-space character.",
+        )
+    people = connection.execute("SELECT id FROM person ORDER BY id").fetchall()
+    matches = [
+        str(person["id"])
+        for person in people
+        if str(person["id"]).casefold() == normalized_handle.casefold()
+    ]
+    if len(matches) != 1:
+        raise LabQuorumError(
+            ErrorCode.UNKNOWN_REQUESTER,
+            f"Requester handle '{normalized_handle}' is not registered in the lab ledger. "
+            "Ask the lab admin to add or correct the requester profile before proposing a booking.",
+            {"requester_handle": normalized_handle},
+        )
+    return matches[0]
+
+
 def _conflict_details(
     error: LabQuorumError,
     *,
@@ -409,6 +432,14 @@ class LabTools:
     @_safe_tool
     def propose_booking(
         self,
+        requester_handle: Annotated[
+            str,
+            Field(
+                min_length=1,
+                max_length=32,
+                description="Switch sender platform handle of the person requesting this booking.",
+            ),
+        ],
         instrument_id: Annotated[str, Field(description="Instrument ID from list_instruments.")],
         project_id: Annotated[
             str,
@@ -434,10 +465,11 @@ class LabTools:
         interval = Interval(start_value, end_value)
         with closing(open_database(self.database_path)) as connection:
             now = self.clock.now()
+            person_id = _resolve_requester_id(connection, requester_handle)
             try:
                 proposal = repos.propose_booking(
                     connection,
-                    person_id=DEMO_REQUESTER_ID,
+                    person_id=person_id,
                     instrument_id=instrument_id,
                     project_id=project_id,
                     start=start_value,
@@ -451,7 +483,7 @@ class LabTools:
                 context = _load_booking_context(
                     connection,
                     instrument_id=instrument_id,
-                    person_id=DEMO_REQUESTER_ID,
+                    person_id=person_id,
                 )
                 raise LabQuorumError(
                     error.code,

@@ -217,6 +217,7 @@ def test_C_13_commit_schema_and_transaction_require_the_full_decision(
                 await proposer.call_tool(
                     "propose_booking",
                     {
+                        "requester_handle": "maya",
                         "instrument_id": "INS-01",
                         "project_id": "p2-contract",
                         "start": PROBE_START,
@@ -317,6 +318,7 @@ def test_U_B02_conflict_tool_names_owner_and_nearest_same_length_slot(
                 await session.call_tool(
                     "propose_booking",
                     {
+                        "requester_handle": "maya",
                         "instrument_id": "INS-01",
                         "project_id": "conflict-check",
                         "start": requested_start.isoformat(),

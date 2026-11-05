@@ -194,7 +194,9 @@ def validate_binding_request(  # noqa: PLR0913, PLR0917
 
 
 class BindingCommitLimiter:
-    """Allow one distinct commit per process or persistent Codex session."""
+    """Allow one successful distinct commit per process or persisted session home."""
+
+    _STATE_TABLE = "binding_commit_state"
 
     def __init__(self, state_path: Path | None = None) -> None:
         self._lock = RLock()
@@ -203,23 +205,117 @@ class BindingCommitLimiter:
 
     @classmethod
     def for_session_home(cls, session_home: Path) -> BindingCommitLimiter:
-        """Bind a commit reservation to the persistent Codex session home."""
-        state_path = session_home.expanduser().resolve(strict=False) / "labquorum-commit.sqlite"
+        home = session_home.expanduser().resolve(strict=False)
+        home.mkdir(parents=True, exist_ok=True)
+        state_path = home / "labquorum-commit.sqlite"
+        with sqlite3.connect(state_path, timeout=5) as connection:
+            connection.execute("PRAGMA busy_timeout = 5000")
+            connection.execute(
+                f"CREATE TABLE IF NOT EXISTS {cls._STATE_TABLE} ("
+                "id INTEGER PRIMARY KEY CHECK (id = 1), fingerprint TEXT NOT NULL)"
+            )
         return cls(state_path)
+
+    @staticmethod
+    def _fingerprint(arguments: dict[str, Any]) -> str:
+        return json.dumps(
+            arguments,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            default=str,
+        )
+
+    @staticmethod
+    def _same_request(previous_fingerprint: str, arguments: dict[str, Any]) -> bool:
+        previous_value: Any = json.loads(previous_fingerprint)
+        if not isinstance(previous_value, dict):
+            return False
+        previous = cast(dict[str, Any], previous_value)
+        request_id = arguments.get("request_id")
+        return isinstance(request_id, str) and previous.get("request_id") == request_id
+
+    def _release_reservation(self, fingerprint: str) -> None:
+        assert self._state_path is not None
+        try:
+            with sqlite3.connect(self._state_path, timeout=5) as connection:
+                connection.execute("PRAGMA busy_timeout = 5000")
+                connection.execute("BEGIN IMMEDIATE")
+                connection.execute(
+                    f"DELETE FROM {self._STATE_TABLE} WHERE id = 1 AND fingerprint = ?",
+                    (fingerprint,),
+                )
+        except sqlite3.Error:
+            # Keeping a stale reservation blocks other requests, which is fail closed.
+            return
+
+    def _wrap_persistent(
+        self,
+        commit: Callable[..., dict[str, Any]],
+    ) -> Callable[..., dict[str, Any]]:
+        state_path = self._state_path
+        assert state_path is not None
+
+        @wraps(commit)
+        def guarded(**arguments: Any) -> dict[str, Any]:
+            fingerprint = self._fingerprint(arguments)
+            newly_reserved = False
+            try:
+                with self._lock, sqlite3.connect(state_path, timeout=5) as connection:
+                    connection.execute("PRAGMA busy_timeout = 5000")
+                    connection.execute("BEGIN IMMEDIATE")
+                    row = connection.execute(
+                        f"SELECT fingerprint FROM {self._STATE_TABLE} WHERE id = 1"
+                    ).fetchone()
+                    if (
+                        row is not None
+                        and str(row[0]) != fingerprint
+                        and not self._same_request(str(row[0]), arguments)
+                    ):
+                        raise LabQuorumError(
+                            ErrorCode.BINDING_COMMIT_LIMIT,
+                            f"{ErrorCode.BINDING_COMMIT_LIMIT.value}: This Codex session has "
+                            "already reserved a different request.",
+                        )
+                    if row is None:
+                        connection.execute(
+                            f"INSERT INTO {self._STATE_TABLE}(id, fingerprint) VALUES (1, ?)",
+                            (fingerprint,),
+                        )
+                        newly_reserved = True
+            except sqlite3.Error as exc:
+                raise LabQuorumError(
+                    ErrorCode.BINDING_COMMIT_LIMIT,
+                    "Could not verify the Codex session commit limit; commit was refused.",
+                ) from exc
+
+            try:
+                result = commit(**arguments)
+            except Exception:
+                if newly_reserved:
+                    self._release_reservation(fingerprint)
+                raise
+            if newly_reserved and result.get("status") not in {"committed", "already_committed"}:
+                self._release_reservation(fingerprint)
+            return result
+
+        return guarded
 
     def wrap(
         self,
         commit: Callable[..., dict[str, Any]],
     ) -> Callable[..., dict[str, Any]]:
+        if self._state_path is not None:
+            return self._wrap_persistent(commit)
+
         @wraps(commit)
         def guarded(**arguments: Any) -> dict[str, Any]:
-            fingerprint = _argument_fingerprint(arguments)
+            fingerprint = self._fingerprint(arguments)
             with self._lock:
-                if self._state_path is not None:
-                    return self._guard_persistent(commit, arguments, fingerprint)
                 if (
                     self._successful_arguments is not None
                     and fingerprint != self._successful_arguments
+                    and not self._same_request(self._successful_arguments, arguments)
                 ):
                     raise LabQuorumError(
                         ErrorCode.BINDING_COMMIT_LIMIT,
@@ -235,55 +331,3 @@ class BindingCommitLimiter:
                 return result
 
         return guarded
-
-    def _guard_persistent(
-        self,
-        commit: Callable[..., dict[str, Any]],
-        arguments: dict[str, Any],
-        fingerprint: str,
-    ) -> dict[str, Any]:
-        assert self._state_path is not None
-        self._state_path.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            with sqlite3.connect(self._state_path, timeout=5) as connection:
-                connection.execute("PRAGMA busy_timeout = 5000")
-                connection.execute(
-                    "CREATE TABLE IF NOT EXISTS binding_commit_guard ("
-                    "id INTEGER PRIMARY KEY CHECK (id = 1), fingerprint TEXT NOT NULL)"
-                )
-                connection.execute("BEGIN IMMEDIATE")
-                row = connection.execute(
-                    "SELECT fingerprint FROM binding_commit_guard WHERE id = 1"
-                ).fetchone()
-                if row is not None and row[0] != fingerprint:
-                    raise _commit_limit_error()
-                if row is None:
-                    connection.execute(
-                        "INSERT INTO binding_commit_guard(id, fingerprint) VALUES (1, ?)",
-                        (fingerprint,),
-                    )
-                connection.commit()
-        except sqlite3.Error as exc:
-            raise LabQuorumError(
-                ErrorCode.BINDING_CERTIFICATION_REQUIRED,
-                f"Could not persist the Codex-session commit reservation: {exc}",
-            ) from exc
-        return commit(**arguments)
-
-
-def _argument_fingerprint(arguments: dict[str, Any]) -> str:
-    return json.dumps(
-        arguments,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        default=str,
-    )
-
-
-def _commit_limit_error() -> LabQuorumError:
-    return LabQuorumError(
-        ErrorCode.BINDING_COMMIT_LIMIT,
-        f"{ErrorCode.BINDING_COMMIT_LIMIT.value}: This Codex session has already reserved "
-        "a different booking commit.",
-    )
