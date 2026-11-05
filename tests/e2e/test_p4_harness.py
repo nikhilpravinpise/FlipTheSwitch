@@ -469,6 +469,10 @@ def test_E2E_01_smoke_accepts_top_level_handoff_outside_prompt_thread(
     class StubPersona:
         root_id: str | None = None
 
+        def get_channel_posts(self, channel_id: str) -> list[MattermostPost]:
+            assert channel_id == "channel-1"
+            return []
+
         def post(self, channel_id: str, message: str) -> MattermostPost:
             assert channel_id == "channel-1"
             assert message
@@ -708,6 +712,10 @@ def test_E2E_04_approval_proposal_finds_top_level_pi_handoff(
     class StubPersona:
         root_id: str | None = None
 
+        def get_channel_posts(self, channel_id: str) -> list[MattermostPost]:
+            assert channel_id == "channel-1"
+            return []
+
         def post(self, channel_id: str, message: str) -> MattermostPost:
             assert channel_id == "channel-1"
             assert message == "proposal"
@@ -763,6 +771,10 @@ def test_E2E_04_approval_proposal_requires_pi_handoff(
     )
 
     class StubPersona:
+        def get_channel_posts(self, channel_id: str) -> list[MattermostPost]:
+            assert channel_id == "channel-1"
+            return []
+
         def post(self, channel_id: str, message: str) -> MattermostPost:
             assert channel_id == "channel-1"
             assert message == "proposal"
