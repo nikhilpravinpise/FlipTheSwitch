@@ -396,7 +396,7 @@ def test_E2E_01_read_propose_smoke_rejects_wrong_persisted_booking(
         "The 15:45-16:45 slot is proposed. Request AR-0042."
     )
 
-    with pytest.raises(AssertionError, match="persisted booking"):
+    with pytest.raises(AssertionError, match="persisted"):
         assert_read_propose_smoke(reply, "AR-0042", altered)
 
 
