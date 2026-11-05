@@ -175,10 +175,14 @@ def test_C_11_agent_directory_write_probe_checks_file_creation(
     issue = probe(tmp_path)
     assert issue is not None and "writable" in issue
 
-    def denied_probe(**_kwargs: Any) -> Any:
-        raise PermissionError("write denied")
+    original_open = Path.open
 
-    monkeypatch.setattr(provisioning_module.tempfile, "mkstemp", denied_probe)
+    def denied_probe(path: Path, mode: str = "r", *args: Any, **kwargs: Any) -> Any:
+        if path.name.startswith(".lq-write-probe-"):
+            raise PermissionError("write denied")
+        return original_open(path, mode, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", denied_probe)
     assert probe(tmp_path) is None
 
 
