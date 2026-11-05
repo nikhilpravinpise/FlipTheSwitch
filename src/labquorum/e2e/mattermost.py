@@ -29,6 +29,13 @@ class ReplyTimeout(MattermostError):
     """Raised when no matching agent reply arrives before the timeout."""
 
 
+def agent_username_matches(username: str, alias: str) -> bool:
+    """Match a room alias to its installed rao-prefixed Switch agent username."""
+    normalized_username = username.casefold()
+    normalized_alias = alias.casefold()
+    return normalized_username in {normalized_alias, f"rao-{normalized_alias}"}
+
+
 class MattermostTimeout(MattermostError):
     """Raised when a REST request exceeds its configured timeout."""
 
@@ -157,7 +164,7 @@ class MattermostClient:
                     continue
                 if root_id and root_id not in (post.root_id, post.post_id):
                     continue
-                if self._username_for(post.user_id).casefold() == from_agent.casefold():
+                if agent_username_matches(self._username_for(post.user_id), from_agent):
                     return post
             remaining = deadline - time.monotonic()
             if remaining <= 0:

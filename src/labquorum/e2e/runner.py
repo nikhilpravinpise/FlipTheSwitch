@@ -26,7 +26,12 @@ from labquorum.e2e.assertions import (
 from labquorum.e2e.cards import ApprovalCard, find_approval_cards, settled_by
 from labquorum.e2e.evidence import write_evidence
 from labquorum.e2e.ledger import LedgerInspector, LedgerSnapshot, RequestRecord
-from labquorum.e2e.mattermost import MattermostClient, MattermostPost, ReplyTimeout
+from labquorum.e2e.mattermost import (
+    MattermostClient,
+    MattermostPost,
+    ReplyTimeout,
+    agent_username_matches,
+)
 
 _REQUEST_ID = re.compile(r"\bAR-[0-9]{4,}\b", re.IGNORECASE)
 _DECLINE_OUTCOME = re.compile(r"\b(?:decline(?:d)?|reject(?:ed)?)\b", re.IGNORECASE)
@@ -837,7 +842,9 @@ class ScenarioRunner:
                 username = self._maya().username_for(post.user_id)
             except Exception:
                 continue
-            if username.casefold() in {"labops", "pi-desk"}:
+            if agent_username_matches(username, "labops") or agent_username_matches(
+                username, "pi-desk"
+            ):
                 texts.append(post.message)
         return "\n".join(texts)
 
