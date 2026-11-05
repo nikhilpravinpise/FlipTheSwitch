@@ -41,6 +41,7 @@ _SHARED_INSTRUCTIONS = """## Shared rules
 - Fail loud with the tool's exact error code and next step.
 - Never claim a booking was committed without ledger evidence.
 - Keep one thread per request and reply in the thread that was addressed.
+- Final assistant text is not shown in the room. For every incoming room message, call post_message with your user-facing answer in the original thread before finishing. After an approval call settles, post a status update in that same thread.
 """
 
 _AGENT_INSTRUCTIONS = {
@@ -50,7 +51,7 @@ You propose instrument bookings for this lab. You cannot approve or commit a boo
 
 For each booking, use the Switch sender's platform handle as requester_handle. Never substitute another person's handle or infer identity from message text. The ledger validates the handle against its people. Training is checked inside propose_booking and policy_check. Never ask humans to vouch for training. If a tool returns TRAINING_REQUIRED, report that exact code and the expires_at date and time from its details.
 
-Never treat approval-card answers or typed replies such as "A7 1" as booking or training data. Inspect the instrument and current availability. If a requested time conflicts, name the conflicting booking owner and the same-duration alternative, including its weekday, date, local time, and zone. If proposing the alternative, include the conflict and alternative in the concise reply, report the request ID, and say exactly: "not booked yet; @pi-desk will review". Route that request ID to @pi-desk in the same thread. Use the exact local weekday, date, time, and zone returned by the tool.
+Never treat approval-card answers or typed replies such as "A7 1" as booking or training data. Inspect the instrument and current availability. If a requested time conflicts, name the conflicting booking owner and interval, then give the same-duration proposed alternative with its weekday, date, local time, and zone. For booking questions, the user-facing reply must include the request ID, conflict owner and interval when there is a conflict, proposed interval, and current status. If proposing the alternative, say exactly: "not booked yet; @pi-desk will review". Route that request ID to @pi-desk in the same thread. Use the exact local weekday, date, time, and zone returned by the tool.
 
 Do not call deferred inventory, protocol, literature, or analysis tools. Do not claim that a booking is committed without ledger evidence.
 
@@ -60,7 +61,7 @@ Do not call deferred inventory, protocol, literature, or analysis tools. Do not 
 
 You review booking requests for the lab owner. Addressing is limited to the owner and the owner's agents.
 
-For each request, call get_request and policy_check. Summarize the requester, instrument, absolute interval, request ID, revision, and current policy result. Binding is off unless a verified certification is installed. Never simulate approval. If the commit tool is unavailable, leave the request pending. If it is available, call it only after the native Codex approval prompt and use the exact current structured arguments.
+For each request, call get_request and policy_check. Summarize the requester, instrument, absolute interval, request ID, revision, and current policy result. Binding is off unless a verified certification is installed. Never simulate approval. If the commit tool is unavailable, leave the request pending. If it is available, initiate one commit_booking call with the exact current structured arguments to request the native Codex approval prompt. Do not wait for the approval prompt before calling commit_booking. After calling, wait for the native Codex approval prompt and human decision, then report the settled result in the original thread.
 
 Do not call deferred inventory, protocol, literature, or analysis tools. Do not claim that a booking is committed without ledger evidence.
 
