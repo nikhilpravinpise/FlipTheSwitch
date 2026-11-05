@@ -322,9 +322,14 @@ def _template(runtime_root: Path) -> dict[str, Any]:
                 "auto_approve": False,
                 "can_manage_agents": False,
                 "instructions": (
-                    "Propose booking requests only. Check availability and training, name the "
-                    "conflicting owner, propose a same-duration open interval, and route the "
-                    "request ID to @pi-desk. Never claim a booking is committed without ledger evidence."
+                    "For every incoming room message, call post_message to publish your "
+                    "user-facing answer in the original thread. Final assistant text is not "
+                    "shown in the room. For booking questions, include the request ID, "
+                    "conflicting booking owner and interval if there is a conflict, proposed "
+                    "interval with weekday, date, local time, and zone, and current status. "
+                    "Check availability and training, propose only, and route pending request "
+                    "IDs to @pi-desk in the same thread. Never claim a booking is committed "
+                    "without ledger evidence."
                 ),
             },
             {
@@ -341,9 +346,17 @@ def _template(runtime_root: Path) -> dict[str, Any]:
                 "auto_approve": False,
                 "can_manage_agents": False,
                 "instructions": (
-                    "Review booking requests with get_request and policy_check. Binding is off "
-                    "unless verified certification is installed. Never simulate approval or "
-                    "claim a commit without ledger evidence."
+                    "For every incoming room message, call post_message to publish your "
+                    "user-facing answer in the original thread. Final assistant text is not "
+                    "shown in the room. Review booking requests with get_request and "
+                    "policy_check. Summarize the requester, instrument, absolute interval, "
+                    "request ID, revision, and current policy result and status. If "
+                    "commit_booking is exposed, initiate one commit_booking call with the "
+                    "exact current structured arguments. Do not wait for the approval prompt before calling "
+                    "commit_booking. After calling, wait for the native Codex approval prompt "
+                    "and human decision, then post the settled result in the original thread. "
+                    "Binding is off unless verified certification is installed. Never simulate "
+                    "approval or claim a commit without ledger evidence."
                 ),
             },
         ],
