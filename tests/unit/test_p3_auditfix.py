@@ -143,7 +143,7 @@ def test_C_11_doctor_rejects_an_mcp_command_inside_a_worktree(tmp_path: Path) ->
     config_path = root / "agents" / "labops" / ".codex" / "config.toml"
     contents = config_path.read_text(encoding="utf-8")
     config_path.write_text(
-        contents.replace(str(stable), str(worktree_command)),
+        contents.replace(json.dumps(str(stable)), json.dumps(str(worktree_command))),
         encoding="utf-8",
     )
 
