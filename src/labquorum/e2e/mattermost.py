@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 from typing import Any, cast
+from urllib.parse import quote, urljoin
 
 import httpx
 
@@ -57,6 +58,7 @@ class MattermostClient:
     ) -> None:
         if timeout <= 0:
             raise ValueError("Mattermost timeout must be positive.")
+        self._base_url = base_url.rstrip("/")
         api_root = f"{base_url.rstrip('/')}/api/v4"
         self._http = httpx.Client(
             base_url=api_root,
@@ -80,6 +82,7 @@ class MattermostClient:
                 raise MattermostAuthenticationError(
                     "Mattermost login did not return a usable persona session."
                 )
+            self._session_token = token
             self.user_id = user_id
             self.username = username if isinstance(username, str) else login_id
             self._usernames[user_id] = self.username
@@ -96,6 +99,29 @@ class MattermostClient:
 
     def close(self) -> None:
         self._http.close()
+
+    @property
+    def session_token(self) -> str:
+        """Return the in-memory login token for an authenticated browser cookie."""
+        return self._session_token
+
+    def room_url(self, channel_id: str) -> str:
+        """Resolve a channel ID to Mattermost's team and channel deep link."""
+        encoded_channel_id = quote(channel_id, safe="")
+        channel = self._json_object(self._request("GET", f"/channels/{encoded_channel_id}"))
+        team_id = channel.get("team_id")
+        channel_name = channel.get("name")
+        if not isinstance(team_id, str) or not team_id:
+            raise MattermostError("Configured Mattermost room is not attached to a team.")
+        if not isinstance(channel_name, str) or not channel_name:
+            raise MattermostError("Mattermost room lookup returned no channel name.")
+        encoded_team_id = quote(team_id, safe="")
+        team = self._json_object(self._request("GET", f"/teams/{encoded_team_id}"))
+        team_name = team.get("name")
+        if not isinstance(team_name, str) or not team_name:
+            raise MattermostError("Mattermost team lookup returned no team name.")
+        path = f"{quote(team_name, safe='')}/channels/{quote(channel_name, safe='')}"
+        return urljoin(f"{self._base_url}/", path)
 
     def post(
         self,
@@ -131,6 +157,34 @@ class MattermostClient:
             if isinstance(post, dict)
         ]
         return sorted(parsed, key=lambda post: post.create_at)
+
+    def wait_for_post(  # noqa: PLR0913
+        self,
+        channel_id: str,
+        *,
+        from_user: str,
+        message: str,
+        after_ms: int,
+        timeout: float = 30.0,
+        poll_interval: float = 0.5,
+    ) -> MattermostPost:
+        """Poll for an exact message from a persona after a recorded UI send."""
+        if timeout < 0:
+            raise ValueError("Post timeout cannot be negative.")
+        if poll_interval <= 0:
+            raise ValueError("Post poll interval must be positive.")
+        deadline = time.monotonic() + timeout
+        while True:
+            posts = self.get_channel_posts(channel_id)
+            for post in reversed(posts):
+                if post.create_at < after_ms or post.message != message:
+                    continue
+                if self._username_for(post.user_id).casefold() == from_user.casefold():
+                    return post
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise ReplyTimeout(f"Post from {from_user} timed out after {timeout:g} seconds.")
+            time.sleep(min(max(poll_interval, 0.001), remaining, 2.0))
 
     def username_for(self, user_id: str) -> str:
         """Resolve a post author with the Mattermost user lookup endpoint."""

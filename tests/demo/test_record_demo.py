@@ -127,7 +127,14 @@ class FakeClient:
     def username_for(self, user_id: str) -> str:
         return user_id
 
-    def get_channel_posts(self, _channel_id: str) -> list[MattermostPost]:
+    def get_channel_posts(
+        self,
+        channel_id: str,
+        *,
+        include_deleted: bool = False,
+    ) -> list[MattermostPost]:
+        del channel_id
+        del include_deleted
         return []
 
     def wait_for_approval_card(
@@ -282,7 +289,7 @@ def test_E2E_02_proposal_only_aborts_when_the_real_thread_has_an_approval_card(
     tmp_path: Path,
 ) -> None:
     recorder, student, _, _, _, _ = _make_recorder(tmp_path, proposal_only=True)
-    student.get_channel_posts = lambda _channel_id: [
+    student.get_channel_posts = lambda channel_id, *, include_deleted=False: [
         MattermostPost(
             post_id="card-1",
             channel_id="room-1",
@@ -408,7 +415,7 @@ def test_E2E_02_mattermost_wait_for_post_observes_exact_persona_message() -> Non
         message="@labops propose a booking",
         create_at=200,
     )
-    client.get_channel_posts = lambda _channel_id: [post]
+    client.get_channel_posts = lambda channel_id, *, include_deleted=False: [post]
 
     observed = client.wait_for_post(
         "room-1",
