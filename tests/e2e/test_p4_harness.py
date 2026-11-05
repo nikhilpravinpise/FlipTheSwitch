@@ -33,6 +33,7 @@ from labquorum.e2e.mattermost import (
     MattermostAuthenticationError,
     MattermostClient,
     MattermostPost,
+    MattermostTimeout,
     ReplyTimeout,
 )
 from labquorum.e2e.runner import INJECTION_PROMPTS, ScenarioOptions, ScenarioRunner
@@ -94,7 +95,10 @@ def fake_mattermost() -> Any:
             for key, value in (headers or {}).items():
                 self.send_header(key, value)
             self.end_headers()
-            self.wfile.write(body)
+            try:
+                self.wfile.write(body)
+            except OSError:
+                return
 
         def do_POST(self) -> None:
             length = int(self.headers.get("Content-Length", "0"))
@@ -217,6 +221,17 @@ def test_mattermost_client_reports_reply_timeout(
             timeout=0.02,
             poll_interval=0.002,
         )
+
+
+def test_mattermost_client_reports_http_timeout(
+    fake_mattermost: tuple[str, FakeMattermostState],
+) -> None:
+    base_url, state = fake_mattermost
+    state.delay_channel_posts = 0.1
+
+    with MattermostClient(base_url, "maya", "fake-password", timeout=0.01) as client:
+        with pytest.raises(MattermostTimeout, match="timed out"):
+            client.get_channel_posts("channel-1")
 
 
 def test_mattermost_client_auth_failure_does_not_expose_password(
