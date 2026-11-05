@@ -314,6 +314,42 @@ def test_E2E_05_pi_decline_leaves_domain_request_pending(tmp_path: Path) -> None
     assert_decline(snapshot, "AR-0042", "prof-rao")
 
 
+def test_E2E_05_decline_runner_rejects_an_approved_card_settlement(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
+    card = ApprovalCard(
+        "A7",
+        "card-7",
+        "channel-1",
+        "switch-bot",
+        "approval",
+        options=((1, "Approve once"), (2, "Decline")),
+    )
+    attempt = SimpleNamespace(
+        prompt_post=MattermostPost("prompt", "channel-1", "maya-id", "request", 1000),
+        reply=MattermostPost("reply", "channel-1", "labops-id", "AR-0042", 2000),
+        request_id="AR-0042",
+        after_reply=snapshot,
+    )
+    runner = ScenarioRunner(
+        personas=cast(Any, {"maya": object(), "prof-rao": object()}),
+        ledger=LedgerInspector(tmp_path / "ledger.sqlite"),
+        channel_id="channel-1",
+        evidence_dir=tmp_path / "evidence",
+    )
+    monkeypatch.setattr(runner, "_open_card", lambda *args: ((attempt, card), 2))
+    monkeypatch.setattr(
+        runner,
+        "_answer_and_wait",
+        lambda *args: ("**Approve once** A7\\nChosen by @prof-rao.", "prof-rao", "answer-1"),
+    )
+    monkeypatch.setattr(runner, "_wait_for_pending", lambda request_id: snapshot)
+
+    with pytest.raises(AssertionError, match="decline"):
+        runner._decline()
+
+
 def test_E2E_11_second_commit_requires_error_or_fresh_card(tmp_path: Path) -> None:
     snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
 
