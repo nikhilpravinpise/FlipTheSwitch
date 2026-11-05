@@ -268,9 +268,19 @@ def test_approval_card_discovery_excludes_switch_action_tokens() -> None:
         "id": "card-1",
         "channel_id": "channel-1",
         "user_id": "switch-bot",
-        "message": "1. Allow once\n2. Decline\nReply with `A7` and your choice, e.g. `A7 1`.",
+        "message": "Reply with `A7` and your choice, e.g. `A7 1`.",
         "props": {
-            "actions": [{"id": "approve", "token": "never-copy-this-switch-token"}],
+            "attachments": [
+                {
+                    "actions": [
+                        {
+                            "name": "1. Allow once",
+                            "integration": {"context": {"token": "never-copy-this-switch-token"}},
+                        },
+                        {"name": "2. Decline"},
+                    ]
+                }
+            ],
         },
     }
 
@@ -278,6 +288,7 @@ def test_approval_card_discovery_excludes_switch_action_tokens() -> None:
 
     assert "1. Allow once" in card.message
     assert "never-copy-this-switch-token" not in card.message
+    assert card.options == ((1, "Allow once"), (2, "Decline"))
 
 
 def test_settled_card_can_be_read_after_switch_deletes_it(
