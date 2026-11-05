@@ -1,13 +1,15 @@
 """Independent regressions for P1 boundary defects."""
 
-from datetime import timedelta
+from datetime import date, timedelta
 
 import pytest
 
 from labquorum.domain.approvals import serialize_decision
 from labquorum.domain.canonical import canonical_json
 from labquorum.domain.errors import LabQuorumError
+from labquorum.store.db import init_database
 from labquorum.store.repos import propose_booking
+from labquorum.store.seed import seed_demo
 from tests.conftest import ANCHOR_DATE, at
 
 
@@ -35,11 +37,6 @@ def test_positive_subsecond_booking_can_be_proposed(seeded_ledger) -> None:
 
 
 def test_seed_bookings_fall_on_next_open_day(tmp_path) -> None:
-    from datetime import date
-
-    from labquorum.store.db import init_database
-    from labquorum.store.seed import seed_demo
-
     connection = init_database(tmp_path / "sunday.sqlite")
     try:
         seed_demo(connection, date(2026, 11, 8))
