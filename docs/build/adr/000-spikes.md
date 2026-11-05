@@ -247,3 +247,11 @@ The Switch workspace room list contained `rao-labquorum`; its Mattermost private
 Issue #1 was updated with both room names and the requested first message: `@labops, can I book INS-01 for 60 minutes on the next open day between 14:00 and 17:00?`. The invite link was not reposted.
 
 No password or token was written to this file. The Switch account's generated initial password was not retained, so direct password sign-in to Switch would need a secure reset or setup path if Darshan needs one.
+
+## S6 capacity (orchestrator, Thu 5 Nov 2026, 21:05 IST)
+
+PASS. Measured under heavier-than-demo load: both Codex room agents (`rao-labops`, `rao-pi-desk`) registered, Switch Console (12 processes, 1.6 GB), Switch core and PostgreSQL (0.7 GB), Mattermost container (132 MiB), five concurrent Codex builder runs (1.2 GB), Node processes (2.5 GB), Wispr Flow (1.3 GB). Physical memory 23.3 GB total, 6.2 GB free: **27% headroom** against the required 20%. The `.wslconfig` cap (5 GB) is not yet applied (applies at the next WSL restart); Docker currently reports an 11.33 GiB container limit, unused. Re-measure after three demo takes if the demo runs with builders active.
+
+## P0 status summary (21:05 IST)
+
+S0 PASS (Codex agent reply), S1 PASS (unclaimed refusal; claimed PI, Maya and Darshan), S4 fixture PASS (personas posting, template import via server API in P3), S6 PASS (27% headroom), Darshan onboarded over Tailscale with access controls (`docs/build/access-control.md`). Model and effort are proven from Codex's thread database (`gpt-6-luna`, `high`, CLI 0.166.0, see P3 report); proof from a rollout `turn_context` line remains open because Switch's per-session rollout file is removed before it can be read, and is assigned to the P4 certification run.
