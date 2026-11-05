@@ -4,7 +4,7 @@ import json
 import sqlite3
 import threading
 import time
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -354,6 +354,7 @@ def test_ledger_inspector_reads_pending_rows_and_audit_chain(tmp_path: Path) -> 
     assert snapshot.bad_audit_sequence is None
     assert snapshot.requests[0].request_id == "AR-0042"
     assert snapshot.requests[0].status == "pending"
+    assert snapshot.requests[0].resource_timezone == "Asia/Kolkata"
     assert snapshot.bookings[0].status == "proposed"
     with (
         sqlite3.connect(inspector.read_only_uri, uri=True) as connection,
@@ -380,6 +381,7 @@ def test_E2E_01_read_propose_smoke_checks_conflict_slot_and_pending_request(
         {"resource": "INS-02"},
         {"start_utc": "2026-11-06T10:00:00Z"},
         {"end_utc": "2026-11-06T11:30:00Z"},
+        {"resource_timezone": "UTC"},
     ],
 )
 def test_E2E_01_read_propose_smoke_rejects_wrong_persisted_booking(
@@ -387,7 +389,7 @@ def test_E2E_01_read_propose_smoke_rejects_wrong_persisted_booking(
     updates: dict[str, str],
 ) -> None:
     snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
-    request = replace(snapshot.requests[0], **updates)
+    request = SimpleNamespace(**{**vars(snapshot.requests[0]), **updates})
     altered = replace(snapshot, requests=(request,))
     reply = (
         "Lena's 14:00-15:30 INS-01 booking conflicts. "
@@ -751,6 +753,8 @@ def _make_ledger(path: Path, *, committed: bool = False) -> Path:
         """
         CREATE TABLE schema_version (version INTEGER NOT NULL);
         INSERT INTO schema_version(version) VALUES (1);
+        CREATE TABLE instrument (id TEXT PRIMARY KEY, timezone TEXT NOT NULL);
+        INSERT INTO instrument VALUES ('INS-01', 'Asia/Kolkata');
         CREATE TABLE approval_request (
             id TEXT PRIMARY KEY, kind TEXT NOT NULL, requester TEXT NOT NULL,
             resource TEXT NOT NULL, start_utc TEXT NOT NULL, end_utc TEXT NOT NULL,
