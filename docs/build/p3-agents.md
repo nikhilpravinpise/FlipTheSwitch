@@ -37,11 +37,11 @@ Codex config requests `sandbox_mode = "read-only"`, `web_search = "disabled"`, `
 
 `lq-mcp` defaults to `--binding off`. In off mode, an approver has review tools but no `commit_booking` tool. Setup always writes off mode.
 
-`--binding certify` is for the P3 acceptance probe only. It accepts the exact `p3-test-ledger.sqlite` inside a `labquorum-p3-*` temporary root whose runtime manifest records binding off and a separate `ledger.sqlite`. A directory name or caller-writable marker is not enough. The mode allows one distinct commit per process; an identical retry reaches the ledger's idempotent path.
+`--binding certify` is for the P2 and P3 acceptance probes only. It accepts either the exact `p3-test-ledger.sqlite` inside a `labquorum-p3-*` temporary root whose runtime manifest records binding off and a separate `ledger.sqlite`, or the exact `g.sqlite` directly inside the P2 gate's `labquorum-p2-*` temporary root. Production ledgers and arbitrary temporary paths are refused. The mode allows one distinct commit per Codex home; an identical retry reaches the ledger's idempotent path.
 
 `--binding on` is unconditionally refused until a trusted P4 certificate verifier and a complete P4 record exist. A caller-supplied tuple is not certification. The production runtime remains proposal-only.
 
-The one-commit limiter has a persistent SQLite reservation under the active Codex home for every `certify` or future certified `on` server, so a server restart or concurrent server cannot reserve a different request. A reservation is written before calling the ledger and remains after a crash. P3 retains the limitation that it cannot prove this home maps to one human conversation; `on` stays disabled pending P4 lifecycle certification.
+The P3 one-commit limiter has a persistent SQLite reservation under the active Codex home, so a server restart or concurrent server cannot reserve a different request. The separate P2-only `g.sqlite` probe skips that limiter so its tampered-decision test reaches the booking validator. A reservation is written before a P3 ledger call and remains after a crash. P3 retains the limitation that it cannot prove this home maps to one human conversation; `on` stays disabled pending P4 lifecycle certification.
 
 ## Run commands
 

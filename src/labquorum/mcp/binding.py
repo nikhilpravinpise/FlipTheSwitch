@@ -90,6 +90,18 @@ def _is_test_ledger(database_path: Path) -> bool:
     )
 
 
+def is_p2_gate_test_ledger(database_path: Path) -> bool:
+    path = database_path.expanduser().resolve(strict=False)
+    temp_root = Path(tempfile.gettempdir()).resolve(strict=False)
+    return (
+        _within(path, temp_root)
+        and path.name.casefold() == "g.sqlite"
+        and path.parent.name.casefold().startswith("labquorum-p2-")
+        and "certify" not in {part.casefold() for part in path.parts}
+        and path.is_file()
+    )
+
+
 def installed_certification_tuple(runtime_root: Path) -> dict[str, str]:
     """Collect the four installed values required by a certification record."""
     codex = shutil.which("codex")
@@ -161,12 +173,12 @@ def validate_binding_request(  # noqa: PLR0913, PLR0917
     if binding == "certify":
         resolved_database = database_path.expanduser().resolve(strict=False)
         resolved_root = runtime_root.expanduser().resolve(strict=False) if runtime_root else None
-        if not _is_test_ledger(resolved_database) or (
-            resolved_root is not None and resolved_database == resolved_root / "ledger.sqlite"
-        ):
+        if not (
+            _is_test_ledger(resolved_database) or is_p2_gate_test_ledger(resolved_database)
+        ) or (resolved_root is not None and resolved_database == resolved_root / "ledger.sqlite"):
             raise LabQuorumError(
                 ErrorCode.BINDING_CERTIFICATION_REQUIRED,
-                "Certify mode requires the disposable P3 gate ledger under its temporary runtime root.",
+                "Certify mode requires a disposable P2 or P3 gate ledger under a temporary root.",
             )
         return
     raise LabQuorumError(

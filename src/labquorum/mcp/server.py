@@ -23,6 +23,7 @@ from labquorum.domain.errors import ErrorCode, LabQuorumError
 from labquorum.domain.timeutil import Clock
 from labquorum.mcp.binding import (
     BindingCommitLimiter,
+    is_p2_gate_test_ledger,
     resolve_runtime_profile,
     validate_binding_request,
 )
@@ -144,7 +145,10 @@ def create_server(  # noqa: PLR0913
     if effective_binding == "off" and "commit_booking" in names:
         names.remove("commit_booking")
     limiter = None
-    if effective_binding in {"certify", "on"}:
+    p2_gate_only = effective_binding == "certify" and is_p2_gate_test_ledger(
+        database_path or default_database_path()
+    )
+    if effective_binding in {"certify", "on"} and not p2_gate_only:
         codex_home = os.environ.get("CODEX_HOME")
         if codex_home:
             state_home = Path(codex_home)
