@@ -35,7 +35,7 @@ Phase gate (`scripts/gates/p1.py`) adds: line coverage >= 90% for `src/labquorum
 
 ## P2 - MCP server and `lq` CLI
 
-FastMCP stdio server with profiles `proposer` (labops), `approver` (pi-desk), `unavailable` (scout, analyst), decision schema under 900 serialized characters, `NEEDS_ISO_DATETIME`, compact results, rate guard; CLI `lq init | seed | doctor | audit verify | audit tail | request show`.
+FastMCP stdio server with profiles `proposer` (labops), `approver` (pi-desk), `unavailable` (reserved for agents whose tools are not built; per `resource-plan.md` the baseline room runs only labops and pi-desk), decision schema under 900 serialized characters, `NEEDS_ISO_DATETIME`, compact results, rate guard; CLI `lq init | seed | doctor | audit verify | audit tail | request show`.
 
 Claimed IDs: C-01, C-02, C-03, C-09, C-10, C-13, C-14, I-02, I-03, I-11, I-32 (CLI part), U-G01 (wired), I-12 (replay of recorded call sequence on a fresh seed).
 
