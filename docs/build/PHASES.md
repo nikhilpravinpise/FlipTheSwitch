@@ -45,6 +45,8 @@ Phase gate adds: a real subprocess `lq-mcp --profile <p>` started by the officia
 
 `agents/<name>/` with `CLAUDE.md`, `.mcp.json`, `.claude/settings.json`; gate hook; template in `switch/` that lints and matches the pinned Switch template schema.
 
+Token budget rule (Nikhil, 5 Nov 14:43): every agent in every template and agent folder runs `model: claude-haiku-5-5` with `advanced_config: {effort: medium}` and the folder `.claude/settings.json` also pins `"model": "claude-haiku-5-5"`; C-07 template lint fails on any other model or effort, and P4 verifies the model from real session transcripts.
+
 Claimed IDs: C-04, C-05, C-06, C-07, C-08, C-11, C-12, I-13, plus local headless proofs: the installed `claude` CLI started in each agent folder sees only its profile's lab tools, denied tools are denied, and the gated commit tool is never auto-allowed.
 
 ## P4 - Live Switch E2E (needs P0)
