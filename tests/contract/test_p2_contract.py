@@ -8,9 +8,10 @@ import shutil
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
@@ -281,20 +282,47 @@ def test_U_B02_conflict_tool_names_owner_and_nearest_same_length_slot(
 
     async def exercise() -> None:
         async with _connect("proposer", database) as session:
+            state = _payload(await session.call_tool("lab_state", {}))
+            instrument = next(
+                item for item in state["instruments"] if item["instrument_id"] == "INS-01"
+            )
+            instrument_timezone = ZoneInfo(instrument["timezone"])
+            seeded_booking = next(
+                item
+                for item in state["bookings"]
+                if item["instrument_id"] == "INS-01" and item["requester"] == "lena"
+            )
+            booking_day = (
+                datetime.fromisoformat(seeded_booking["start_utc"].replace("Z", "+00:00"))
+                .astimezone(instrument_timezone)
+                .date()
+            )
+            requested_start = datetime.combine(booking_day, time(14, 0), tzinfo=instrument_timezone)
+            requested_end = datetime.combine(booking_day, time(15, 0), tzinfo=instrument_timezone)
             result = _payload(
                 await session.call_tool(
                     "propose_booking",
                     {
                         "instrument_id": "INS-01",
                         "project_id": "conflict-check",
-                        "start": "2026-11-06T14:00:00+05:30",
-                        "end": "2026-11-06T15:00:00+05:30",
+                        "start": requested_start.isoformat(),
+                        "end": requested_end.isoformat(),
                     },
                 )
             )
         assert result["error"] == "CONFLICT"
         assert result["details"]["conflicting_booking"]["owner"] == "lena"
-        assert result["details"]["nearest_free_slot"]["start_utc"] == "2026-11-06T10:15:00Z"
+        assert result["details"]["conflicting_booking"]["owner_name"] == "Dr. Lena Okafor"
+        nearest_slot = result["details"]["nearest_free_slot"]
+        nearest_start = datetime.fromisoformat(
+            nearest_slot["start_utc"].replace("Z", "+00:00")
+        ).astimezone(instrument_timezone)
+        nearest_end = datetime.fromisoformat(
+            nearest_slot["end_utc"].replace("Z", "+00:00")
+        ).astimezone(instrument_timezone)
+        assert (nearest_start.date(), nearest_start.time()) == (booking_day, time(15, 45))
+        assert (nearest_end.date(), nearest_end.time()) == (booking_day, time(16, 45))
+        assert nearest_end - nearest_start == requested_end - requested_start
 
     asyncio.run(exercise())
 
