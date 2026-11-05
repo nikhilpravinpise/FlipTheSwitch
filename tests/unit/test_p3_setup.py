@@ -51,7 +51,7 @@ def test_C_04_setup_sets_prompt_for_commit_booking_only(tmp_path: Path) -> None:
     user_config = _load_toml(root / "codex" / "source-home-config.toml")
     server = user_config["mcp_servers"]["labquorum"]
     assert server["tools"]["commit_booking"]["approval_mode"] == "prompt"
-    assert "default_tools_approval_mode" not in server
+    assert server["default_tools_approval_mode"] == "approve"
     assert server["args"] == [
         "--runtime-root",
         str(root.resolve()),
