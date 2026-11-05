@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import os
 import re
@@ -11,7 +12,7 @@ import sqlite3
 import subprocess
 import sys
 from collections.abc import Sequence
-from contextlib import closing
+from contextlib import closing, redirect_stderr
 from datetime import date
 from pathlib import Path
 from typing import Any, cast
@@ -19,6 +20,7 @@ from typing import Any, cast
 from labquorum.domain.errors import ErrorCode, LabQuorumError
 from labquorum.domain.timeutil import SystemClock
 from labquorum.mcp.profiles import profile_for_agent
+from labquorum.mcp.server import argument_parser as _server_argument_parser
 from labquorum.store.audit import tail, verify
 from labquorum.store.db import (
     database_info,
@@ -174,7 +176,8 @@ def _resolve_mcp_command(command: str, folder: Path) -> str | None:
     candidate = Path(expanded).expanduser()
     if candidate.is_absolute() or len(candidate.parts) > 1:
         resolved = candidate if candidate.is_absolute() else folder / candidate
-        return str(resolved.resolve(strict=False)) if resolved.is_file() else None
+        absolute = resolved.resolve(strict=False)
+        return str(absolute) if absolute.is_file() and os.access(absolute, os.X_OK) else None
     return shutil.which(expanded)
 
 
@@ -191,8 +194,11 @@ def _read_agent_mcp_config(config_path: Path) -> tuple[str, list[str]]:
             "MCP_CONFIG_MISSING", f"{config_path.parent.name} is missing .mcp.json."
         )
     try:
-        config: Any = json.loads(config_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        config: Any = json.loads(
+            config_path.read_text(encoding="utf-8"),
+            object_pairs_hook=_unique_json_object,
+        )
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
         raise _McpConfigIssue(
             "MCP_CONFIG_INVALID", f"Could not read {config_path}: {exc}."
         ) from exc
@@ -221,6 +227,42 @@ def _read_agent_mcp_config(config_path: Path) -> tuple[str, list[str]]:
     return command, arguments
 
 
+def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON property {key!r}")
+        result[key] = value
+    return result
+
+
+def _effective_server_arguments(command: str, arguments: list[str]) -> list[str] | None:
+    """Extract the arguments consumed by the actual LabQuorum server entry point."""
+    command_name = Path(os.path.expandvars(command)).stem.casefold()
+    if command_name == "lq-mcp":
+        return arguments
+    if command_name == "uv":
+        run_positions = [index for index, argument in enumerate(arguments) if argument == "run"]
+        entrypoints = [
+            index
+            for index, argument in enumerate(arguments)
+            if Path(argument).stem.casefold() == "lq-mcp"
+            and run_positions
+            and index > run_positions[0]
+        ]
+        if len(run_positions) == 1 and len(entrypoints) == 1:
+            return arguments[entrypoints[0] + 1 :]
+    if command_name.startswith("python"):
+        module_positions = [
+            index
+            for index in range(len(arguments) - 1)
+            if arguments[index] == "-m" and arguments[index + 1] == "labquorum.mcp.server"
+        ]
+        if len(module_positions) == 1:
+            return arguments[module_positions[0] + 2 :]
+    return None
+
+
 def _agent_config_finding(folder: Path) -> dict[str, str]:
     config_path = folder / ".mcp.json"
     try:
@@ -231,17 +273,28 @@ def _agent_config_finding(folder: Path) -> dict[str, str]:
                 "MCP_COMMAND_UNRESOLVED",
                 f"Could not resolve MCP command {command!r} in {config_path}.",
             )
-        configured_profile = None
-        if "--profile" in arguments:
-            profile_index = arguments.index("--profile") + 1
-            if profile_index < len(arguments):
-                configured_profile = arguments[profile_index]
-        has_entrypoint = Path(command).stem.casefold() == "lq-mcp" or "lq-mcp" in arguments
-        if not has_entrypoint or configured_profile is None:
+        server_arguments = _effective_server_arguments(command, arguments)
+        if server_arguments is None:
             raise _McpConfigIssue(
                 "MCP_CONFIG_INVALID",
-                f"{config_path} must launch lq-mcp with --profile.",
+                f"{config_path} must launch lq-mcp or python -m labquorum.mcp.server.",
             )
+        parser = _server_argument_parser()
+        repeated_option = parser.duplicate_option(server_arguments)
+        if repeated_option is not None:
+            raise _McpConfigIssue(
+                "MCP_CONFIG_DUPLICATE_OPTION",
+                f"{config_path} contains duplicate launch option {repeated_option}.",
+            )
+        try:
+            with redirect_stderr(io.StringIO()):
+                parsed_arguments = parser.parse_args(server_arguments)
+        except SystemExit as exc:
+            raise _McpConfigIssue(
+                "MCP_CONFIG_INVALID",
+                f"{config_path} has invalid lq-mcp launch arguments (parser exit {exc.code}).",
+            ) from exc
+        configured_profile = parsed_arguments.profile
         expected_profile = profile_for_agent(folder.name)
         if expected_profile is None or configured_profile != expected_profile.value:
             expected = expected_profile.value if expected_profile is not None else "no P2 profile"
@@ -274,9 +327,28 @@ def doctor_report(
     repo_root: Path = REPO_ROOT,
 ) -> dict[str, Any]:
     """Collect distinct local setup findings without mutating the ledger or contacting APIs."""
+    database_path = database_path.expanduser().resolve(strict=False)
     uv_version, findings = _check_uv()
     python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     findings.append(_finding("PYTHON_AVAILABLE", "info", f"Python {python_version} is running."))
+
+    ledger_parent = database_path.parent
+    if not ledger_parent.is_dir():
+        findings.append(
+            _finding(
+                "LEDGER_PARENT_MISSING",
+                "error",
+                f"Ledger parent directory does not exist: {ledger_parent}.",
+            )
+        )
+    elif not os.access(ledger_parent, os.W_OK):
+        findings.append(
+            _finding(
+                "LEDGER_PARENT_NOT_WRITABLE",
+                "error",
+                f"Ledger parent directory is not writable: {ledger_parent}.",
+            )
+        )
 
     warning = onedrive_warning(database_path)
     if warning is not None:

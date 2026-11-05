@@ -17,7 +17,7 @@ from mcp.client.stdio import StdioServerParameters, stdio_client
 from labquorum.cli.main import _agent_config_finding, doctor_report
 from labquorum.domain.timeutil import FixedClock
 from labquorum.mcp.profiles import TOOL_DESCRIPTIONS
-from labquorum.mcp.server import _parser as server_parser
+from labquorum.mcp.server import argument_parser as server_parser
 from labquorum.mcp.server import create_runtime
 from labquorum.store import repos
 from labquorum.store.db import init_database, open_database

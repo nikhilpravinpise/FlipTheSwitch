@@ -1,29 +1,164 @@
-[
-  {
-    "profile": "proposer",
-    "tool": "propose_booking",
-    "arguments": {
-      "instrument_id": "INS-01",
-      "project_id": "replay-project",
-      "start": "2026-11-09T10:00:00+05:30",
-      "end": "2026-11-09T11:00:00+05:30"
+{
+  "provenance": {
+    "transport": "MCP stdio",
+    "client": "mcp.client.stdio.stdio_client and ClientSession",
+    "server": "labquorum.mcp.server.create_server",
+    "recorder": "scripts/dev/record_p2_replay.py",
+    "recorded_at_utc": "2026-11-05T10:55:20+00:00",
+    "clock_now": "2026-11-05T12:00:00Z",
+    "seed": {
+      "anchor_date": "2026-11-06",
+      "result": {
+        "seeded": true,
+        "anchor_date": "2026-11-06",
+        "people": 5,
+        "instruments": 4,
+        "bookings": 2
+      }
     }
   },
-  {
-    "profile": "approver",
-    "tool": "get_request",
-    "arguments": {
-      "request_id": {"$ref": "results.0.request_id"}
+  "steps": [
+    {
+      "profile": "proposer",
+      "tool": "propose_booking",
+      "arguments": {
+        "instrument_id": "INS-01",
+        "project_id": "I-12 recorded stdio replay",
+        "start": "2026-11-09T10:00:00+05:30",
+        "end": "2026-11-09T11:00:00+05:30"
+      },
+      "expected": {
+        "action": "commit_booking",
+        "instrument_id": "INS-01",
+        "instrument_name": "Plate reader (Tecan Spark)",
+        "requester_handle": "maya",
+        "requester_display_name": "Maya Iyer",
+        "project_untrusted_text": "I-12 recorded stdio replay",
+        "start_local": "Mon 9 Nov 2026 10:00 IST",
+        "end_local": "Mon 9 Nov 2026 11:00 IST",
+        "start_utc": "2026-11-09T04:30:00.000000Z",
+        "end_utc": "2026-11-09T05:30:00.000000Z",
+        "request_id": "AR-0042",
+        "revision": 1,
+        "content_hash": "2289c83a632fe3ec0db844044aeb05806f20064436fdbe45714c2a1a0056f4e8"
+      }
+    },
+    {
+      "profile": "approver",
+      "tool": "get_request",
+      "arguments": {
+        "request_id": {
+          "$ref": "results.0.request_id"
+        }
+      },
+      "expected": {
+        "action": "commit_booking",
+        "end_local": "Mon 9 Nov 2026 11:00 IST",
+        "end_utc": "2026-11-09T05:30:00.000000Z",
+        "instrument_id": "INS-01",
+        "instrument_name": "Plate reader (Tecan Spark)",
+        "project_untrusted_text": "I-12 recorded stdio replay",
+        "request_id": "AR-0042",
+        "requester_display_name": "Maya Iyer",
+        "requester_handle": "maya",
+        "revision": 1,
+        "start_local": "Mon 9 Nov 2026 10:00 IST",
+        "start_utc": "2026-11-09T04:30:00.000000Z",
+        "content_hash": "2289c83a632fe3ec0db844044aeb05806f20064436fdbe45714c2a1a0056f4e8"
+      }
+    },
+    {
+      "profile": "approver",
+      "tool": "policy_check",
+      "arguments": {
+        "request_id": {
+          "$ref": "results.0.request_id"
+        }
+      },
+      "expected": {
+        "request_id": "AR-0042",
+        "allowed": true,
+        "checks": [
+          {
+            "name": "request_pending",
+            "passed": true,
+            "code": null,
+            "reason": "Request is pending."
+          },
+          {
+            "name": "booking_policy",
+            "passed": true,
+            "code": null,
+            "reason": "Current booking policy passes."
+          }
+        ]
+      }
+    },
+    {
+      "profile": "approver",
+      "tool": "commit_booking",
+      "arguments": {
+        "request_id": {
+          "$ref": "results.1.request_id"
+        },
+        "revision": {
+          "$ref": "results.1.revision"
+        },
+        "content_hash": {
+          "$ref": "results.1.content_hash"
+        },
+        "action": {
+          "$ref": "results.1.action"
+        },
+        "instrument_id": {
+          "$ref": "results.1.instrument_id"
+        },
+        "instrument_name": {
+          "$ref": "results.1.instrument_name"
+        },
+        "requester_handle": {
+          "$ref": "results.1.requester_handle"
+        },
+        "requester_display_name": {
+          "$ref": "results.1.requester_display_name"
+        },
+        "project_untrusted_text": {
+          "$ref": "results.1.project_untrusted_text"
+        },
+        "start_local": {
+          "$ref": "results.1.start_local"
+        },
+        "end_local": {
+          "$ref": "results.1.end_local"
+        },
+        "start_utc": {
+          "$ref": "results.1.start_utc"
+        },
+        "end_utc": {
+          "$ref": "results.1.end_utc"
+        }
+      },
+      "expected": {
+        "request_id": "AR-0042",
+        "booking_id": "BK-0042",
+        "revision": 1,
+        "content_hash": "2289c83a632fe3ec0db844044aeb05806f20064436fdbe45714c2a1a0056f4e8",
+        "decision": {
+          "action": "commit_booking",
+          "end_local": "Mon 9 Nov 2026 11:00 IST",
+          "end_utc": "2026-11-09T05:30:00.000000Z",
+          "instrument_id": "INS-01",
+          "instrument_name": "Plate reader (Tecan Spark)",
+          "project_untrusted_text": "I-12 recorded stdio replay",
+          "request_id": "AR-0042",
+          "requester_display_name": "Maya Iyer",
+          "requester_handle": "maya",
+          "revision": 1,
+          "start_local": "Mon 9 Nov 2026 10:00 IST",
+          "start_utc": "2026-11-09T04:30:00.000000Z"
+        },
+        "status": "committed"
+      }
     }
-  },
-  {
-    "profile": "approver",
-    "tool": "commit_booking",
-    "arguments": {
-      "request_id": {"$ref": "results.1.request_id"},
-      "revision": {"$ref": "results.1.revision"},
-      "content_hash": {"$ref": "results.1.content_hash"},
-      "decision": {"$ref": "results.1.decision"}
-    }
-  }
-]
+  ]
+}

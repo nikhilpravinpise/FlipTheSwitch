@@ -11,6 +11,7 @@ from typing import Any
 from labquorum.domain.approvals import (
     RequestStatus,
     approval_decision,
+    commit_card_decision,
     is_expired,
     next_revision,
     serialize_decision,
@@ -23,9 +24,15 @@ from labquorum.domain.booking import (
     Training,
     check_booking,
 )
+from labquorum.domain.canonical import canonical_json
 from labquorum.domain.canonical import content_hash as canonical_hash
 from labquorum.domain.errors import ErrorCode, LabQuorumError
-from labquorum.domain.timeutil import Clock, parse_iso_datetime, utc_timestamp
+from labquorum.domain.timeutil import (
+    Clock,
+    format_local_instant,
+    parse_iso_datetime,
+    utc_timestamp,
+)
 from labquorum.store.audit import append_event
 from labquorum.store.db import immediate_transaction
 
@@ -176,6 +183,11 @@ def _next_number(connection: sqlite3.Connection, counter_name: str) -> int:
     return number
 
 
+def _peek_next_number(connection: sqlite3.Connection, counter_name: str) -> int:
+    row = connection.execute("SELECT value FROM counter WHERE name = ?", (counter_name,)).fetchone()
+    return int(row["value"]) if row is not None else 1
+
+
 def _request_decision(  # noqa: PLR0913
     *,
     request_id: str,
@@ -211,16 +223,22 @@ def _insert_request(  # noqa: PLR0913
     revision: int,
     created: datetime,
     expires: datetime,
+    decision_override: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], str, str]:
-    decision, decision_json, digest = _request_decision(
-        request_id=request_id,
-        revision=revision,
-        requester=person_id,
-        resource=instrument_id,
-        start=interval.start,
-        end=interval.end,
-        project=project_id,
-    )
+    if decision_override is None:
+        decision, decision_json, digest = _request_decision(
+            request_id=request_id,
+            revision=revision,
+            requester=person_id,
+            resource=instrument_id,
+            start=interval.start,
+            end=interval.end,
+            project=project_id,
+        )
+    else:
+        decision = dict(decision_override)
+        decision_json = serialize_decision(decision)
+        digest = canonical_hash(decision)
     connection.execute(
         "INSERT INTO approval_request(id, kind, requester, resource, start_utc, end_utc, project, "
         "revision, content_hash, decision_json, status, created_utc, expires_utc) "
@@ -261,6 +279,40 @@ def _proposal_result(  # noqa: PLR0913, PLR0917
     }
 
 
+def _proposal_card_decision(  # noqa: PLR0913
+    connection: sqlite3.Connection,
+    *,
+    request_id: str,
+    person_id: str,
+    instrument_id: str,
+    project_id: str,
+    interval: Interval,
+) -> dict[str, Any]:
+    instrument = connection.execute(
+        "SELECT name, timezone FROM instrument WHERE id = ?", (instrument_id,)
+    ).fetchone()
+    person = connection.execute(
+        "SELECT display_name FROM person WHERE id = ?", (person_id,)
+    ).fetchone()
+    if instrument is None or person is None:
+        raise LabQuorumError(ErrorCode.NOT_FOUND, "Booking requester or instrument was not found.")
+    timezone = str(instrument["timezone"])
+    return commit_card_decision(
+        action="commit_booking",
+        instrument_id=instrument_id,
+        instrument_name=str(instrument["name"]),
+        requester_handle=person_id,
+        requester_display_name=str(person["display_name"]),
+        project_untrusted_text=project_id,
+        start_local=format_local_instant(interval.start, timezone),
+        end_local=format_local_instant(interval.end, timezone),
+        start_utc=utc_timestamp(interval.start),
+        end_utc=utc_timestamp(interval.end),
+        request_id=request_id,
+        revision=1,
+    )
+
+
 def propose_booking(  # noqa: PLR0913
     connection: sqlite3.Connection,
     *,
@@ -271,6 +323,7 @@ def propose_booking(  # noqa: PLR0913
     end: datetime,
     clock: Clock,
     hold_minutes: int = 10,
+    card_bound: bool = False,
 ) -> dict[str, Any]:
     """Recheck current booking policy and create a pending revision-one request."""
     if not project_id.strip() or hold_minutes <= 0:
@@ -288,6 +341,36 @@ def propose_booking(  # noqa: PLR0913
             interval=interval,
             now=now,
         )
+        decision_override: dict[str, Any] | None = None
+        if card_bound:
+            request_id = f"AR-{_peek_next_number(connection, 'request'):04d}"
+            decision_override = _proposal_card_decision(
+                connection,
+                request_id=request_id,
+                person_id=person_id,
+                instrument_id=instrument_id,
+                project_id=project_id,
+                interval=interval,
+            )
+            card_json = serialize_decision(decision_override)
+            digest = canonical_hash(decision_override)
+            commit_arguments = {
+                **decision_override,
+                "content_hash": digest,
+            }
+            serialized_arguments = canonical_json(commit_arguments)
+            if len(serialized_arguments) >= 900:
+                raise LabQuorumError(
+                    ErrorCode.INVALID_ARGUMENT,
+                    "Complete commit arguments must stay below 900 characters for approval-card visibility.",
+                    {"characters": len(serialized_arguments), "limit": 899},
+                )
+            if len(card_json) >= 900:
+                raise LabQuorumError(
+                    ErrorCode.INVALID_ARGUMENT,
+                    "Canonical approval card exceeds its serialized decision limit.",
+                    {"characters": len(card_json), "limit": 899},
+                )
         request_number = _next_number(connection, "request")
         booking_number = _next_number(connection, "booking")
         request_id = f"AR-{request_number:04d}"
@@ -303,6 +386,7 @@ def propose_booking(  # noqa: PLR0913
             revision=1,
             created=now,
             expires=expires,
+            decision_override=decision_override,
         )
         connection.execute(
             "INSERT INTO booking(id, instrument_id, person_id, project_id, start_utc, end_utc, status, request_id) "

@@ -18,6 +18,7 @@
 | EXPIRED | The approval request has expired. |
 | STALE_REQUEST | The request revision or content hash is stale. |
 | DECISION_MISMATCH | The submitted decision differs from the canonical decision. |
+| UNCOMMITTABLE_REQUEST | The pending request predates or exceeds the current commit-card contract. |
 | ALREADY_DECIDED | The request already has a terminal decision. |
 | DECLINED | The request was declined and cannot be committed. |
 | NOT_FOUND | The requested ledger record does not exist. |

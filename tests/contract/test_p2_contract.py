@@ -211,7 +211,10 @@ def test_C_13_commit_schema_and_transaction_require_the_full_decision(
             )
             assert len(encoded_args) < 900
             assert set(proposed) == set(request)
-            assert "Fri 6 Nov 2026" in request["start_local"] or "Mon 9 Nov 2026" in request["start_local"]
+            assert (
+                "Fri 6 Nov 2026" in request["start_local"]
+                or "Mon 9 Nov 2026" in request["start_local"]
+            )
             tampered = dict(request)
             tampered["project_untrusted_text"] = "tampered-project"
             tampered = _payload(
