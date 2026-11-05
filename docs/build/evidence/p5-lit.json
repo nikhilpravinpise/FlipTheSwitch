@@ -1,0 +1,10 @@
+{
+  "red_commit": "5a3e30bce1ceabfdfaec15093276387b55386b97",
+  "red_tests": [
+    "tests/unit/test_p5_scholarly.py::test_U_C02_exact_normalized_title_or_needs_review",
+    "tests/unit/test_p5_http.py::test_I_06_429_retry_after_is_honored",
+    "tests/unit/test_p5_http.py::test_I_07_cache_hits_avoid_network_and_label_age",
+    "tests/integration/test_p5_literature_cassettes.py::test_I04_crossref_cassette_verifies_seeded_real_doi",
+    "tests/contract/test_p5_librarian_contract.py::test_C_01_librarian_tools_have_a_stable_contract"
+  ]
+}

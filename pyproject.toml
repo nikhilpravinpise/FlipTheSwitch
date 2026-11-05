@@ -1,15 +1,39 @@
 [project]
 name = "labquorum"
-version = "0.1.0"
-description = "Booking workflows for shared laboratory instruments"
+version = "1.0.0rc1"
+description = "Shared-instrument booking ledger and approval workflow for lab teams"
 readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Nikhil Pravin Pise" },
+    { name = "Darshan Ved" },
+]
 requires-python = ">=3.12,<3.13"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database",
+    "Topic :: Scientific/Engineering",
+]
 dependencies = [
+    "httpx>=0.28.1,<1.0.0",
+    "matplotlib>=3.11.2",
     "mcp>=1,<2",
     "pyyaml>=6.0.3",
+    "rapidfuzz>=3.14.6",
     "structlog>=26.1.0",
     "tzdata>=2026.6",
 ]
+
+[project.urls]
+Homepage = "https://github.com/nikhilpravinpise/FlipTheSwitch"
+Repository = "https://github.com/nikhilpravinpise/FlipTheSwitch"
+Issues = "https://github.com/nikhilpravinpise/FlipTheSwitch/issues"
 
 [project.scripts]
 lq = "labquorum.cli.main:main"
@@ -54,7 +78,7 @@ pythonVersion = "3.12"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = ["--strict-markers", "--timeout=60", "-m", "not live"]
+addopts = ["--strict-markers", "--timeout=60", "--block-network", "--record-mode=none", "-m", "not live"]
 markers = [
     "slow: tests that take longer than the normal suite",
     "race: concurrency and race-condition tests",
@@ -67,8 +91,10 @@ dev = [
     "pyright>=1.1.414",
     "pytest>=9.2.0",
     "pytest-cov>=7.1.0",
+    "pytest-recording>=0.14.1",
     "pytest-timeout>=2.4.0",
     "pytest-xdist>=3.8.0",
+    "respx>=0.23.1",
     "ruff>=0.17.3",
     "syrupy>=6.1.1",
 ]

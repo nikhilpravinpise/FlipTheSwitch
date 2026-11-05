@@ -12,8 +12,12 @@ from pathlib import Path
 
 from labquorum.domain.errors import ErrorCode, LabQuorumError
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 BUSY_TIMEOUT_MS = 5_000
+BACKUP_GUIDANCE = (
+    "Before changing versions, preserve this ledger with "
+    "`lq backup --db <ledger> --output <backup>`. This older schema is not upgraded in place."
+)
 
 
 @dataclass(frozen=True)
@@ -129,12 +133,12 @@ def _schema_version(connection: sqlite3.Connection) -> int:
     except sqlite3.DatabaseError as exc:
         raise LabQuorumError(
             ErrorCode.SCHEMA_VERSION_MISMATCH,
-            "Ledger has no readable schema_version table.",
+            f"Ledger has no readable schema_version table. {BACKUP_GUIDANCE}",
         ) from exc
     if len(rows) != 1:
         raise LabQuorumError(
             ErrorCode.SCHEMA_VERSION_MISMATCH,
-            "Ledger must contain exactly one schema version row.",
+            f"Ledger must contain exactly one schema version row. {BACKUP_GUIDANCE}",
         )
     return int(rows[0]["version"])
 
@@ -144,7 +148,8 @@ def _check_schema_version(connection: sqlite3.Connection) -> int:
     if version != SCHEMA_VERSION:
         raise LabQuorumError(
             ErrorCode.SCHEMA_VERSION_MISMATCH,
-            f"Ledger schema version {version} is unsupported; expected {SCHEMA_VERSION}.",
+            f"Ledger schema version {version} is unsupported; expected {SCHEMA_VERSION}. "
+            f"{BACKUP_GUIDANCE}",
             {"found": version, "expected": SCHEMA_VERSION},
         )
     return version
@@ -166,7 +171,8 @@ def init_database(path: Path) -> sqlite3.Connection:
                 found = int(versions[0]["version"]) if versions else None
                 raise LabQuorumError(
                     ErrorCode.SCHEMA_VERSION_MISMATCH,
-                    f"Ledger schema version {found} is unsupported; expected {SCHEMA_VERSION}.",
+                    f"Ledger schema version {found} is unsupported; expected {SCHEMA_VERSION}. "
+                    f"{BACKUP_GUIDANCE}",
                     {"found": found, "expected": SCHEMA_VERSION},
                 )
 

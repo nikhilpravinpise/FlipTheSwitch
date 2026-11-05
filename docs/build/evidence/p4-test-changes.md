@@ -1,0 +1,18 @@
+# P4 harness test changes
+
+## Integration with offline test guard
+
+- The first integrated run had six Mattermost client tests fail because pytest-recording's `--block-network` also blocks the harness's local fake server. Those tests now allow only the exact `127.0.0.1` host through the plugin's `block_network` marker. No external host is allowed, and the fake server remains local.
+
+## Changes after red commit d54ed77
+
+- `tests/e2e/test_p4_harness.py`: commit the synthetic setup rows before opening the database with the read-only inspector. SQLite correctly hid the test's uncommitted fixture rows from the separate read-only connection; the original fixture therefore tested visibility of uncommitted writes instead of harness behavior. The test also now attempts an update through the inspector's `mode=ro` URI and requires SQLite to reject it. Added regression coverage for historical commits during a no-effect refusal, repeat error matching and pending state, `%LOCALAPPDATA%` expansion, operator-confirmed Console session IDs, leaving a distinct same-session card pending after the first commit, verifying that the settled card names Decline, requiring I-41 to use a real stale request reference, recording timed scenario steps in evidence, reading a deleted settled card through the admin-only Mattermost path, excluding Switch action tokens from card text, distinguishing REST request timeouts, and ignoring unverified session IDs in private post props. These changes strengthen the acceptance checks and do not weaken any scenario assertion.
+- The smoke acceptance case now has negative controls for an incorrect persisted instrument or interval. The first run failed because the assertion only checked reply text and pending state, not whether the ledger persisted the requested INS-01 15:45-16:45 proposal. The approval fixture now uses the actual nested LabQuorum canonical decision shape, and its visible card fixture uses the flat commit arguments supplied to Switch's renderer; this exposed that matching nested decision object keys against the visible call card always rejects `interval` and `resource`.
+- The smoke ledger fixture now includes the instrument timezone. The harness must read that value so a live database can verify 15:45-16:45 in the instrument's local time rather than assuming the workstation timezone.
+- A duplicate visible `instrument_id` field with the correct value currently passes the card matcher. The acceptance test requires ambiguous duplicate canonical fields to fail closed.
+- The repeated-call error probe must come from the thread started by the second proposal. The test includes an unrelated thread with `COMMIT_LIMIT_REACHED` and requires it not to satisfy E2E-11.
+- Pinned Mattermost cards do not expose a verified Console session ID. The test now requires card discovery to omit private post props from its typed card object; E2E-11 records its operator-confirmed Console ID separately.
+- I-41 now has a runner test with a real revision-one hash in the audit history and a bogus stale hash. The current runner reaches the Mattermost post instead of rejecting the unaudited hash before sending it.
+- The approval flow test now requires card polling to stay on the thread started by the proposal. The current runner searches the entire channel and can select an unrelated card before the canonical field check.
+- The read/propose smoke test now requires the reply to describe Lena's 14:00-15:30 slot as a conflict or overlap, not merely repeat the times.
+- The REST parser test now requires Mattermost action props to retain only visible button names. The previous `MattermostPost` object retained the Switch signed action token in its public `props` field.
