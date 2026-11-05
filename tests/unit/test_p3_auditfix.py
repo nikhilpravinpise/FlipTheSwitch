@@ -320,6 +320,7 @@ def test_C_06_launch_console_script_sets_runtime_home_and_waits_for_cdp() -> Non
         "Machine",
         "User",
         "CODEX_HOME",
+        "GetDirectoryName",
         "remote-debugging-port=9333",
         "/json/version",
         "(WD,AD,WEA,WA,DE,DC,WDAC,WO)",

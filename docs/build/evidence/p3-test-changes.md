@@ -10,3 +10,4 @@
 | tests/unit/test_p3_auditfix.py | Verify a certify server creates its persistent commit limiter under the active Codex home, covering restarts and concurrent server instances. |
 | tests/unit/test_p3_auditfix.py | Check the Windows ACL deny mask uses specific write and delete rights without denying Synchronize, so agents retain read access to their instructions. |
 | tests/unit/test_p3_auditfix.py | Require doctor to prove agent directory protection with a `Path.open` file-create attempt because `os.access(W_OK)` reports a false positive for the specific Windows deny mask. |
+| tests/unit/test_p3_auditfix.py | Assert the launcher uses a PowerShell-compatible path API for its process working directory after the live run exposed an unsupported `Split-Path` parameter set. |
