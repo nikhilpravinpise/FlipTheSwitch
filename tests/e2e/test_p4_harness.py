@@ -550,6 +550,7 @@ def test_E2E_04_open_card_wait_uses_the_proposal_thread(
         prompt_post=prompt,
         request_id=request.request_id,
         after_reply=ledger.snapshot(),
+        approval_baseline_post_ids=frozenset({"prior-card-1"}),
     )
     card = ApprovalCard(
         "A7",
@@ -562,10 +563,12 @@ def test_E2E_04_open_card_wait_uses_the_proposal_thread(
 
     class StubPersona:
         root_id: str | None = None
+        baseline_post_ids: frozenset[str] | None = None
 
         def wait_for_approval_card(self, channel_id: str, **kwargs: Any) -> ApprovalCard:
             assert channel_id == "channel-1"
             self.root_id = kwargs.get("root_id")
+            self.baseline_post_ids = kwargs.get("baseline_post_ids")
             return card
 
     persona = StubPersona()
@@ -580,6 +583,74 @@ def test_E2E_04_open_card_wait_uses_the_proposal_thread(
     runner._open_card("proposal", "allow")
 
     assert persona.root_id == prompt.post_id
+    assert persona.baseline_post_ids == frozenset({"prior-card-1"})
+
+
+def test_E2E_04_approval_baseline_is_captured_before_prompt(
+    tmp_path: Path,
+) -> None:
+    ledger = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite"))
+    request = ledger.snapshot().requests[0]
+    prompt = MattermostPost("prompt-1", "channel-1", "maya-id", "proposal", 1000)
+    old_card = MattermostPost(
+        "prior-card-1",
+        "channel-1",
+        "switch-bot",
+        "Reply with A1 and your choice",
+        500,
+    )
+    handoff = MattermostPost(
+        "handoff-1",
+        "channel-1",
+        "labops-id",
+        f"@pi-desk Request {request.request_id} is pending for INS-01.",
+        2000,
+    )
+    events: list[str] = []
+
+    class StubPersona:
+        def get_channel_posts(self, channel_id: str) -> list[MattermostPost]:
+            assert channel_id == "channel-1"
+            events.append("baseline")
+            return [old_card]
+
+        def post(self, channel_id: str, message: str) -> MattermostPost:
+            assert channel_id == "channel-1"
+            assert message == "proposal"
+            events.append("prompt")
+            return prompt
+
+        def wait_for_reply(  # noqa: PLR0913
+            self,
+            channel_id: str,
+            *,
+            from_agent: str,
+            after_ms: int,
+            timeout: float,
+            poll_interval: float,
+            root_id: str | None = None,
+        ) -> MattermostPost:
+            assert channel_id == "channel-1"
+            assert from_agent == "labops"
+            assert after_ms == prompt.create_at
+            assert timeout > 0
+            assert poll_interval > 0
+            assert root_id is None
+            events.append("reply")
+            return handoff
+
+    persona = StubPersona()
+    runner = ScenarioRunner(
+        personas=cast(Any, {"maya": persona, "prof-rao": persona}),
+        ledger=ledger,
+        channel_id="channel-1",
+        evidence_dir=tmp_path / "evidence",
+    )
+
+    attempt = runner._begin_proposal("proposal")
+
+    assert events == ["baseline", "prompt", "reply"]
+    assert attempt.approval_baseline_post_ids == frozenset({old_card.post_id})
 
 
 def test_E2E_04_approval_proposal_finds_top_level_pi_handoff(
