@@ -8,12 +8,13 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
 from labquorum.domain.canonical import content_hash
 from labquorum.e2e.config import load_config
+from labquorum.e2e.__main__ import build_parser
 from labquorum.e2e.assertions import (
     assert_approval,
     assert_decline,
@@ -31,6 +32,7 @@ from labquorum.e2e.mattermost import (
     MattermostClient,
     ReplyTimeout,
 )
+from labquorum.e2e.runner import ScenarioOptions, ScenarioRunner
 from labquorum.store.audit import append_event
 
 
@@ -354,6 +356,31 @@ def test_E2E_11_fresh_card_requires_a_pending_second_request(tmp_path: Path) -> 
             snapshot=snapshot,
             first_card_handle="A1",
             second_card_handle="A2",
+        )
+
+
+def test_E2E_11_session_id_option_requires_explicit_confirmation() -> None:
+    args = build_parser().parse_args(
+        [
+            "--scenario",
+            "e2e11",
+            "--session-id",
+            "session-123",
+            "--confirm-session-id",
+        ]
+    )
+
+    assert args.confirm_session_id
+
+
+def test_E2E_11_runner_rejects_unconfirmed_session_id(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="confirm"):
+        ScenarioRunner(
+            personas={"maya": cast(Any, object()), "prof-rao": cast(Any, object())},
+            ledger=LedgerInspector(tmp_path / "ledger.sqlite"),
+            channel_id="channel-1",
+            evidence_dir=tmp_path / "evidence",
+            options=ScenarioOptions(binding=True, session_id="session-123"),
         )
 
 
