@@ -38,9 +38,12 @@ def agent_username_matches(username: str, alias: str) -> bool:
 
 def _is_switch_progress_post(message: str) -> bool:
     normalized = message.strip().casefold()
-    return normalized.startswith(
-        ("**working", "**worked for", "**queued. waiting for the agent to start")
-    ) or "the agent host is offline" in normalized
+    return (
+        normalized.startswith(
+            ("**working", "**worked for", "**queued. waiting for the agent to start")
+        )
+        or "the agent host is offline" in normalized
+    )
 
 
 class MattermostTimeout(MattermostError):
