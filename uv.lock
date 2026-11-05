@@ -321,6 +321,7 @@ name = "labquorum"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "httpx" },
     { name = "mcp" },
     { name = "pyyaml" },
     { name = "structlog" },
@@ -341,6 +342,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "httpx", specifier = ">=0.27.1,<1.0.0" },
     { name = "mcp", specifier = ">=1,<2" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "structlog", specifier = ">=26.1.0" },
