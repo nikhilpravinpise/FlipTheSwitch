@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import json
 import tomllib
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Any, cast
 
 import pytest
 
 from labquorum.domain.errors import ErrorCode, LabQuorumError
-from labquorum.mcp import binding
+from labquorum.mcp import binding, server as mcp_server
 from labquorum.mcp.profiles import Profile
 from labquorum.provisioning import (
     _template,
@@ -233,6 +234,48 @@ def test_C_12_commit_limiter_persists_one_distinct_commit_across_instances(
     assert resumed_limiter.wrap(second_commit)(**first)["status"] == "committed"
     assert len(first_calls) == 1
     assert len(second_calls) == 1
+
+
+def test_C_12_certify_server_binds_limiter_to_codex_home(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime_root = tmp_path / "labquorum-p3-binding-runtime"
+    runtime_root.mkdir()
+    agent_directory = runtime_root / "agents" / "pi-desk"
+    agent_directory.mkdir(parents=True)
+    database = runtime_root / "p3-test-ledger.sqlite"
+    database.touch()
+    manifest = {
+        "schema_version": 1,
+        "runtime_root": str(runtime_root.resolve()),
+        "ledger_path": str((runtime_root / "ledger.sqlite").resolve()),
+        "binding_mode": "off",
+    }
+    (runtime_root / "runtime.json").write_text(json.dumps(manifest), encoding="utf-8")
+    codex_home = tmp_path / "codex home"
+    monkeypatch.setenv("CODEX_HOME", str(codex_home))
+    homes: list[Path] = []
+
+    class RecordingLimiter:
+        @classmethod
+        def for_session_home(cls, session_home: Path) -> RecordingLimiter:
+            homes.append(session_home)
+            return cls()
+
+        def wrap(self, commit: Any) -> Any:
+            return commit
+
+    monkeypatch.setattr(mcp_server, "BindingCommitLimiter", RecordingLimiter)
+    mcp_server.create_server(
+        Profile.APPROVER,
+        database,
+        binding="certify",
+        runtime_root=runtime_root,
+        cwd=agent_directory,
+    )
+
+    assert homes == [codex_home]
 
 
 def test_C_06_launch_console_script_sets_runtime_home_and_waits_for_cdp() -> None:
