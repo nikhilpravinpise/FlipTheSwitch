@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -22,8 +23,8 @@ def vcr_config() -> dict[str, object]:
     }
 
 
-def _goldens() -> dict[str, dict[str, object]]:
-    return json.loads(GOLDEN_PATH.read_text(encoding="utf-8"))
+def _goldens() -> dict[str, dict[str, Any]]:
+    return cast(dict[str, dict[str, Any]], json.loads(GOLDEN_PATH.read_text(encoding="utf-8")))
 
 
 def _verify(tmp_path: Path, claim: CitationClaim):
@@ -78,3 +79,18 @@ def test_G_golden_set_has_only_explicit_expected_fixture_classes() -> None:
         "UNRESOLVED",
     }
 
+
+def test_C_16_all_seed_dois_are_pinned_and_labeled() -> None:
+    fixtures = _goldens()
+    expected = {
+        "verified": "VERIFIED",
+        "retracted": "RETRACTED",
+        "fabricated": "UNRESOLVED",
+    }
+    assert set(fixtures) == set(expected)
+    for label, fixture in fixtures.items():
+        assert fixture["label"] == label
+        assert fixture["expected"] == expected[label]
+        assert fixture["retrieved_on"] == "2026-11-05"
+        assert fixture["doi"] == fixture["claim"]["doi"]
+    assert fixtures["retracted"]["notice_doi"] == "10.1038/s41598-023-44593-7"

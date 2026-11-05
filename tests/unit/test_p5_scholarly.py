@@ -6,7 +6,8 @@ from datetime import UTC, datetime
 
 import httpx
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
 from labquorum.domain.errors import ErrorCode, LabQuorumError
 from labquorum.scholarly.http import CrossrefClient, OpenAlexClient, RequestBudget
@@ -40,7 +41,7 @@ def test_P_04_doi_normalization_is_idempotent(value: str) -> None:
 
 
 def test_U_C02_exact_normalized_title_or_needs_review(tmp_path) -> None:
-    assert normalize_title(r"<i>ＡlphaFold</i>: \textit{accurate} structure") == (
+    assert normalize_title("<i>\uff21lphaFold</i>: \\textit{accurate} structure") == (
         "alphafold accurate structure"
     )
     claim = CitationClaim(doi="10.1038/example", title="A study of the evidence")
@@ -228,11 +229,7 @@ def test_U_C07_preprint_with_published_version_returns_note() -> None:
         record={
             "DOI": "10.48550/arxiv.1234",
             "title": ["A complete title"],
-            "relation": {
-                "is-preprint-of": [
-                    {"id-type": "doi", "id": "10.1000/version-of-record"}
-                ]
-            },
+            "relation": {"is-preprint-of": [{"id-type": "doi", "id": "10.1000/version-of-record"}]},
         },
         source="crossref",
         checked_at=CHECKED_AT,
@@ -378,4 +375,3 @@ def test_I_06_request_budget_exhaustion_is_a_domain_error() -> None:
     with pytest.raises(LabQuorumError) as error:
         budget.consume()
     assert error.value.code is ErrorCode.BUDGET_EXCEEDED
-

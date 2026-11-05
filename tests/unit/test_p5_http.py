@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import multiprocessing
 import time
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from itertools import pairwise
 from pathlib import Path
+from typing import Any
 
 import httpx
 import pytest
@@ -36,14 +39,21 @@ class ProcessFakeClock:
             self.value.value += seconds
 
 
-def _fake_scholar_worker(
-    database_path: Path,
-    clock: ProcessFakeClock,
-    active_count,
-    maximum_active,
-    state_lock,
-    events,
-) -> None:
+@dataclass
+class WorkerState:
+    clock: ProcessFakeClock
+    active_count: Any
+    maximum_active: Any
+    state_lock: Any
+    events: Any
+
+
+def _fake_scholar_worker(database_path: Path, state: WorkerState) -> None:
+    clock = state.clock
+    active_count = state.active_count
+    maximum_active = state.maximum_active
+    state_lock = state.state_lock
+    events = state.events
     limiter = SharedHostLimiter(
         database_path,
         host="fake.scholar.test",
@@ -64,6 +74,11 @@ def _fake_scholar_worker(
         with state_lock:
             active_count.value -= 1
         lease.release()
+
+
+def _advance_clock(sleeps: list[float], now: list[float], seconds: float) -> None:
+    sleeps.append(seconds)
+    now[0] += seconds
 
 
 def test_I_06_429_retry_after_is_honored(tmp_path) -> None:
@@ -98,7 +113,7 @@ def test_I_06_five_consecutive_5xx_open_a_sixty_second_circuit(tmp_path) -> None
             cache_dir=tmp_path,
             contact_email="labquorum-dev@example.invalid",
             monotonic=lambda: now[0],
-            sleep=lambda seconds: (sleeps.append(seconds), now.__setitem__(0, now[0] + seconds)),
+            sleep=lambda seconds: _advance_clock(sleeps, now, seconds),
             jitter=lambda: 0.0,
         )
         for _ in range(2):
@@ -162,17 +177,11 @@ def test_I_05_two_processes_share_host_rate_and_concurrency_limits(tmp_path) -> 
     state_lock = context.Lock()
     events = context.Queue()
     database_path = tmp_path / "shared-limiter.sqlite3"
+    state = WorkerState(fake_clock, active_count, maximum_active, state_lock, events)
     workers = [
         context.Process(
             target=_fake_scholar_worker,
-            args=(
-                database_path,
-                fake_clock,
-                active_count,
-                maximum_active,
-                state_lock,
-                events,
-            ),
+            args=(database_path, state),
         )
         for _ in range(2)
     ]
@@ -183,7 +192,7 @@ def test_I_05_two_processes_share_host_rate_and_concurrency_limits(tmp_path) -> 
     assert [worker.exitcode for worker in workers] == [0, 0]
     starts = sorted(events.get(timeout=2) for _ in range(8))
     assert maximum_active.value <= 3
-    assert all(right - left >= (1 / 3) - 0.000001 for left, right in zip(starts, starts[1:]))
+    assert all(right - left >= (1 / 3) - 0.000001 for left, right in pairwise(starts))
 
 
 def test_http_call_budget_exceeding_fifty_is_refused() -> None:
@@ -206,4 +215,3 @@ def test_openalex_query_and_result_limits_are_enforced_before_http(tmp_path) -> 
     with pytest.raises(LabQuorumError) as too_many:
         client.search_works("microscopy", RequestBudget(), max_results=9)
     assert too_many.value.code is ErrorCode.INVALID_ARGUMENT
-

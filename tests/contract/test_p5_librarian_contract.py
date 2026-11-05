@@ -10,7 +10,7 @@ from syrupy.assertion import SnapshotAssertion
 
 from labquorum.domain.timeutil import FixedClock
 from labquorum.mcp.librarian_tools import LibrarianTools
-from labquorum.mcp.profiles import Profile, PROFILE_TOOLS, profile_for_agent
+from labquorum.mcp.profiles import PROFILE_TOOLS, Profile, profile_for_agent
 from labquorum.mcp.server import create_server
 from labquorum.scholarly.http import OpenAlexClient
 
@@ -21,7 +21,9 @@ def test_C_01_librarian_tools_have_a_stable_contract(
 ) -> None:
     actual = LibrarianTools.contract_snapshot()
     assert actual == snapshot
-    server_tools = asyncio.run(create_server(Profile.LIBRARIAN, tmp_path / "unused.sqlite").list_tools())
+    server_tools = asyncio.run(
+        create_server(Profile.LIBRARIAN, tmp_path / "unused.sqlite").list_tools()
+    )
     server_contract = [
         {
             "name": tool.name,
@@ -33,7 +35,7 @@ def test_C_01_librarian_tools_have_a_stable_contract(
     assert server_contract == actual
 
 
-def test_C_16_librarian_profile_is_assigned_to_scout() -> None:
+def test_scout_profile_is_assigned_to_librarian() -> None:
     librarian = getattr(Profile, "LIBRARIAN", None)
     assert librarian is not None
     assert librarian.value == "librarian"
@@ -68,4 +70,3 @@ def test_C_01_search_literature_caps_candidates_and_query_length(tmp_path) -> No
     too_long = tools.search_literature("q" * 301)
     assert too_long["error"] == "INVALID_ARGUMENT"
     assert len(requests) == 1
-
