@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import httpx
@@ -19,6 +21,7 @@ from labquorum.e2e.ledger import (
     RequestRecord,
 )
 from labquorum.e2e.mattermost import MattermostClient, MattermostPost
+from scripts.demo import record_demo as record_demo_module
 from scripts.demo.record_demo import (
     DemoRecorder,
     DemoRecordingError,
@@ -123,6 +126,9 @@ class FakeClient:
 
     def username_for(self, user_id: str) -> str:
         return user_id
+
+    def get_channel_posts(self, _channel_id: str) -> list[MattermostPost]:
+        return []
 
     def wait_for_approval_card(
         self,
@@ -397,6 +403,29 @@ def test_E2E_02_mattermost_wait_for_post_observes_exact_persona_message() -> Non
     )
 
     assert observed == post
+
+
+def test_E2E_04_audit_tail_runs_against_a_temporary_ledger_copy(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "ledger.sqlite"
+    with sqlite3.connect(source) as connection:
+        connection.execute("CREATE TABLE audit_event (seq INTEGER PRIMARY KEY)")
+
+    def fake_run(command: list[str], **_kwargs: Any) -> SimpleNamespace:
+        copied_path = Path(command[command.index("--db") + 1])
+        assert copied_path != source
+        assert copied_path.is_file()
+        return SimpleNamespace(returncode=0, stdout="[]", stderr="")
+
+    monkeypatch.setattr(record_demo_module.subprocess, "run", fake_run)
+
+    output = record_demo_module.run_audit_tail(source)
+
+    assert output == "[]"
+    with sqlite3.connect(source) as connection:
+        assert connection.execute("SELECT COUNT(*) FROM audit_event").fetchone() == (0,)
 
 
 def _make_recorder(
