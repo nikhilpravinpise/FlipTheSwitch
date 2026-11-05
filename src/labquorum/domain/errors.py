@@ -20,6 +20,7 @@ class ErrorCode(StrEnum):
     EXPIRED = "EXPIRED"
     STALE_REQUEST = "STALE_REQUEST"
     DECISION_MISMATCH = "DECISION_MISMATCH"
+    UNCOMMITTABLE_REQUEST = "UNCOMMITTABLE_REQUEST"
     ALREADY_DECIDED = "ALREADY_DECIDED"
     DECLINED = "DECLINED"
     NOT_FOUND = "NOT_FOUND"
@@ -68,6 +69,7 @@ def error_codes_markdown() -> str:
         ErrorCode.EXPIRED: "The approval request has expired.",
         ErrorCode.STALE_REQUEST: "The request revision or content hash is stale.",
         ErrorCode.DECISION_MISMATCH: "The submitted decision differs from the canonical decision.",
+        ErrorCode.UNCOMMITTABLE_REQUEST: "The pending request predates or exceeds the current commit-card contract.",
         ErrorCode.ALREADY_DECIDED: "The request already has a terminal decision.",
         ErrorCode.DECLINED: "The request was declined and cannot be committed.",
         ErrorCode.NOT_FOUND: "The requested ledger record does not exist.",

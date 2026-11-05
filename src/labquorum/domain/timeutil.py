@@ -137,6 +137,39 @@ def format_interval(start: datetime, end: datetime, timezone: str | ZoneInfo) ->
     return f"{start_date}, {local_start:%H:%M}-{end_date}, {end_clock} {zone_name}"
 
 
+def format_local_instant(value: datetime, timezone: str | ZoneInfo) -> str:
+    """Render one instant as a compact weekday, date, time, and zone card field."""
+    _require_aware(value)
+    try:
+        zone = ZoneInfo(timezone) if isinstance(timezone, str) else timezone
+    except (ZoneInfoNotFoundError, ValueError) as exc:
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"Unknown IANA time zone: {timezone!s}.",
+        ) from exc
+    local = value.astimezone(zone)
+    weekdays = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    months = (
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+    )
+    zone_name = local.tzname() or zone.key
+    return (
+        f"{weekdays[local.weekday()]} {local.day} {months[local.month - 1]} "
+        f"{local.year} {local:%H:%M} {zone_name}"
+    )
+
+
 def utc_timestamp(value: datetime) -> str:
     """Serialize an aware datetime as fixed-width UTC YYYY-MM-DDTHH:MM:SS.ffffffZ."""
     _require_aware(value)
