@@ -4,7 +4,7 @@ import json
 import sqlite3
 import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -372,6 +372,30 @@ def test_E2E_01_read_propose_smoke_checks_conflict_slot_and_pending_request(
     )
 
     assert_read_propose_smoke(reply, "AR-0042", snapshot)
+
+
+@pytest.mark.parametrize(
+    "updates",
+    [
+        {"resource": "INS-02"},
+        {"start_utc": "2026-11-06T10:00:00Z"},
+        {"end_utc": "2026-11-06T11:30:00Z"},
+    ],
+)
+def test_E2E_01_read_propose_smoke_rejects_wrong_persisted_booking(
+    tmp_path: Path,
+    updates: dict[str, str],
+) -> None:
+    snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
+    request = replace(snapshot.requests[0], **updates)
+    altered = replace(snapshot, requests=(request,))
+    reply = (
+        "Lena's 14:00-15:30 INS-01 booking conflicts. "
+        "The 15:45-16:45 slot is proposed. Request AR-0042."
+    )
+
+    with pytest.raises(AssertionError, match="persisted booking"):
+        assert_read_propose_smoke(reply, "AR-0042", altered)
 
 
 def test_E2E_03_wrong_person_refusal_has_no_ledger_effect(tmp_path: Path) -> None:
@@ -750,13 +774,17 @@ def _make_ledger(path: Path, *, committed: bool = False) -> Path:
         "action": "commit_booking",
         "requester": "maya",
         "resource": "INS-01",
-        "start_utc": "2026-11-06T10:15:00Z",
-        "end_utc": "2026-11-06T11:15:00Z",
+        "interval": {
+            "start_utc": "2026-11-06T10:15:00Z",
+            "end_utc": "2026-11-06T11:15:00Z",
+        },
         "project": "egcg",
         "request_id": "AR-0042",
         "revision": 1,
     }
     digest = content_hash(decision)
+    start_utc = decision["interval"]["start_utc"]
+    end_utc = decision["interval"]["end_utc"]
     request_status = "committed" if committed else "pending"
     booking_status = "committed" if committed else "proposed"
     connection.execute(
@@ -765,8 +793,8 @@ def _make_ledger(path: Path, *, committed: bool = False) -> Path:
             "AR-0042",
             "maya",
             "INS-01",
-            decision["start_utc"],
-            decision["end_utc"],
+            start_utc,
+            end_utc,
             "egcg",
             1,
             digest,
@@ -786,8 +814,8 @@ def _make_ledger(path: Path, *, committed: bool = False) -> Path:
             "maya",
             "INS-01",
             "egcg",
-            decision["start_utc"],
-            decision["end_utc"],
+            start_utc,
+            end_utc,
             booking_status,
         ),
     )
@@ -814,8 +842,19 @@ def _make_ledger(path: Path, *, committed: bool = False) -> Path:
 
 
 def _card_text(request: Any) -> str:
-    values = json.dumps(request.decision, sort_keys=True)
-    return f"Decision: {values}\ncontent_hash: {request.content_hash}"
+    return "\n".join(
+        (
+            "action: commit_booking",
+            f"request_id: {request.request_id}",
+            f"revision: {request.revision}",
+            f"content_hash: {request.content_hash}",
+            f"requester_handle: {request.requester}",
+            f"instrument_id: {request.resource}",
+            f"project_untrusted_text: {request.project}",
+            f"start_utc: {request.start_utc}",
+            f"end_utc: {request.end_utc}",
+        )
+    )
 
 
 @dataclass(frozen=True)
