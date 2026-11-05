@@ -36,6 +36,9 @@ class ErrorCode(StrEnum):
     MISMATCH = "MISMATCH"
     RETRACTED = "RETRACTED"
     UNREACHABLE = "UNREACHABLE"
+    BINDING_COMMIT_LIMIT = "BINDING_COMMIT_LIMIT"
+    BINDING_CERTIFICATION_REQUIRED = "BINDING_CERTIFICATION_REQUIRED"
+    BINDING_CERTIFICATION_MISMATCH = "BINDING_CERTIFICATION_MISMATCH"
 
 
 class LabQuorumError(Exception):
@@ -85,6 +88,9 @@ def error_codes_markdown() -> str:
         ErrorCode.MISMATCH: "The source metadata does not match the supplied metadata.",
         ErrorCode.RETRACTED: "The source has a recorded retraction.",
         ErrorCode.UNREACHABLE: "The remote source could not be reached.",
+        ErrorCode.BINDING_COMMIT_LIMIT: "This MCP process already committed a different booking.",
+        ErrorCode.BINDING_CERTIFICATION_REQUIRED: "Binding requires a test ledger or matching certification evidence.",
+        ErrorCode.BINDING_CERTIFICATION_MISMATCH: "Certification evidence does not match the installed runtime tuple.",
     }
     rows = ["| Code | Meaning |", "| --- | --- |"]
     rows.extend(f"| {code.value} | {meanings[code]} |" for code in ErrorCode)

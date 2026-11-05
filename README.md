@@ -34,4 +34,7 @@
 | MISMATCH | The source metadata does not match the supplied metadata. |
 | RETRACTED | The source has a recorded retraction. |
 | UNREACHABLE | The remote source could not be reached. |
+| BINDING_COMMIT_LIMIT | This MCP process already committed a different booking. |
+| BINDING_CERTIFICATION_REQUIRED | Binding requires a test ledger or matching certification evidence. |
+| BINDING_CERTIFICATION_MISMATCH | Certification evidence does not match the installed runtime tuple. |
 <!-- error-codes:end -->

@@ -20,6 +20,11 @@ from structlog.stdlib import add_log_level
 
 from labquorum.domain.errors import ErrorCode, LabQuorumError
 from labquorum.domain.timeutil import Clock
+from labquorum.mcp.binding import (
+    BindingCommitLimiter,
+    resolve_runtime_profile,
+    validate_binding_request,
+)
 from labquorum.mcp.profiles import TOOL_DESCRIPTIONS, Profile, tool_names_for_profile
 from labquorum.mcp.tools_lab import LabTools
 from labquorum.store.db import default_database_path, open_database
@@ -29,10 +34,12 @@ from labquorum.store.db import default_database_path, open_database
 
 
 def duplicate_option(
-    parser: argparse.ArgumentParser,
+    parser: argparse.ArgumentParser | _UniqueOptionArgumentParser,
     arguments: Sequence[str],
 ) -> str | None:
     """Return the first repeated recognized option, including its ``--name=value`` form."""
+    if isinstance(parser, _UniqueOptionArgumentParser):
+        parser = parser.parser
     actions = {option: action for action in parser._actions for option in action.option_strings}
     seen: set[int] = set()
     for argument in arguments:
@@ -57,6 +64,10 @@ class _UniqueOptionArgumentParser:
 
     def duplicate_option(self, arguments: Sequence[str]) -> str | None:
         return duplicate_option(self._parser, arguments)
+
+    @property
+    def parser(self) -> argparse.ArgumentParser:
+        return self._parser
 
     def parse_args(self, args: Sequence[str] | None = None) -> argparse.Namespace:
         arguments = list(sys.argv[1:] if args is None else args)
@@ -83,14 +94,19 @@ def create_runtime(
     return LabTools(resolved_profile, database_path, clock=clock)
 
 
-def create_server(
-    profile: str | Profile,
+def create_server(  # noqa: PLR0913
+    profile: str | Profile | None,
     database_path: Path | None = None,
     *,
     clock: Clock | None = None,
+    binding: str = "off",
+    runtime_root: Path | None = None,
+    certification_evidence: Path | None = None,
+    cwd: Path | None = None,
 ) -> FastMCP:
-    """Create a FastMCP server named labquorum with only this profile's tools."""
-    runtime = create_runtime(profile, database_path, clock=clock)
+    """Create a profile-scoped server, hiding commits unless binding is verified."""
+    working_directory = cwd or Path.cwd()
+    resolved_profile = resolve_runtime_profile(profile, runtime_root, working_directory)
     server = FastMCP(
         name="labquorum",
         instructions=(
@@ -100,12 +116,42 @@ def create_server(
         ),
         log_level="ERROR",
     )
-    for name in tool_names_for_profile(runtime.profile):
+    if resolved_profile is None:
+        return server
+    effective_binding = binding
+    if binding != "off":
+        try:
+            validate_binding_request(
+                binding,
+                resolved_profile,
+                database_path or default_database_path(),
+                runtime_root,
+                certification_evidence,
+                working_directory,
+            )
+        except LabQuorumError as exc:
+            if binding != "on":
+                raise
+            effective_binding = "off"
+            structlog.get_logger("labquorum.mcp.server").warning(
+                "binding_disabled",
+                error_code=exc.code.value,
+                message=exc.message,
+            )
+    runtime = create_runtime(resolved_profile, database_path, clock=clock)
+    names = list(tool_names_for_profile(runtime.profile))
+    if effective_binding == "off" and "commit_booking" in names:
+        names.remove("commit_booking")
+    limiter = BindingCommitLimiter() if effective_binding in {"certify", "on"} else None
+    for name in names:
+        method = runtime.tool_method(name)
+        if name == "commit_booking" and limiter is not None:
+            method = limiter.wrap(method)
         server.tool(
             name=name,
             description=TOOL_DESCRIPTIONS[name],
             structured_output=True,
-        )(runtime.tool_method(name))
+        )(method)
     return server
 
 
@@ -117,14 +163,29 @@ def argument_parser() -> _UniqueOptionArgumentParser:
     parser.add_argument(
         "--profile",
         choices=[profile.value for profile in Profile],
-        required=True,
-        help="Agent capability profile for this MCP process.",
+        help="Optional capability profile; omitted profiles are resolved from runtime cwd.",
     )
     parser.add_argument(
         "--db",
         type=Path,
         default=default_database_path(),
         help="SQLite ledger path (defaults to the lq CLI ledger path).",
+    )
+    parser.add_argument(
+        "--runtime-root",
+        type=Path,
+        help="Stable LabQuorum runtime root used to scope profile resolution.",
+    )
+    parser.add_argument(
+        "--binding",
+        choices=("off", "certify", "on"),
+        default="off",
+        help="Commit exposure mode; default off is proposal and review only.",
+    )
+    parser.add_argument(
+        "--certification-evidence",
+        type=Path,
+        help="Evidence JSON for a certified on-mode runtime tuple.",
     )
     return _UniqueOptionArgumentParser(parser)
 
@@ -155,14 +216,25 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         with closing(open_database(args.db)) as connection:
             connection.execute("SELECT 1").fetchone()
-        server = create_server(args.profile, args.db)
-        logger.info("server_started", profile=args.profile, database=str(args.db.resolve()))
+        server = create_server(
+            args.profile,
+            args.db,
+            binding=args.binding,
+            runtime_root=args.runtime_root,
+            certification_evidence=args.certification_evidence,
+        )
+        logger.info(
+            "server_started",
+            profile=args.profile or "cwd-scoped",
+            database=str(args.db.resolve()),
+            binding=args.binding,
+        )
         asyncio.run(server.run_stdio_async())
         return 0
     except (LabQuorumError, OSError, sqlite3.Error) as error:
         logger.error(
             "server_start_failed",
-            profile=args.profile,
+            profile=args.profile or "cwd-scoped",
             database=str(args.db),
             error_code=getattr(getattr(error, "code", None), "value", "INVALID_ARGUMENT"),
             message=str(error),

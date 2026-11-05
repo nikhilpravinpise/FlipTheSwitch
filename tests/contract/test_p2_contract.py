@@ -37,6 +37,13 @@ PROBE_END = "2026-11-09T11:00:00+05:30"
 def _seed_database(path: Path) -> None:
     connection = init_database(path)
     try:
+        connection.execute(
+            "CREATE TABLE IF NOT EXISTS labquorum_test_marker (marker TEXT PRIMARY KEY)"
+        )
+        connection.execute(
+            "INSERT OR IGNORE INTO labquorum_test_marker(marker) VALUES (?)",
+            ("p3-certify-only",),
+        )
         seed_demo(
             connection,
             date(2026, 11, 6),
@@ -57,6 +64,7 @@ async def _connect(profile: str, database: Path) -> AsyncIterator[ClientSession]
             profile,
             "--db",
             str(database),
+            *(["--binding", "certify"] if profile == "approver" else []),
         ],
         cwd=ROOT,
     )

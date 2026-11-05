@@ -18,12 +18,28 @@
       "request_id": "/request_id",
       "revision": "/revision",
       "content_hash": "/content_hash",
+      "decision": "",
       "commit_arguments": ""
     }
   },
   "commit_booking": {
     "tool": "commit_booking",
-    "arguments": {},
+    "arguments": {
+      "request_id": {"$ref": "request.request_id"},
+      "revision": {"$ref": "request.revision"},
+      "content_hash": {"$ref": "request.content_hash"},
+      "decision": {"$ref": "request.decision"},
+      "action": {"$ref": "request.decision.action"},
+      "instrument_id": {"$ref": "request.decision.instrument_id"},
+      "instrument_name": {"$ref": "request.decision.instrument_name"},
+      "requester_handle": {"$ref": "request.decision.requester_handle"},
+      "requester_display_name": {"$ref": "request.decision.requester_display_name"},
+      "project_untrusted_text": {"$ref": "request.decision.project_untrusted_text"},
+      "start_local": {"$ref": "request.decision.start_local"},
+      "end_local": {"$ref": "request.decision.end_local"},
+      "start_utc": {"$ref": "request.decision.start_utc"},
+      "end_utc": {"$ref": "request.decision.end_utc"}
+    },
     "result_paths": {"status": "/status"},
     "committed_value": "committed",
     "idempotent_values": ["committed"],

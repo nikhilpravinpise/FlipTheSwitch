@@ -1,0 +1,14 @@
+{
+  "red_commit": "f3cf6c9707b27ec6da9e57ef869fbe1ad73f7275",
+  "red_tests": [
+    "tests/unit/test_p3_setup.py::test_C_04_setup_sets_prompt_for_commit_booking_only",
+    "tests/unit/test_p3_setup.py::test_C_05_per_agent_configs_expose_only_their_booking_profile",
+    "tests/unit/test_p3_setup.py::test_C_06_home_registration_is_cwd_scoped_and_restricts_codex_tools",
+    "tests/unit/test_p3_setup.py::test_C_07_template_lint_enforces_provider_model_effort_and_addressing",
+    "tests/unit/test_p3_setup.py::test_C_08_template_lint_rejects_bad_names_mentions_and_em_dash",
+    "tests/unit/test_p3_setup.py::test_C_09_setup_writes_absolute_codex_mcp_profiles_without_duplicate_flags",
+    "tests/unit/test_p3_setup.py::test_C_11_doctor_rejects_invalid_runtime_configuration",
+    "tests/unit/test_p3_setup.py::test_C_12_binding_fails_closed_and_limits_distinct_commits",
+    "tests/unit/test_p3_setup.py::test_I_13_doctor_reports_and_validates_effective_binding_state"
+  ]
+}

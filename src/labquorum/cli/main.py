@@ -21,6 +21,12 @@ from labquorum.domain.errors import ErrorCode, LabQuorumError
 from labquorum.domain.timeutil import SystemClock
 from labquorum.mcp.profiles import profile_for_agent
 from labquorum.mcp.server import argument_parser as _server_argument_parser
+from labquorum.provisioning import (
+    default_runtime_root,
+    lint_template_file,
+    runtime_doctor_findings,
+    setup_runtime,
+)
 from labquorum.store.audit import tail, verify
 from labquorum.store.db import (
     database_info,
@@ -58,8 +64,17 @@ def _parser() -> argparse.ArgumentParser:
     seed.add_argument("--anchor-date", type=_date_argument, required=True)
 
     doctor = commands.add_parser("doctor", help="check the local LabQuorum environment")
-    doctor.add_argument("--db", type=Path, default=default_database_path())
+    doctor.add_argument("--db", type=Path)
     doctor.add_argument("--agents-dir", type=Path, default=REPO_ROOT / "agents")
+    doctor.add_argument("--runtime-root", type=Path)
+
+    setup = commands.add_parser("setup", help="create the booking agent runtime")
+    setup.add_argument("--runtime-root", type=Path, default=default_runtime_root())
+
+    template = commands.add_parser("template", help="check a Switch agent template")
+    template_commands = template.add_subparsers(dest="template_command", required=True)
+    lint = template_commands.add_parser("lint", help="lint a booking-only Switch template")
+    lint.add_argument("path", type=Path)
 
     request = commands.add_parser("request", help="inspect approval requests")
     request_commands = request.add_subparsers(dest="request_command", required=True)
@@ -325,6 +340,7 @@ def doctor_report(
     *,
     agents_dir: Path,
     repo_root: Path = REPO_ROOT,
+    inspect_agents: bool = True,
 ) -> dict[str, Any]:
     """Collect distinct local setup findings without mutating the ledger or contacting APIs."""
     database_path = database_path.expanduser().resolve(strict=False)
@@ -415,7 +431,8 @@ def doctor_report(
             )
         )
     findings.append(_check_docker())
-    findings.extend(_inspect_agent_configs(agents_dir))
+    if inspect_agents:
+        findings.extend(_inspect_agent_configs(agents_dir))
     return {
         "python_version": python_version,
         "uv_version": uv_version,
@@ -428,12 +445,42 @@ def doctor_report(
     }
 
 
-def _run(args: argparse.Namespace) -> int:
-    path: Path = args.db
+def _run(args: argparse.Namespace) -> int:  # noqa: PLR0911
+    if args.command == "setup":
+        manifest = setup_runtime(args.runtime_root)
+        connection = init_database(Path(manifest["ledger_path"]))
+        connection.close()
+        print(_json(manifest))
+        return 0
+    if args.command == "template" and args.template_command == "lint":
+        issues = lint_template_file(args.path)
+        print(
+            _json(
+                {"path": str(args.path.resolve(strict=False)), "issues": issues, "ok": not issues}
+            )
+        )
+        return 0 if not issues else 1
     if args.command == "doctor":
-        report = doctor_report(path, agents_dir=args.agents_dir)
+        runtime_root = args.runtime_root
+        path = (
+            runtime_root.expanduser().resolve(strict=False) / "ledger.sqlite"
+            if runtime_root is not None and args.db is None
+            else args.db or default_database_path()
+        )
+        agents_dir = runtime_root / "agents" if runtime_root is not None else args.agents_dir
+        report = doctor_report(
+            path,
+            agents_dir=agents_dir,
+            inspect_agents=runtime_root is None,
+        )
+        if runtime_root is not None:
+            resolved_root = runtime_root.expanduser().resolve(strict=False)
+            report["runtime_root"] = str(resolved_root)
+            report["findings"].extend(runtime_doctor_findings(resolved_root))
+            report["ok"] = not any(item["severity"] == "error" for item in report["findings"])
         print(_json(report))
         return 0 if report["ok"] else 1
+    path: Path = args.db
     if args.command == "init":
         connection = init_database(path)
         try:
