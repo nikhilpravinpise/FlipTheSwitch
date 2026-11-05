@@ -100,7 +100,7 @@ def _register_p6_commands(commands: Any) -> None:
     """Register the P6 backup and restore CLI commands."""
     backup = commands.add_parser("backup", help="create and verify a ledger backup")
     backup.add_argument("--db", type=Path, default=default_database_path())
-    backup.add_argument("--out", type=Path, required=True)
+    backup.add_argument("--out", "--output", dest="out", type=Path, required=True)
 
     restore = commands.add_parser("restore", help="restore and verify a ledger backup")
     restore.add_argument("--from", dest="source", type=Path, required=True)
@@ -670,7 +670,6 @@ def _run(args: argparse.Namespace) -> int:  # noqa: PLR0911
             report["ok"] = not any(item["severity"] == "error" for item in report["findings"])
         print(_json(report))
         return 0 if report["ok"] else 1
-    path: Path = args.db
     if args.command == "init":
         connection = init_database(path)
         try:

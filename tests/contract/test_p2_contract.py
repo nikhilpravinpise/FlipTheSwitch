@@ -130,7 +130,7 @@ def test_C_09_agent_folder_maps_to_its_expected_mcp_profile(
     assert profile_for_agent("labops") is Profile.PROPOSER
     assert profile_for_agent("pi-desk") is Profile.APPROVER
     assert profile_for_agent("scout") is Profile.UNAVAILABLE
-    assert profile_for_agent("analyst") is Profile.UNAVAILABLE
+    assert profile_for_agent("analyst") is Profile.ANALYST
     agents_dir = tmp_path / "agents"
     labops_dir = agents_dir / "labops"
     labops_dir.mkdir(parents=True)
