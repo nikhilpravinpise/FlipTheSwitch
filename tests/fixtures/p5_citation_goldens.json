@@ -1,0 +1,34 @@
+{
+  "verified": {
+    "label": "verified",
+    "expected": "VERIFIED",
+    "doi": "10.1038/s41586-021-03819-2",
+    "retrieved_on": "2026-11-05",
+    "claim": {
+      "doi": "10.1038/s41586-021-03819-2",
+      "title": "Highly accurate protein structure prediction with AlphaFold",
+      "first_author": "Jumper",
+      "year": 2021
+    }
+  },
+  "retracted": {
+    "label": "retracted",
+    "expected": "RETRACTED",
+    "doi": "10.1038/s41598-019-45611-3",
+    "notice_doi": "10.1038/s41598-023-44593-7",
+    "retrieved_on": "2026-11-05",
+    "claim": {
+      "doi": "10.1038/s41598-019-45611-3"
+    }
+  },
+  "fabricated": {
+    "label": "fabricated",
+    "expected": "UNRESOLVED",
+    "doi": "10.5555/labquorum-unresolved-fixture-20261107",
+    "retrieved_on": "2026-11-05",
+    "claim": {
+      "doi": "10.5555/labquorum-unresolved-fixture-20261107",
+      "title": "A deliberately fabricated metadata record"
+    }
+  }
+}

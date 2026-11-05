@@ -1,3 +1,5 @@
+> Editing base: use Darshan's 135-second script in [darshan/issue-4-qa-video.md](darshan/issue-4-qa-video.md) as the editing base for this draft.
+
 # Demo script - target 2:15, hard cap under 3:00
 
 Production draft. Record one genuine causal run with synthetic lab records and two real teammates: Nikhil as PI and Darshan as student. Binding shots are conditional on the complete P4 certification for the installed tuple, including refusal, complete card and fresh consent. Capture actual waits and caption edits. Source: `docs/build/team-impact.md`, `docs/build/PHASES.md`, `docs/submission-fields.md`.

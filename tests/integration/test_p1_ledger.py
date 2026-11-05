@@ -610,6 +610,38 @@ def test_I_10_demo_seed_is_idempotent_and_anchor_date_relative(
     assert any(row["start_utc"] == "2026-11-07T08:30:00.000000Z" for row in initial_bookings)
 
 
+def test_I_10_demo_seed_backfills_a_new_person_and_training_at_the_same_anchor(
+    tmp_path: Path,
+) -> None:
+    anchor_date = date(2026, 11, 6)
+    connection, clock = make_seeded_ledger(
+        tmp_path / "seed-backfill.sqlite", anchor_date=anchor_date
+    )
+    connection.execute("DELETE FROM training WHERE person_id = ?", ("darved2305",))
+    connection.execute("DELETE FROM person WHERE id = ?", ("darved2305",))
+    connection.commit()
+    initial_audit_count = _audit_count(connection)
+
+    result = seed_demo(connection, anchor_date, clock=clock)
+
+    person = connection.execute(
+        "SELECT display_name, role FROM person WHERE id = ?", ("darved2305",)
+    ).fetchone()
+    training = connection.execute(
+        "SELECT expires_at_utc FROM training WHERE person_id = ? AND instrument_id = ?",
+        ("darved2305", "INS-01"),
+    ).fetchone()
+    assert result["seeded"] is False
+    assert result["people"] == 1
+    assert person is not None
+    assert person["display_name"] == "Darshan Ved (student)"
+    assert person["role"] == "student"
+    assert training is not None
+    assert verify(connection) is None
+    assert _audit_count(connection) == initial_audit_count + 1
+    connection.close()
+
+
 def _assert_seeded_alternative_for_anchor(
     database_path: Path, anchor_date: date, expected_open_day: date
 ) -> None:

@@ -14,6 +14,11 @@ people:
     display_name: Maya Iyer
     role: student
     timezone: Asia/Kolkata
+  # Synthetic demo identity and training record, not a real lab credential.
+  - id: darved2305
+    display_name: Darshan Ved (student)
+    role: student
+    timezone: Asia/Kolkata
   - id: dev
     display_name: Dev Sharma
     role: ra
@@ -97,6 +102,10 @@ training:
     instrument_id: INS-02
     granted_offset_days: -3650
     expires_offset_days: 60
+  - person_id: darved2305
+    instrument_id: INS-01
+    granted_offset_days: -3650
+    expires_offset_days: 120
   - person_id: dev
     instrument_id: INS-01
     granted_offset_days: -400

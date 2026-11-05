@@ -11,7 +11,7 @@
       "result": {
         "seeded": true,
         "anchor_date": "2026-11-06",
-        "people": 5,
+        "people": 6,
         "instruments": 4,
         "bookings": 2
       }
@@ -22,6 +22,7 @@
       "profile": "proposer",
       "tool": "propose_booking",
       "arguments": {
+        "requester_handle": "maya",
         "instrument_id": "INS-01",
         "project_id": "I-12 recorded stdio replay",
         "start": "2026-11-09T10:00:00+05:30",

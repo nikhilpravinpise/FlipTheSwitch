@@ -225,3 +225,81 @@ The session-home derivation is `sha256(sessionId)` under `root/provider-home`, a
 | `uv run pytest` | PASS, 101 passed in 53.92 seconds |
 | `git diff --check` | PASS, exit code 0; Git warned that the ADR working copy uses CRLF and will be normalized to LF |
 | U+2014 scan of Run 5 files | PASS, zero occurrences in `000-spikes.md` and `run5-api.json` |
+## Run 7 - 2026-11-05
+
+Scope: API-only onboarding of Darshan Ved following the accepted 19:12 access-control decision. Mattermost remained tailnet-only. The Switch Console RPC opened its authenticated Gateway origin, and all account, identity, and membership changes used HTTP APIs. No UI clicks or typing were used.
+
+### Account discovery and Switch identity
+
+| Area | API calls and result |
+| --- | --- |
+| Mattermost session | `switchServers.getBundledChatSignIn` supplied the local `@user` login to `POST /api/v4/users/login`. Password and bearer token stayed in process memory and were not recorded. `GET /api/v4/users/me` verified the session as `@user`. |
+| Darshan lookup | `GET /api/v4/users?sort=create_at&per_page=50` returned HTTP 400. `POST /api/v4/users/search` for `darshan`, `darved`, `Darshan Ved`, and `darshanmved` returned HTTP 200 and matched Mattermost user `darved2305`, email `darshanmved@gmail.com`, id `uis47eufo3njdjobcuigp8ky1o`. |
+| Switch user | `GET /gateway/users` confirmed the email was not already present. Admin-authenticated `POST /gateway/users` created `Darshan Ved (student)` with role `user`; it returned HTTP 200 and the follow-up `GET /gateway/users` verified the same record. A high-entropy initial password was generated in memory and not recorded. The admin-only route and request fields are in pinned Switch source `core/switch_core/gateway/auth_routes.py:501-531`. |
+| Identity claim | `POST /gateway/collaborations/{bridge_id}/identities` with Mattermost's user id, username `darved2305`, and the new Switch user id returned HTTP 200. The response listed `Darshan Ved (student)` as the claimant. The claim request's optional target `user_id` is in `core/switch_core/gateway/schemas.py:740-752`; the route and admin check are in `core/switch_core/gateway/collaborations.py:815-862`. |
+
+The Console API session path is pinned at `console/apps/switch-console-desktop/src/main/core/switch-servers/controller.ts:622-637` and `auth.ts:31-33, 76-83, 128-142`. The Mattermost API shapes follow the official [users](https://docs.mattermost.com/api/reference/users) and [channels](https://docs.mattermost.com/api/reference/channels) references.
+
+### Room membership and issue follow-up
+
+The Switch workspace room list contained `rao-labquorum`; its Mattermost private channel slug is `rao-labquorum-cb95ddef`. Direct Mattermost channel lookup also found the private persona test room `lq-p0-run3-private` (display name `LabQuorum P0 Run 3`). As `@user`, `POST /api/v4/channels/{channel_id}/members` added Darshan to both rooms and returned HTTP 201 for each. `GET /api/v4/channels/{channel_id}/members/{user_id}` returned HTTP 200 for both, listing Darshan as `channel_user`.
+
+Issue #1 was updated with both room names and the requested first message: `@labops, can I book INS-01 for 60 minutes on the next open day between 14:00 and 17:00?`. The invite link was not reposted.
+
+No password or token was written to this file. The Switch account's generated initial password was not retained, so direct password sign-in to Switch would need a secure reset or setup path if Darshan needs one.
+
+## S6 capacity (orchestrator, Thu 5 Nov 2026, 21:05 IST)
+
+PASS. Measured under heavier-than-demo load: both Codex room agents (`rao-labops`, `rao-pi-desk`) registered, Switch Console (12 processes, 1.6 GB), Switch core and PostgreSQL (0.7 GB), Mattermost container (132 MiB), five concurrent Codex builder runs (1.2 GB), Node processes (2.5 GB), Wispr Flow (1.3 GB). Physical memory 23.3 GB total, 6.2 GB free: **27% headroom** against the required 20%. The `.wslconfig` cap (5 GB) is not yet applied (applies at the next WSL restart); Docker currently reports an 11.33 GiB container limit, unused. Re-measure after three demo takes if the demo runs with builders active.
+
+## P0 status summary (21:05 IST)
+
+S0 PASS (Codex agent reply), S1 PASS (unclaimed refusal; claimed PI, Maya and Darshan), S4 fixture PASS (personas posting, template import via server API in P3), S6 PASS (27% headroom), Darshan onboarded over Tailscale with access controls (`docs/build/access-control.md`). Model and effort are proven from Codex's thread database (`gpt-6-luna`, `high`, CLI 0.166.0, see P3 report); proof from a rollout `turn_context` line remains open because Switch's per-session rollout file is removed before it can be read, and is assigned to the P4 certification run.
+
+## Run 8 - 2026-11-05
+
+Scope: merge `p3-fix2`, integrate its requester-identity and prompt-routing changes with the existing P3 isolation fixes, update the real runtime through `lq` and Switch APIs, then run the offline and live P3 gates. No push was made.
+
+### Merge and integration changes
+
+| Change | Result |
+| --- | --- |
+| Merge `p3-fix2` | Merge commit `eff3b17` retained both runs' changes: requester identity is explicit and follows the sender; Darshan is in the demo seed; LabOps instructions handle approval-card text safely; only `commit_booking` is prompted. P3 hardlink checks, disabled binding-on behavior, and commit-session limiting remain in place. |
+| P2 protected audit test | Orchestrator-authorized update passes `requester_handle="maya"` to the echo-to-commit test. Its assertion is unchanged. |
+| P3 doctor integration | A test exposed a duplicate `RUNTIME_CODEX_HOME` finding after merge. The implementation now emits one finding. |
+| Same-anchor seed recovery | A test exposed that an existing runtime seed did not add a newly introduced demo person. Same-anchor seed now adds missing seed people and their training, records the audit event, and preserves existing bookings. The real run added Darshan without changing its 3 bookings or 3 requests. |
+
+Test-first commits: `c920668` / `3f70e79` for the doctor finding and `86989c7` / `73801ed` for additive seed recovery. `cbcafea` keeps the seed helper Ruff-clean. The protected audit update is `4b1568a`.
+
+### Runtime and Switch API results
+
+Runtime root: `C:\Users\Nikhil\AppData\Local\LabQuorum`. `uv run lq setup --runtime-root C:\Users\Nikhil\AppData\Local\LabQuorum` completed with binding off, a valid generated template, the runtime Codex home, and the stable MCP executable. `uv run lq seed --demo --db C:\Users\Nikhil\AppData\Local\LabQuorum\ledger.sqlite --anchor-date 2026-11-05` added the missing Darshan record at the existing anchor. `uv run lq audit verify --db C:\Users\Nikhil\AppData\Local\LabQuorum\ledger.sqlite` reported a valid audit chain. Read-only DB inspection verified Darshan `darved2305`, student role, INS-01 training through `2027-03-04T18:30:00Z`, and preserved booking/request counts.
+
+`scripts/ops/launch_console.ps1 -RuntimeRoot C:\Users\Nikhil\AppData\Local\LabQuorum` relaunched Switch Console and reported CDP ready on port 9333 with `CODEX_HOME` set to `C:\Users\Nikhil\AppData\Local\LabQuorum\codex-home`; the launcher refreshed PATH. Through the Switch RPC API, both `rao-labops` and `rao-pi-desk` were stopped and restarted, then verified running with Codex `gpt-6-luna`, effort `high`, `autoMode=false`, and `autoApprove=false`. The config has default approval mode `approve` and only the `commit_booking` override set to `prompt`.
+
+The stop/start operation uses `managedAgents.setDesiredState` with `desiredState` `stopped` or `running`, as implemented in pinned Switch Console v0.40.1 source `console/apps/switch-console-desktop/src/main/core/managed-agents/controller.ts:231-239`. API calls were made through the reviewed RPC bridge; no Console UI clicks or typing were used.
+
+The protected user Codex config hash remained `BA1BD22F8C52F9022D6DB83304B23E86E732CD9028576543B017142881804F13` before and after setup. It was not written.
+
+### Live Darshan request
+
+The exact request was not replayed by the operator because the runtime has no Darshan-authenticated Mattermost API session or approved `darved2305` token. Mattermost post creation uses the authenticated API identity; the caller cannot select another user as the post author ([Mattermost create post API](https://docs.mattermost.com/api/reference/create-post)). No Darshan credential was requested, reset, or fabricated. Therefore the live agent reply, conflict/proposal result, approval-card count, and under-two-minute response time remain UNVERIFIED.
+
+Issue #8 was commented with the exact request and expected result, asking `@darved2305` to replay it and report the request ID and elapsed time: https://github.com/nikhilpravinpise/FlipTheSwitch/issues/8#issuecomment-6665448634.
+
+### Command outcomes
+
+| Command or action | Result |
+| --- | --- |
+| `uv sync --locked` | PASS |
+| `uv run ruff check .` | PASS |
+| `uv run ruff format --check .` | PASS, 139 files formatted |
+| `uv run pyright` | PASS, 0 errors, warnings, or informations |
+| `uv run pytest -q` | PASS, 134 passed in 69.10 seconds; snapshot passed |
+| `uv run python scripts/gates/p1.py` | PASS, 134 common tests passed; coverage 94.16%; P1 race test passed; exit 0 |
+| `uv run python scripts/gates/p2.py` | PASS, common gate, proposer/approver stdio probes, idempotent commit retry, and tampered-decision rejection; exit 0 |
+| `uv run python scripts/gates/p3.py` | PASS, common gate, setup safety, template lint, MCP profile, seed, booking and binding-limit probes; exit 0 |
+| `uv run python scripts/gates/p3.py --live` | PASS, offline P3 checks and live Switch wiring; both `rao-labops` and `rao-pi-desk` validated; exit 0 |
+| `gh issue comment 8 -R nikhilpravinpise/FlipTheSwitch --body-file C:\Users\Nikhil\.claude\jobs\85ca08fa\tmp\out\run8-issue-comment.md` | PASS, comment posted as issue comment 6665448634 |
+
+Warnings in the P3 test doctor's temporary runtime (`OPENALEX_API_KEY` missing and Docker unavailable) are expected for this booking-only, offline gate. They did not cause gate failures.

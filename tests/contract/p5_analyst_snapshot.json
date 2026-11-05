@@ -1,0 +1,149 @@
+[
+  {
+    "description": "Read a staged dataset's columns, inferred types, missing values, duplicate rows or wells, out-of-range OD values, formula-like cells, and mapping warnings by dataset version ID. No file path is accepted.",
+    "inputSchema": {
+      "properties": {
+        "dataset_version_id": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Dataset Version Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dataset_version_id"
+      ],
+      "title": "dataset_profileArguments",
+      "type": "object"
+    },
+    "name": "dataset_profile"
+  },
+  {
+    "description": "List recent analysis runs and their current or stale state, optionally scoped by dataset ID.",
+    "inputSchema": {
+      "properties": {
+        "dataset_id": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Id"
+        },
+        "limit": {
+          "default": 20,
+          "maximum": 50,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        }
+      },
+      "title": "list_runsArguments",
+      "type": "object"
+    },
+    "name": "list_runs"
+  },
+  {
+    "description": "Register UTF-8 CSV text as an immutable, hashed dataset version under LabQuorum's private staging root. Supply a stable dataset ID, sensitivity, and correction reason. Human-subject data is refused. File paths and shell commands are not accepted.",
+    "inputSchema": {
+      "properties": {
+        "change_reason": {
+          "default": "",
+          "maxLength": 240,
+          "title": "Change Reason",
+          "type": "string"
+        },
+        "csv_text": {
+          "minLength": 1,
+          "title": "Csv Text",
+          "type": "string"
+        },
+        "dataset_id": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "sensitivity": {
+          "default": "internal",
+          "enum": [
+            "internal",
+            "unpublished",
+            "human_subjects"
+          ],
+          "title": "Sensitivity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dataset_id",
+        "csv_text"
+      ],
+      "title": "register_datasetArguments",
+      "type": "object"
+    },
+    "name": "register_dataset"
+  },
+  {
+    "description": "Run the vetted descriptive recipe on a current staged plate dataset. It records input, recipe, lockfile and output hashes and returns a JSON summary and PNG figure. Wells are technical replicates; no p-values or significance claims are produced. No shell or path is accepted.",
+    "inputSchema": {
+      "properties": {
+        "dataset_version_id": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Dataset Version Id",
+          "type": "string"
+        },
+        "params": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Params"
+        },
+        "recipe": {
+          "const": "descriptive",
+          "title": "Recipe",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dataset_version_id",
+        "recipe"
+      ],
+      "title": "run_analysisArguments",
+      "type": "object"
+    },
+    "name": "run_analysis"
+  },
+  {
+    "description": "Read one analysis run and its JSON/PNG artifact hashes, status, and stale reason. A stale run never becomes current; reruns receive new IDs.",
+    "inputSchema": {
+      "properties": {
+        "run_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id"
+      ],
+      "title": "run_statusArguments",
+      "type": "object"
+    },
+    "name": "run_status"
+  }
+]

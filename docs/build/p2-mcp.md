@@ -12,7 +12,7 @@ uv run lq-mcp --profile proposer
 
 `lq-mcp` accepts `--profile proposer|approver|unavailable` and an optional `--db PATH`. Repeating any recognized option is an argument error, including `--profile` and `--db`. The default ledger path is the same path used by `lq`. The MCP server name is `labquorum`. MCP JSON-RPC uses stdout; structured JSON logs use stderr.
 
-The `proposer` profile is for `labops`; the `approver` profile is for `pi-desk`. The `unavailable` profile is for agents whose capability is deferred. It only exposes `capability_status`. The P2 booking workflow uses the seeded requester Maya. It does not infer a human identity from tool arguments.
+The `proposer` profile is for `labops`; the `approver` profile is for `pi-desk`. The `unavailable` profile is for agents whose capability is deferred. It only exposes `capability_status`. `propose_booking` requires the Switch sender's platform handle and resolves it case-insensitively against ledger people. An unknown handle returns `UNKNOWN_REQUESTER`; it never falls back to Maya or another person.
 
 ## Tool catalogue
 
@@ -26,7 +26,7 @@ Datetime arguments are ISO 8601 strings with an explicit UTC offset, such as `20
 | --- | --- | --- |
 | `list_instruments` | None | Lists instrument ID, name, location, time zone, status, training requirement, maximum block, cleaning gap, and booking window. |
 | `check_availability` | `instrument_id`, `start`, `end` | Checks current policy for Maya. Returns an availability result and a readable local-time summary. A conflict returns the conflicting booking ID and owner, plus the nearest free interval with the same length when one exists. |
-| `propose_booking` | `instrument_id`, `project_id`, `start`, `end` | Creates a pending booking request. Returns exactly the flat arguments that can be echoed to `commit_booking`, including instrument and requester names, `project_untrusted_text`, local weekday/date/time/zone endpoints, UTC endpoints, revision, and hash. Project text is limited to 120 characters. A conflict returns the owner and nearest same-length slot. |
+| `propose_booking` | `requester_handle`, `instrument_id`, `project_id`, `start`, `end` | Validates the requester handle against ledger people, checks that person's training and creates a pending booking request. Returns exactly the flat arguments that can be echoed to `commit_booking`, including instrument and requester names, `project_untrusted_text`, local weekday/date/time/zone endpoints, UTC endpoints, revision, and hash. Project text is limited to 120 characters. A conflict returns the owner and nearest same-length slot. |
 | `cancel_my_proposal` | `booking_id` | Cancels a committed booking after checking that its recorded requester is Maya. |
 | `lab_state` | None | Reads a compact snapshot of instruments and bookings. |
 
@@ -94,6 +94,7 @@ This table is generated from `ErrorCode` in `src/labquorum/domain/errors.py` by 
 | ALREADY_DECIDED | The request already has a terminal decision. |
 | DECLINED | The request was declined and cannot be committed. |
 | NOT_FOUND | The requested ledger record does not exist. |
+| UNKNOWN_REQUESTER | Requester handle is not in the lab ledger; ask the lab admin to add or correct it. |
 | RATE_LIMITED | The profile exceeded its tool call rate limit. |
 | INVALID_ARGUMENT | An argument is invalid or outside the supported format. |
 | SCHEMA_VERSION_MISMATCH | The ledger schema version is not supported. |
@@ -106,3 +107,6 @@ This table is generated from `ErrorCode` in `src/labquorum/domain/errors.py` by 
 | MISMATCH | The source metadata does not match the supplied metadata. |
 | RETRACTED | The source has a recorded retraction. |
 | UNREACHABLE | The remote source could not be reached. |
+| BINDING_COMMIT_LIMIT | This MCP process already committed a different booking. |
+| BINDING_CERTIFICATION_REQUIRED | Binding requires a test ledger or matching certification evidence. |
+| BINDING_CERTIFICATION_MISMATCH | Certification evidence does not match the installed runtime tuple. |

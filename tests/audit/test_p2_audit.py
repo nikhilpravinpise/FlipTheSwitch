@@ -22,6 +22,7 @@ def test_audit_proposal_can_be_echoed_to_commit(tmp_path: Path) -> None:
         "propose_booking",
         {
             "instrument_id": "INS-01",
+            "requester_handle": "maya",
             "project_id": "x" * 81,
             "start": "2026-11-09T10:00:00+05:30",
             "end": "2026-11-09T11:00:00+05:30",

@@ -4,6 +4,12 @@
 
 Evidence below refers to the pinned Switch root `C:/Users/Nikhil/.claude/jobs/85ca08fa/tmp/ref/switch-v0.40.1/`; `S:` prefixes paths under it. Documentation describes current Codex, not proof of CLI 0.166.0 behavior; all runtime conclusions need the stated installed-version tests.
 
+## P3 audit fix status
+
+Setup now stores Codex configuration under `<runtime-root>/codex-home`, keeps the user's global config untouched, installs a stable `lq-mcp` executable under the runtime root, and sets workspace network access, web search, and the shell tool off. Switch still changes the effective sandbox to `workspace-write`, so setup and the Console launcher apply an OS write deny to the two agent folders and verify that a write fails. `lq doctor` reports the runtime Codex home, rejects a managed block in `~/.codex/config.toml`, and rejects worktree MCP executables.
+
+Binding `on` is disabled until a trusted P4 certificate verifier and complete P4 record exist. The persistent one-commit reservation is scoped to the managed Codex session home for a future certified mode. The host-injected `switch` MCP registration remains separate: its complete tool inventory and an effective minimal allowlist are still UNVERIFIED, so do not enable its control-plane mutators based on source-home configuration.
+
 ## Launch and configuration
 
 - Switch spawns `codex app-server`, feature arguments, mode `-c` overrides, then MCP `-c` overrides, with `cwd=input.cwd` and supplied environment. Thread start/resume gets that cwd, configured sandbox if found, reviewer and optional policy; turn start sends model and effort. [S:console/packages/agent-providers/src/codex/codex-adapter.ts:354-370,401-409,453-473]
@@ -89,7 +95,7 @@ The isolated spike (`docs/build/spikes/codex-elicitation.md`) disproved the elic
 Revised binding design for P3, all enforced by our server or by tests, not by agent instructions:
 
 1. **Native tool-call card is the human decision.** `labquorum` is registered so that `commit_booking` uses approval mode `prompt` (never `approve`), and the registration path is chosen so Switch's host default `default_tools_approval_mode="approve"` cannot apply to it (P3 must prove the effective mode from a live card, not from config).
-2. **One binding commit per MCP server process.** The approver server process refuses a second `commit_booking` with a new error code after one successful commit, so a PI's "Approve for this session" can never authorize a second booking; the next request needs a new agent session (`!reset` on `@pi-desk`) and therefore a fresh card. Idempotent retries of the same committed request are still allowed.
+2. **One distinct binding commit per Codex session home.** A persistent SQLite reservation under the active `CODEX_HOME` is shared by MCP server restarts and concurrent servers for that home. A second distinct `commit_booking` is refused, while an identical retry reaches the ledger's idempotent path. The reservation does not prove that one Codex home maps to one human conversation, and the behavior of a resumed thread after a session-wide grant remains unverified for P4. Production binding stays off until that lifecycle is certified.
 3. **The card must show the whole decision.** The commit arguments carry request id, revision, content hash and the canonical decision under the 900-character cap; P4 certifies on the real card that every critical field is visible, otherwise binding stays disabled.
 4. **Identity** is Switch's addressing check on the answer (`@pi-desk` is `owner-agents`); P4 tests student, unclaimed and owner answers.
 5. **Fail closed:** without an explicit verified profile, or without the P4 certification evidence matching the installed tuple, no binding tool is exposed and the demo is proposal-only.
