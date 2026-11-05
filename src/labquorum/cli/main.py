@@ -86,7 +86,16 @@ def _run(args: argparse.Namespace) -> int:
         if args.audit_command == "verify":
             bad_sequence = verify(connection)
             valid = bad_sequence is None
-            print(_json({"valid": valid, "first_bad_seq": bad_sequence}))
+            print(
+                _json(
+                    {
+                        "valid": valid,
+                        "first_bad_seq": bad_sequence,
+                        "scope": "internal chain consistency",
+                        "limitation": "Truncation and recomputed chains are not detectable without an external checkpoint.",
+                    }
+                )
+            )
             return 0 if valid else 1
         if args.audit_command == "tail":
             if args.n <= 0:
