@@ -5,8 +5,11 @@ from __future__ import annotations
 import json
 import sqlite3
 import tomllib
+from collections.abc import Callable
+from contextlib import redirect_stderr, redirect_stdout
+from io import StringIO
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import pytest
 import yaml
@@ -18,9 +21,6 @@ from labquorum.mcp.profiles import Profile
 
 
 def _run_lq(arguments: list[str]) -> tuple[int, str, str]:
-    from io import StringIO
-    from contextlib import redirect_stderr, redirect_stdout
-
     stdout = StringIO()
     stderr = StringIO()
     try:
@@ -52,7 +52,12 @@ def test_C_04_setup_sets_prompt_for_commit_booking_only(tmp_path: Path) -> None:
     server = user_config["mcp_servers"]["labquorum"]
     assert server["tools"]["commit_booking"]["approval_mode"] == "prompt"
     assert "default_tools_approval_mode" not in server
-    assert server["args"] == ["--runtime-root", str(root.resolve()), "--db", str((root / "ledger.sqlite").resolve())]
+    assert server["args"] == [
+        "--runtime-root",
+        str(root.resolve()),
+        "--db",
+        str((root / "ledger.sqlite").resolve()),
+    ]
 
 
 def test_C_05_per_agent_configs_expose_only_their_booking_profile(tmp_path: Path) -> None:
@@ -166,7 +171,9 @@ def test_C_11_doctor_rejects_invalid_runtime_configuration(tmp_path: Path) -> No
     _setup(root)
     config_path = root / "agents" / "labops" / ".codex" / "config.toml"
     contents = config_path.read_text(encoding="utf-8")
-    config_path.write_text(contents.replace("args = [", 'args = ["--profile", "proposer", '), encoding="utf-8")
+    config_path.write_text(
+        contents.replace("args = [", 'args = ["--profile", "proposer", '), encoding="utf-8"
+    )
 
     status, stdout, stderr = _run_lq(["doctor", "--runtime-root", str(root)])
 
@@ -218,7 +225,9 @@ def test_I_13_doctor_reports_and_validates_effective_binding_state(tmp_path: Pat
     assert status == 0, f"lq doctor failed: {stdout}{stderr}"
     report = json.loads(stdout)
     assert report["runtime_root"] == str(root.resolve())
-    runtime_findings = [finding for finding in report["findings"] if finding["code"].startswith("RUNTIME_")]
+    runtime_findings = [
+        finding for finding in report["findings"] if finding["code"].startswith("RUNTIME_")
+    ]
     assert any(finding["code"] == "RUNTIME_BINDING_OFF" for finding in runtime_findings)
     with sqlite3.connect(root / "ledger.sqlite") as connection:
         assert connection.execute("SELECT 1").fetchone() == (1,)
