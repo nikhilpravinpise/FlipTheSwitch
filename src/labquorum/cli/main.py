@@ -31,8 +31,8 @@ from labquorum.provisioning import (
 from labquorum.store.audit import tail, verify
 from labquorum.store.db import (
     BUSY_TIMEOUT_MS,
-    DatabaseInfo,
     SCHEMA_VERSION,
+    DatabaseInfo,
     database_info,
     default_database_path,
     init_database,
@@ -677,7 +677,7 @@ def doctor_report(
     }
 
 
-def _run(args: argparse.Namespace) -> int:  # noqa: PLR0911
+def _run(args: argparse.Namespace) -> int:  # noqa: PLR0911, PLR0912, PLR0915
     if args.command == "setup":
         manifest = setup_runtime(args.runtime_root)
         connection = init_database(Path(manifest["ledger_path"]))
