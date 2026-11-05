@@ -11,8 +11,9 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import tempfile
 from collections.abc import Sequence
-from contextlib import closing, redirect_stderr
+from contextlib import closing, redirect_stderr, suppress
 from datetime import date
 from pathlib import Path
 from typing import Any, cast
@@ -29,6 +30,8 @@ from labquorum.provisioning import (
 )
 from labquorum.store.audit import tail, verify
 from labquorum.store.db import (
+    BUSY_TIMEOUT_MS,
+    DatabaseInfo,
     database_info,
     default_database_path,
     init_database,
@@ -89,7 +92,20 @@ def _parser() -> argparse.ArgumentParser:
     audit_tail = audit_commands.add_parser("tail", help="show recent audit rows")
     audit_tail.add_argument("--db", type=Path, default=default_database_path())
     audit_tail.add_argument("-n", type=int, default=20)
+    _register_p6_commands(commands)
     return parser
+
+
+def _register_p6_commands(commands: Any) -> None:
+    """Register the P6 backup and restore CLI commands."""
+    backup = commands.add_parser("backup", help="create and verify a ledger backup")
+    backup.add_argument("--db", type=Path, default=default_database_path())
+    backup.add_argument("--out", type=Path, required=True)
+
+    restore = commands.add_parser("restore", help="restore and verify a ledger backup")
+    restore.add_argument("--from", dest="source", type=Path, required=True)
+    restore.add_argument("--db", type=Path, default=default_database_path())
+    restore.add_argument("--force", action="store_true")
 
 
 def _json(value: Any) -> str:
@@ -249,6 +265,176 @@ def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
             raise ValueError(f"duplicate JSON property {key!r}")
         result[key] = value
     return result
+
+
+def _open_readonly_database(path: Path) -> sqlite3.Connection:
+    resolved = path.expanduser().resolve(strict=False)
+    if not resolved.is_file():
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"SQLite database file does not exist: {resolved}.",
+        )
+    connection = sqlite3.connect(
+        f"{resolved.as_uri()}?mode=ro",
+        uri=True,
+        timeout=BUSY_TIMEOUT_MS / 1_000,
+        isolation_level=None,
+    )
+    connection.row_factory = sqlite3.Row
+    return connection
+
+
+def _verify_database_file(path: Path) -> DatabaseInfo:
+    """Check schema compatibility, SQLite integrity, and the audit chain."""
+    try:
+        with closing(_open_readonly_database(path)) as connection:
+            info = database_info(connection)
+            integrity_messages = [
+                str(row[0]) for row in connection.execute("PRAGMA integrity_check").fetchall()
+            ]
+            if integrity_messages != ["ok"]:
+                raise LabQuorumError(
+                    ErrorCode.TAMPERED,
+                    f"SQLite integrity check failed for {path}.",
+                    {"integrity_messages": integrity_messages},
+                )
+            bad_sequence = verify(connection)
+            if bad_sequence is not None:
+                raise LabQuorumError(
+                    ErrorCode.TAMPERED,
+                    f"Audit chain verification failed at sequence {bad_sequence} in {path}.",
+                    {"first_bad_seq": bad_sequence},
+                )
+            return info
+    except LabQuorumError:
+        raise
+    except sqlite3.Error as error:
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"Could not read SQLite database {path}: {error}.",
+        ) from error
+
+
+def _copy_sqlite_database(
+    source_path: Path,
+    destination_path: Path,
+    *,
+    overwrite: bool = True,
+) -> DatabaseInfo:
+    """Copy a consistent SQLite snapshot through the online backup API."""
+    source = source_path.expanduser().resolve(strict=False)
+    destination = destination_path.expanduser().resolve(strict=False)
+    if source == destination:
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            "The source and destination database paths must be different.",
+        )
+    warning = onedrive_warning(destination)
+    if warning is not None:
+        raise LabQuorumError(ErrorCode.INVALID_ARGUMENT, warning, {"path": str(destination)})
+    try:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=f".{destination.name}.",
+            suffix=".tmp",
+            dir=destination.parent,
+        )
+        os.close(descriptor)
+    except OSError as error:
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"Could not prepare database destination {destination}: {error}.",
+        ) from error
+
+    temporary_path = Path(temporary_name)
+    try:
+        with (
+            closing(_open_readonly_database(source)) as source_connection,
+            closing(
+                sqlite3.connect(temporary_path, timeout=BUSY_TIMEOUT_MS / 1_000)
+            ) as destination_connection,
+        ):
+            source_connection.backup(destination_connection)
+            destination_connection.commit()
+
+        _verify_database_file(temporary_path)
+        if overwrite:
+            os.replace(temporary_path, destination)
+        else:
+            try:
+                os.link(temporary_path, destination)
+            except FileExistsError as error:
+                raise LabQuorumError(
+                    ErrorCode.INVALID_ARGUMENT,
+                    f"Database {destination} already exists. Pass --force to overwrite it.",
+                    {"path": str(destination)},
+                ) from error
+            temporary_path.unlink()
+        return _verify_database_file(destination)
+    except LabQuorumError:
+        raise
+    except sqlite3.Error as error:
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"Could not copy SQLite database {source}: {error}.",
+        ) from error
+    except OSError as error:
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"Could not write restored database {destination}: {error}.",
+        ) from error
+    finally:
+        with suppress(OSError):
+            temporary_path.unlink(missing_ok=True)
+
+
+def _run_p6_command(args: argparse.Namespace) -> int | None:
+    """Run a P6 command without coupling its implementation to other CLI routes."""
+    if args.command == "backup":
+        warning = onedrive_warning(args.db)
+        if warning is not None:
+            raise LabQuorumError(ErrorCode.INVALID_ARGUMENT, warning, {"path": str(args.db)})
+        info = _copy_sqlite_database(args.db, args.out)
+        print(
+            _json(
+                {
+                    "database": str(args.db.expanduser().resolve(strict=False)),
+                    "backup": str(args.out.expanduser().resolve(strict=False)),
+                    "schema_version": info.schema_version,
+                    "integrity_check": "ok",
+                    "audit_valid": True,
+                }
+            )
+        )
+        return 0
+    if args.command == "restore":
+        destination = args.db.expanduser().resolve(strict=False)
+        if destination.exists() and not args.force:
+            raise LabQuorumError(
+                ErrorCode.INVALID_ARGUMENT,
+                f"Database {destination} already exists. Pass --force to overwrite it.",
+                {"path": str(destination)},
+            )
+        if destination.exists() and not destination.is_file():
+            raise LabQuorumError(
+                ErrorCode.INVALID_ARGUMENT,
+                f"Database destination is not a file: {destination}.",
+                {"path": str(destination)},
+            )
+        info = _copy_sqlite_database(args.source, destination, overwrite=args.force)
+        print(
+            _json(
+                {
+                    "database": str(destination),
+                    "restored_from": str(args.source.expanduser().resolve(strict=False)),
+                    "schema_version": info.schema_version,
+                    "integrity_check": "ok",
+                    "audit_valid": True,
+                }
+            )
+        )
+        return 0
+    return None
 
 
 def _effective_server_arguments(command: str, arguments: list[str]) -> list[str] | None:
@@ -460,6 +646,10 @@ def _run(args: argparse.Namespace) -> int:  # noqa: PLR0911
             )
         )
         return 0 if not issues else 1
+    path: Path = args.db
+    p6_status = _run_p6_command(args)
+    if p6_status is not None:
+        return p6_status
     if args.command == "doctor":
         runtime_root = args.runtime_root
         path = (
@@ -521,15 +711,16 @@ def _run(args: argparse.Namespace) -> int:  # noqa: PLR0911
                     }
                 )
             )
-            return 0 if valid else 1
-        if args.audit_command == "tail":
+            status = 0 if valid else 1
+        else:
             if args.n <= 0:
                 raise LabQuorumError(
                     ErrorCode.INVALID_ARGUMENT,
                     "Audit tail count must be positive.",
                 )
             print(_json(tail(connection, limit=args.n)))
-            return 0
+            status = 0
+        return status
     finally:
         connection.close()
     raise RuntimeError("Argument parser produced an unsupported command.")
