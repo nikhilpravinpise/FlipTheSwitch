@@ -21,9 +21,11 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 dependencies = [
+    "httpx>=0.28.1",
     "matplotlib>=3.11.2",
     "mcp>=1,<2",
     "pyyaml>=6.0.3",
+    "rapidfuzz>=3.14.6",
     "structlog>=26.1.0",
     "tzdata>=2026.6",
 ]
@@ -76,7 +78,7 @@ pythonVersion = "3.12"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = ["--strict-markers", "--timeout=60", "-m", "not live"]
+addopts = ["--strict-markers", "--timeout=60", "--block-network", "--record-mode=none", "-m", "not live"]
 markers = [
     "slow: tests that take longer than the normal suite",
     "race: concurrency and race-condition tests",
@@ -89,8 +91,10 @@ dev = [
     "pyright>=1.1.414",
     "pytest>=9.2.0",
     "pytest-cov>=7.1.0",
+    "pytest-recording>=0.14.1",
     "pytest-timeout>=2.4.0",
     "pytest-xdist>=3.8.0",
+    "respx>=0.23.1",
     "ruff>=0.17.3",
     "syrupy>=6.1.1",
 ]
