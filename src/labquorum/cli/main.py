@@ -32,6 +32,7 @@ from labquorum.store.audit import tail, verify
 from labquorum.store.db import (
     BUSY_TIMEOUT_MS,
     DatabaseInfo,
+    SCHEMA_VERSION,
     database_info,
     default_database_path,
     init_database,
@@ -315,11 +316,50 @@ def _verify_database_file(path: Path) -> DatabaseInfo:
         ) from error
 
 
+def _verify_backup_file(path: Path) -> DatabaseInfo:
+    """Verify current ledgers fully and allow integrity-checked older snapshots."""
+    try:
+        return _verify_database_file(path)
+    except LabQuorumError as error:
+        if error.code is not ErrorCode.SCHEMA_VERSION_MISMATCH:
+            raise
+        schema_error = error
+
+    try:
+        with closing(_open_readonly_database(path)) as connection:
+            rows = connection.execute("SELECT version FROM schema_version").fetchall()
+            if len(rows) != 1:
+                raise schema_error
+            schema_version = int(rows[0]["version"])
+            if schema_version >= SCHEMA_VERSION:
+                raise schema_error
+            integrity_messages = [
+                str(row[0]) for row in connection.execute("PRAGMA integrity_check").fetchall()
+            ]
+            if integrity_messages != ["ok"]:
+                raise LabQuorumError(
+                    ErrorCode.TAMPERED,
+                    f"SQLite integrity check failed for {path}.",
+                    {"integrity_messages": integrity_messages},
+                )
+            journal_mode = str(connection.execute("PRAGMA journal_mode").fetchone()[0]).casefold()
+            return DatabaseInfo(
+                sqlite_version=sqlite3.sqlite_version,
+                journal_mode=journal_mode,
+                schema_version=schema_version,
+            )
+    except LabQuorumError:
+        raise
+    except sqlite3.Error as error:
+        raise schema_error from error
+
+
 def _copy_sqlite_database(
     source_path: Path,
     destination_path: Path,
     *,
     overwrite: bool = True,
+    allow_legacy_schema: bool = False,
 ) -> DatabaseInfo:
     """Copy a consistent SQLite snapshot through the online backup API."""
     source = source_path.expanduser().resolve(strict=False)
@@ -357,7 +397,8 @@ def _copy_sqlite_database(
             source_connection.backup(destination_connection)
             destination_connection.commit()
 
-        _verify_database_file(temporary_path)
+        verifier = _verify_backup_file if allow_legacy_schema else _verify_database_file
+        verifier(temporary_path)
         if overwrite:
             os.replace(temporary_path, destination)
         else:
@@ -366,11 +407,11 @@ def _copy_sqlite_database(
             except FileExistsError as error:
                 raise LabQuorumError(
                     ErrorCode.INVALID_ARGUMENT,
-                    f"Database {destination} already exists. Pass --force to overwrite it.",
+                    f"Database {destination} already exists. Choose a new destination.",
                     {"path": str(destination)},
                 ) from error
             temporary_path.unlink()
-        return _verify_database_file(destination)
+        return verifier(destination)
     except LabQuorumError:
         raise
     except sqlite3.Error as error:
@@ -394,7 +435,12 @@ def _run_p6_command(args: argparse.Namespace) -> int | None:
         warning = onedrive_warning(args.db)
         if warning is not None:
             raise LabQuorumError(ErrorCode.INVALID_ARGUMENT, warning, {"path": str(args.db)})
-        info = _copy_sqlite_database(args.db, args.out)
+        info = _copy_sqlite_database(
+            args.db,
+            args.out,
+            overwrite=False,
+            allow_legacy_schema=True,
+        )
         print(
             _json(
                 {
@@ -402,7 +448,7 @@ def _run_p6_command(args: argparse.Namespace) -> int | None:
                     "backup": str(args.out.expanduser().resolve(strict=False)),
                     "schema_version": info.schema_version,
                     "integrity_check": "ok",
-                    "audit_valid": True,
+                    "audit_valid": True if info.schema_version == SCHEMA_VERSION else None,
                 }
             )
         )
