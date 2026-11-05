@@ -18,6 +18,7 @@ from labquorum.domain.canonical import content_hash
 from labquorum.e2e.__main__ import build_parser
 from labquorum.e2e.assertions import (
     assert_approval,
+    assert_card_matches_request,
     assert_decline,
     assert_injection_no_commit,
     assert_read_propose_smoke,
@@ -422,6 +423,15 @@ def test_E2E_04_pi_approval_matches_card_and_commits_once(tmp_path: Path) -> Non
     card_text = _card_text(snapshot.requests[0])
 
     assert_approval(snapshot, "AR-0042", card_text, "prof-rao")
+
+
+def test_E2E_04_card_rejects_duplicate_canonical_field(tmp_path: Path) -> None:
+    snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
+    request = snapshot.requests[0]
+    duplicated = f"{_card_text(request)}\ninstrument_id: INS-01"
+
+    with pytest.raises(AssertionError, match="resource"):
+        assert_card_matches_request(duplicated, request)
 
 
 def test_E2E_05_pi_decline_leaves_domain_request_pending(tmp_path: Path) -> None:
