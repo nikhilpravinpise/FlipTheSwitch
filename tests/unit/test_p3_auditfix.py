@@ -120,6 +120,7 @@ def test_C_11_doctor_reports_runtime_codex_home_and_rejects_global_managed_block
         item["code"] == "RUNTIME_CODEX_HOME" and str(root / "codex-home") in item["message"]
         for item in findings
     )
+    assert sum(item["code"] == "RUNTIME_CODEX_HOME" for item in findings) == 1
 
     user_codex = user_home / ".codex"
     user_codex.mkdir(parents=True)

@@ -13,6 +13,7 @@
 | tests/unit/test_p3_auditfix.py | Assert the launcher uses a PowerShell-compatible path API for its process working directory after the live run exposed an unsupported `Split-Path` parameter set. |
 | tests/unit/test_p3_auditfix.py | Preserve the orchestrator's P2 certify probe using only its disposable `labquorum-p2-*\g.sqlite` ledger, while rejecting other temporary ledger paths. |
 | tests/unit/test_p3_auditfix.py | Keep the P3 one-commit limiter out of the P2-only disposable ledger so its tampered-decision check reaches booking validation. |
+| tests/unit/test_p3_auditfix.py | Add a C-11 assertion that doctor reports the isolated runtime Codex home exactly once after the merge combined both checks. |
 | tests/unit/test_p3_fix2.py | Added requester-handle, synthetic Darshan seed, labops instructions, and generated Codex approval-mode regressions. |
 | tests/contract/test_p2_contract.py | Added explicit `requester_handle` arguments to existing MCP proposal contract and conflict tests. |
 | tests/contract/test_p2_audit_fix.py | Added explicit Maya requester handles to existing proposal-bound, untrusted-text, and bounded-result tests. |
