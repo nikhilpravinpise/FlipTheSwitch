@@ -2,6 +2,7 @@
   "propose_booking": {
     "tool": "propose_booking",
     "arguments": {
+      "requester_handle": "maya",
       "instrument_id": "INS-01",
       "project_id": "p2-stdio-probe",
       "start": "2026-11-09T10:00:00+05:30",
