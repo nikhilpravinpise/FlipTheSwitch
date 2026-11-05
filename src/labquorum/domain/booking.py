@@ -8,6 +8,7 @@ from datetime import UTC, datetime, time, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from labquorum.domain.errors import ErrorCode, LabQuorumError
+from labquorum.domain.timeutil import utc_timestamp
 
 
 def _aware(value: datetime, label: str) -> datetime:
@@ -162,7 +163,7 @@ def check_booking(
     if is_down_before_start:
         details = {}
         if instrument.down_until is not None:
-            details["down_until"] = instrument.down_until.isoformat()
+            details["down_until"] = utc_timestamp(instrument.down_until)
         raise LabQuorumError(
             ErrorCode.INSTRUMENT_DOWN, "Instrument is down for the requested start.", details
         )
@@ -178,7 +179,7 @@ def check_booking(
     ):
         details: dict[str, str] = {}
         if training is not None:
-            details["expires_at"] = training.expires_at.isoformat()
+            details["expires_at"] = utc_timestamp(training.expires_at)
         raise LabQuorumError(
             ErrorCode.TRAINING_REQUIRED,
             "Valid instrument training is required at booking start.",

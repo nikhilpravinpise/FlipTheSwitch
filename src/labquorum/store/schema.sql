@@ -21,14 +21,25 @@ CREATE TABLE IF NOT EXISTS instrument (
     booking_window_days INTEGER NOT NULL CHECK (booking_window_days >= 0),
     opening_hours_json TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('ok', 'down', 'down_until')),
-    down_until_utc TEXT
+    down_until_utc TEXT CHECK (
+        down_until_utc IS NULL OR (
+            length(down_until_utc) = 27
+            AND down_until_utc GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z'
+        )
+    )
 );
 
 CREATE TABLE IF NOT EXISTS training (
     person_id TEXT NOT NULL REFERENCES person(id),
     instrument_id TEXT NOT NULL REFERENCES instrument(id),
-    granted_at_utc TEXT NOT NULL,
-    expires_at_utc TEXT NOT NULL,
+    granted_at_utc TEXT NOT NULL CHECK (
+        length(granted_at_utc) = 27
+        AND granted_at_utc GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z'
+    ),
+    expires_at_utc TEXT NOT NULL CHECK (
+        length(expires_at_utc) = 27
+        AND expires_at_utc GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z'
+    ),
     PRIMARY KEY (person_id, instrument_id)
 );
 
@@ -42,17 +53,35 @@ CREATE TABLE IF NOT EXISTS approval_request (
     kind TEXT NOT NULL CHECK (kind = 'booking'),
     requester TEXT NOT NULL REFERENCES person(id),
     resource TEXT NOT NULL REFERENCES instrument(id),
-    start_utc TEXT NOT NULL,
-    end_utc TEXT NOT NULL,
+    start_utc TEXT NOT NULL CHECK (
+        length(start_utc) = 27
+        AND start_utc GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z'
+    ),
+    end_utc TEXT NOT NULL CHECK (
+        length(end_utc) = 27
+        AND end_utc GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z'
+    ),
     project TEXT NOT NULL,
     revision INTEGER NOT NULL CHECK (revision > 0),
     content_hash TEXT NOT NULL,
     decision_json TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('pending', 'committed', 'declined', 'expired')),
-    created_utc TEXT NOT NULL,
-    expires_utc TEXT NOT NULL,
-    decided_utc TEXT,
-    decline_reason TEXT
+    created_utc TEXT NOT NULL CHECK (
+        length(created_utc) = 27
+        AND created_utc GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z'
+    ),
+    expires_utc TEXT NOT NULL CHECK (
+        length(expires_utc) = 27
+        AND expires_utc GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z'
+    ),
+    decided_utc TEXT CHECK (
+        decided_utc IS NULL OR (
+            length(decided_utc) = 27
+            AND decided_utc GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z'
+        )
+    ),
+    decline_reason TEXT,
+    CHECK (end_utc > start_utc)
 );
 
 CREATE TABLE IF NOT EXISTS booking (
@@ -60,8 +89,14 @@ CREATE TABLE IF NOT EXISTS booking (
     instrument_id TEXT NOT NULL REFERENCES instrument(id),
     person_id TEXT NOT NULL REFERENCES person(id),
     project_id TEXT NOT NULL,
-    start_utc TEXT NOT NULL,
-    end_utc TEXT NOT NULL,
+    start_utc TEXT NOT NULL CHECK (
+        length(start_utc) = 27
+        AND start_utc GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z'
+    ),
+    end_utc TEXT NOT NULL CHECK (
+        length(end_utc) = 27
+        AND end_utc GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z'
+    ),
     status TEXT NOT NULL CHECK (status IN ('proposed', 'committed', 'cancelled', 'expired', 'declined')),
     request_id TEXT NOT NULL UNIQUE REFERENCES approval_request(id),
     CHECK (end_utc > start_utc)
@@ -79,7 +114,10 @@ CREATE TABLE IF NOT EXISTS app_meta (
 
 CREATE TABLE IF NOT EXISTS audit_event (
     seq INTEGER PRIMARY KEY AUTOINCREMENT,
-    ts_utc TEXT NOT NULL,
+    ts_utc TEXT NOT NULL CHECK (
+        length(ts_utc) = 27
+        AND ts_utc GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]Z'
+    ),
     actor_agent TEXT NOT NULL,
     tool TEXT NOT NULL,
     args_json TEXT NOT NULL,
