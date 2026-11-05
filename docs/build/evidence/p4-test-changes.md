@@ -7,3 +7,4 @@
 - The smoke ledger fixture now includes the instrument timezone. The harness must read that value so a live database can verify 15:45-16:45 in the instrument's local time rather than assuming the workstation timezone.
 - A duplicate visible `instrument_id` field with the correct value currently passes the card matcher. The acceptance test requires ambiguous duplicate canonical fields to fail closed.
 - The repeated-call error probe must come from the thread started by the second proposal. The test includes an unrelated thread with `COMMIT_LIMIT_REACHED` and requires it not to satisfy E2E-11.
+- Pinned Mattermost cards do not expose a verified Console session ID. The test now requires card discovery to omit private post props from its typed card object; E2E-11 records its operator-confirmed Console ID separately.

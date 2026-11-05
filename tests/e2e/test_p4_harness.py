@@ -320,7 +320,7 @@ def test_card_discovery_does_not_treat_private_props_as_session_id() -> None:
 
     [card] = find_approval_cards([card_post])
 
-    assert card.session_id is None
+    assert not hasattr(card, "session_id")
 
 
 def test_settled_card_can_be_read_after_switch_deletes_it(
@@ -597,12 +597,8 @@ def test_E2E_11_fresh_card_remains_pending_in_same_session(
 ) -> None:
     snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
     canonical = _card_text(snapshot.requests[0])
-    first_card = ApprovalCard(
-        "A1", "card-1", "channel-1", "switch-bot", canonical, session_id="provider-session"
-    )
-    second_card = ApprovalCard(
-        "A2", "card-2", "channel-1", "switch-bot", canonical, session_id="provider-session"
-    )
+    first_card = ApprovalCard("A1", "card-1", "channel-1", "switch-bot", canonical)
+    second_card = ApprovalCard("A2", "card-2", "channel-1", "switch-bot", canonical)
 
     class StubPersona:
         answer_calls = 0
