@@ -58,17 +58,43 @@ def _local_instant(anchor_date: date, day_offset: int, clock_text: str, zone: Zo
     return datetime.combine(local_date, time.fromisoformat(clock_text), tzinfo=zone)
 
 
+def _next_open_day(
+    anchor_date: date, opening_hours: dict[str, list[str]], open_day_offset: int
+) -> date:
+    if open_day_offset < 0:
+        raise LabQuorumError(ErrorCode.INVALID_ARGUMENT, "Open-day offset cannot be negative.")
+    open_weekdays = {int(weekday) for weekday in opening_hours}
+    if not open_weekdays:
+        raise LabQuorumError(ErrorCode.INVALID_ARGUMENT, "Instrument has no open days.")
+    selected = anchor_date
+    remaining = open_day_offset + 1
+    while remaining:
+        selected += timedelta(days=1)
+        if selected.weekday() in open_weekdays:
+            remaining -= 1
+    return selected
+
+
 def _insert_seeded_booking(
     connection: sqlite3.Connection,
     booking: dict[str, Any],
     anchor_date: date,
-    zone: ZoneInfo,
     now_utc: datetime,
 ) -> None:
-    start = _local_instant(
-        anchor_date, int(booking["start_day_offset"]), booking["start_time"], zone
-    )
-    end = _local_instant(anchor_date, int(booking["start_day_offset"]), booking["end_time"], zone)
+    instrument = connection.execute(
+        "SELECT timezone, opening_hours_json FROM instrument WHERE id = ?",
+        (booking["instrument_id"],),
+    ).fetchone()
+    if instrument is None:
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"Seed booking references unknown instrument {booking['instrument_id']}.",
+        )
+    zone = ZoneInfo(str(instrument["timezone"]))
+    opening_hours = cast(dict[str, list[str]], json.loads(str(instrument["opening_hours_json"])))
+    booking_day = _next_open_day(anchor_date, opening_hours, int(booking.get("open_day_offset", 0)))
+    start = datetime.combine(booking_day, time.fromisoformat(booking["start_time"]), tzinfo=zone)
+    end = datetime.combine(booking_day, time.fromisoformat(booking["end_time"]), tzinfo=zone)
     if end <= start:
         end += timedelta(days=1)
     start_text = utc_timestamp(start)
@@ -224,7 +250,7 @@ def seed_demo(
             )
 
         for booking in source["bookings"]:
-            _insert_seeded_booking(connection, booking, anchor_date, zone, now_utc)
+            _insert_seeded_booking(connection, booking, anchor_date, now_utc)
 
         request_start = int(source["next_request_number"])
         connection.executemany(
