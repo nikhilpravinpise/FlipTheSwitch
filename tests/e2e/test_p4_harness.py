@@ -10,6 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
@@ -49,6 +50,7 @@ class FakeMattermostState:
     auth_failure: bool = False
     delay_channel_posts: float = 0.0
     auto_reply: tuple[str, str] | None = None
+    deleted_post_ids: set[str] = field(default_factory=set)
 
     def add_post(
         self,
@@ -133,16 +135,22 @@ def fake_mattermost() -> Any:
             self._send(404, {"message": "not found"})
 
         def do_GET(self) -> None:
-            if self.path.startswith("/api/v4/channels/") and self.path.endswith(
-                "/posts?per_page=100"
-            ):
+            parsed = urlsplit(self.path)
+            if parsed.path.startswith("/api/v4/channels/") and parsed.path.endswith("/posts"):
                 if state.delay_channel_posts:
                     time.sleep(state.delay_channel_posts)
-                channel_id = self.path.split("/")[4]
+                channel_id = parsed.path.split("/")[4]
+                include_deleted = parse_qs(parsed.query).get("include_deleted") == ["true"]
+                if include_deleted:
+                    token = self.headers.get("Authorization", "").removeprefix("Bearer ")
+                    if state.tokens.get(token) != "prof-rao":
+                        self._send(403, {"message": "system admin required"})
+                        return
                 posts = {
                     post_id: post
                     for post_id, post in state.posts.items()
                     if post["channel_id"] == channel_id
+                    and (include_deleted or post_id not in state.deleted_post_ids)
                 }
                 self._send(200, {"order": list(reversed(posts)), "posts": posts})
                 return
@@ -253,6 +261,31 @@ def test_approval_card_discovery_and_persona_answer(
     assert sent.message == "A7 1"
     assert sent.user_id == "rao-id"
     assert sent.root_id == card_post["id"]
+
+
+def test_settled_card_can_be_read_after_switch_deletes_it(
+    fake_mattermost: tuple[str, FakeMattermostState],
+) -> None:
+    base_url, state = fake_mattermost
+    card_post = state.add_post(
+        channel_id="channel-1",
+        user_id="switch-bot",
+        message="1. Allow once\n2. Decline\nReply with `A7` and your choice, e.g. `A7 1`.",
+    )
+    card = find_approval_cards([card_post])[0]
+    state.posts[card_post["id"]]["message"] = "**Decline** A7\nChosen by prof-rao from Mattermost."
+    state.deleted_post_ids.add(card_post["id"])
+
+    with MattermostClient(base_url, "prof-rao", "fake-password", timeout=1) as client:
+        settled_text, actor = client.wait_for_settled_card(
+            card,
+            expected_settler="prof-rao",
+            timeout=0.1,
+            poll_interval=0.002,
+        )
+
+    assert "Decline" in settled_text
+    assert actor == "prof-rao"
 
 
 def test_ledger_inspector_reads_pending_rows_and_audit_chain(tmp_path: Path) -> None:
