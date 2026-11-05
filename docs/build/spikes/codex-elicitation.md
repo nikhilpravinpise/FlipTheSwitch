@@ -33,6 +33,7 @@ The server uses an empty Pydantic form schema to match Switch's accepted `{}` co
 class EmptyConfirmation(BaseModel):
     pass
 
+
 @mcp.tool()
 async def confirm_commit(request_id: str, ctx: Context) -> str:
     result = await ctx.elicit(
