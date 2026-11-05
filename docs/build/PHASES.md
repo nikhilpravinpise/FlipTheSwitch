@@ -7,7 +7,7 @@ Source of truth for what "done" means in each phase. The plan is `docs/plan/`; t
 - Orchestrator: writes briefs, runs gates, decides. Does not write product code.
 - Builder (Codex `gpt-6-luna`, reasoning `max`, headless): writes tests and code for one phase.
 - Gate author (separate Codex run): writes `scripts/gates/` from the spec below. Builders may not edit gates.
-- Auditor (fresh Codex run, read-mostly): reviews a finished phase against plan, gate and code; writes `docs/build/audits/pN-audit.md` with severity-ranked findings that cite `file:line`.
+- Auditor (fresh Codex `gpt-6.1-terra`, reasoning `high`, read-mostly; decided by Nikhil 5 Nov 14:52): reviews a finished phase against plan, gate and code; writes `docs/build/audits/pN-audit.md` with severity-ranked findings that cite `file:line`.
 
 ## Universal gate checks (every phase, `scripts/gates/common.py`)
 
