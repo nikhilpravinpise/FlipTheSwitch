@@ -582,6 +582,71 @@ def test_E2E_04_open_card_wait_uses_the_proposal_thread(
     assert persona.root_id == prompt.post_id
 
 
+def test_E2E_04_approval_proposal_finds_top_level_pi_handoff(
+    tmp_path: Path,
+) -> None:
+    ledger = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite"))
+    prompt = MattermostPost("prompt-1", "channel-1", "maya-id", "proposal", 1000)
+    thread_summary = MattermostPost(
+        "summary-1",
+        "channel-1",
+        "labops-id",
+        "Worked for 1m 19s. AR-0042",
+        2000,
+        root_id=prompt.post_id,
+    )
+    handoff = MattermostPost(
+        "handoff-1",
+        "channel-1",
+        "labops-id",
+        "@pi-desk Request AR-0042 is pending for INS-01.",
+        3000,
+    )
+
+    class StubPersona:
+        root_id: str | None = None
+
+        def post(self, channel_id: str, message: str) -> MattermostPost:
+            assert channel_id == "channel-1"
+            assert message == "proposal"
+            return prompt
+
+        def wait_for_reply(  # noqa: PLR0913
+            self,
+            channel_id: str,
+            *,
+            from_agent: str,
+            after_ms: int,
+            timeout: float,
+            poll_interval: float,
+            root_id: str | None = None,
+        ) -> MattermostPost:
+            assert channel_id == "channel-1"
+            assert from_agent == "labops"
+            assert after_ms == prompt.create_at
+            assert timeout > 0
+            assert poll_interval > 0
+            self.root_id = root_id
+            matching = [thread_summary, handoff]
+            if root_id is not None:
+                matching = [post for post in matching if post.root_id == root_id]
+            return matching[-1]
+
+    persona = StubPersona()
+    runner = ScenarioRunner(
+        personas=cast(Any, {"maya": persona, "prof-rao": persona}),
+        ledger=ledger,
+        channel_id="channel-1",
+        evidence_dir=tmp_path / "evidence",
+    )
+
+    attempt = runner._begin_proposal("proposal")
+
+    assert persona.root_id is None
+    assert attempt.reply.post_id == handoff.post_id
+    assert "@pi-desk" in attempt.reply.message
+
+
 def test_E2E_04_card_rejects_duplicate_canonical_field(tmp_path: Path) -> None:
     snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
     request = snapshot.requests[0]
