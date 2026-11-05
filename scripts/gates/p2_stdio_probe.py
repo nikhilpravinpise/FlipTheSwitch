@@ -226,9 +226,8 @@ async def _verify_tool_sets(expected: dict[str, Any], database: Path) -> None:
 
 def _echoed_fields(payload: Mapping[str, Any], paths: Mapping[str, Any]) -> dict[str, Any]:
     values: dict[str, Any] = {}
-    fields = ("request_id", "revision", "content_hash") + tuple(
-        name for name in ("decision", "commit_arguments") if name in paths
-    )
+    optional = [name for name in ("decision", "commit_arguments") if name in paths]
+    fields = ("request_id", "revision", "content_hash", *optional)
     for field in fields:
         pointer = paths[field]
         if not isinstance(pointer, str):
