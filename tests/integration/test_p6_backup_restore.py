@@ -45,15 +45,17 @@ def test_I_19_backup_restore_seeded_ledger_round_trip(tmp_path: Path) -> None:
     assert _run_cli(["backup", "--db", str(source), "--out", str(backup)]) == 0
     assert _run_cli(["restore", "--from", str(backup), "--db", str(restored)]) == 0
 
-    with closing(open_database(source)) as source_connection:
-        with closing(open_database(restored)) as restored_connection:
-            assert verify(restored_connection) is None
-            for table in ("person", "instrument", "approval_request", "booking", "audit_event"):
-                source_count = source_connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-                restored_count = restored_connection.execute(
-                    f"SELECT COUNT(*) FROM {table}"
-                ).fetchone()[0]
-                assert restored_count == source_count
+    with (
+        closing(open_database(source)) as source_connection,
+        closing(open_database(restored)) as restored_connection,
+    ):
+        assert verify(restored_connection) is None
+        for table in ("person", "instrument", "approval_request", "booking", "audit_event"):
+            source_count = source_connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+            restored_count = restored_connection.execute(
+                f"SELECT COUNT(*) FROM {table}"
+            ).fetchone()[0]
+            assert restored_count == source_count
 
 
 def test_I_19_restore_refuses_schema_version_mismatch_and_preserves_target(
@@ -68,9 +70,7 @@ def test_I_19_restore_refuses_schema_version_mismatch_and_preserves_target(
         connection.execute("UPDATE schema_version SET version = 999")
     original_bytes = destination.read_bytes()
 
-    status = _run_cli(
-        ["restore", "--from", str(backup), "--db", str(destination), "--force"]
-    )
+    status = _run_cli(["restore", "--from", str(backup), "--db", str(destination), "--force"])
 
     assert status != 0
     assert ErrorCode.SCHEMA_VERSION_MISMATCH.value in capsys.readouterr().err
@@ -104,9 +104,7 @@ def test_I_19_restore_refuses_corrupt_file_and_preserves_target(
     _seed_ledger(destination)
     original_bytes = destination.read_bytes()
 
-    status = _run_cli(
-        ["restore", "--from", str(corrupt), "--db", str(destination), "--force"]
-    )
+    status = _run_cli(["restore", "--from", str(corrupt), "--db", str(destination), "--force"])
 
     assert status != 0
     assert ErrorCode.INVALID_ARGUMENT.value in capsys.readouterr().err
