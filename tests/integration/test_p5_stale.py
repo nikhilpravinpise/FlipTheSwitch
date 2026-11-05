@@ -6,25 +6,34 @@ import asyncio
 import csv
 import hashlib
 import json
+import os
 import sqlite3
+import subprocess
 import sys
-import uuid
-from collections.abc import AsyncIterator
+import tempfile
+import time
 from collections import deque
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from io import StringIO
 from pathlib import Path
 from typing import Any
 
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
 
+from labquorum.analysis.runner import run_process_with_timeout
+from labquorum.cli.main import main as lq_main
 from labquorum.domain.errors import ErrorCode, LabQuorumError
 from labquorum.domain.timeutil import FixedClock
 from labquorum.mcp.profiles import Profile, tool_names_for_profile
-from labquorum.store.db import init_database, open_database
+from labquorum.mcp.server import create_runtime
+from labquorum.store.db import SCHEMA_VERSION, init_database, open_database
+from labquorum.store.provenance import mark_descendants_stale
 
 ROOT = Path(__file__).resolve().parents[2]
 PLATE_V1 = ROOT / "seed" / "plate3_od590.csv"
@@ -48,8 +57,6 @@ def _require_analyst_profile() -> Profile:
 
 def _runtime(tmp_path: Path) -> tuple[Any, Path]:
     profile = _require_analyst_profile()
-    from labquorum.mcp.server import create_runtime
-
     database = tmp_path / "ledger.sqlite"
     connection = init_database(database)
     connection.close()
@@ -172,6 +179,14 @@ def test_U_D05_descriptive_plate_summary_matches_independent_goldens(
     assert all(item["count"] == 6 for item in groups.values())
     assert groups["8"]["mean_od590"] == pytest.approx(0.803333, abs=1e-6)
     assert groups["8"]["sd_od590"] == pytest.approx(0.361933, abs=1e-6)
+    assert _plate_differences(_plate_csv(), _plate_csv(PLATE_V2)) == {
+        "od590": ("0.083", "0.830"),
+    }
+    assert _changed_plate_wells(_plate_csv(), _plate_csv(PLATE_V2)) == ["C5"]
+    repeated = _run_descriptive(runtime, registered["dataset_version_id"])
+    assert {item["kind"]: item["sha256"] for item in repeated["outputs"]} == {
+        item["kind"]: item["sha256"] for item in result["outputs"]
+    }
 
     registered_v2 = _register(
         runtime,
@@ -194,8 +209,6 @@ def test_U_D05_descriptive_plate_summary_matches_independent_goldens(
 
 def test_U_D06_analysis_timeout_kills_the_process_tree(tmp_path: Path) -> None:
     _require_analyst_profile()
-    from labquorum.analysis.runner import run_process_with_timeout
-
     marker = tmp_path / "child.pid"
     child_code = (
         "import subprocess,sys,time; "
@@ -231,8 +244,6 @@ def test_U_D08_unknown_well_is_reported_for_correction_not_auto_matched(
     runtime, _ = _runtime(tmp_path)
     rows = list(csv.DictReader(PLATE_V1.open(encoding="utf-8", newline="")))
     rows[13]["well"] = "Z99"
-    from io import StringIO
-
     output = StringIO(newline="")
     writer = csv.DictWriter(output, fieldnames=list(rows[0]))
     writer.writeheader()
@@ -354,67 +365,65 @@ def test_U_S06_unrelated_dataset_runs_remain_current(tmp_path: Path) -> None:
 @given(edge_codes=st.sets(st.integers(0, 41), max_size=42))
 def test_P_07_stale_propagation_is_monotonic_and_complete_against_independent_oracle(
     edge_codes: set[int],
-    tmp_path: Path,
 ) -> None:
     _require_analyst_profile()
-    from labquorum.store.provenance import mark_descendants_stale
+    with tempfile.TemporaryDirectory(prefix="labquorum-p5-property-") as temp_dir:
+        database = Path(temp_dir) / "property.sqlite"
+        connection = init_database(database)
+        try:
+            _insert_property_graph(connection, edge_codes)
+            children: dict[tuple[str, str], list[tuple[str, str]]] = {}
+            for edge_code in edge_codes:
+                if edge_code < 6:
+                    child = ("analysis_run", f"RUN-{edge_code}")
+                    parent = ("dataset_version", "DS-ROOT")
+                else:
+                    run_index, artifact_index = divmod(edge_code - 6, 6)
+                    child = ("artifact", f"ART-{artifact_index}")
+                    parent = ("analysis_run", f"RUN-{run_index}")
+                children.setdefault(parent, []).append(child)
 
-    database = tmp_path / f"property-{uuid.uuid4().hex}.sqlite"
-    connection = init_database(database)
-    try:
-        _insert_property_graph(connection, edge_codes)
-        children: dict[tuple[str, str], list[tuple[str, str]]] = {}
-        for edge_code in edge_codes:
-            if edge_code < 6:
-                child = ("analysis_run", f"RUN-{edge_code}")
-                parent = ("dataset_version", "DS-ROOT")
-            else:
-                run_index, artifact_index = divmod(edge_code - 6, 6)
-                child = ("artifact", f"ART-{artifact_index}")
-                parent = ("analysis_run", f"RUN-{run_index}")
-            children.setdefault(parent, []).append(child)
+            expected: set[tuple[str, str]] = set()
+            pending = deque([("dataset_version", "DS-ROOT")])
+            while pending:
+                parent = pending.popleft()
+                for child in children.get(parent, []):
+                    if child not in expected:
+                        expected.add(child)
+                        pending.append(child)
 
-        expected: set[tuple[str, str]] = set()
-        pending = deque([("dataset_version", "DS-ROOT")])
-        while pending:
-            parent = pending.popleft()
-            for child in children.get(parent, []):
-                if child not in expected:
-                    expected.add(child)
-                    pending.append(child)
-
-        mark_descendants_stale(
-            connection,
-            "dataset_version",
-            "DS-ROOT",
-            "DS-ROOT v2 supersedes v1: independent property mutation",
-        )
-        observed = _stale_nodes(connection)
-        assert observed == expected
-        mark_descendants_stale(
-            connection,
-            "dataset_version",
-            "DS-ROOT",
-            "later reason must not rewrite prior stale evidence",
-        )
-        assert _stale_nodes(connection) == expected
-        assert all(
-            "independent property mutation" in str(row["stale_reason"])
-            for row in connection.execute(
-                "SELECT stale_reason FROM analysis_run WHERE status = 'STALE'"
+            mark_descendants_stale(
+                connection,
+                "dataset_version",
+                "DS-ROOT",
+                "DS-ROOT v2 supersedes v1: independent property mutation",
             )
-        )
-        stale_run = connection.execute(
-            "SELECT id FROM analysis_run WHERE status = 'STALE' LIMIT 1"
-        ).fetchone()
-        if stale_run is not None:
-            with pytest.raises(sqlite3.IntegrityError):
-                connection.execute(
-                    "UPDATE analysis_run SET status = 'CURRENT', stale_reason = NULL WHERE id = ?",
-                    (stale_run["id"],),
+            observed = _stale_nodes(connection)
+            assert observed == expected
+            mark_descendants_stale(
+                connection,
+                "dataset_version",
+                "DS-ROOT",
+                "later reason must not rewrite prior stale evidence",
+            )
+            assert _stale_nodes(connection) == expected
+            assert all(
+                "independent property mutation" in str(row["stale_reason"])
+                for row in connection.execute(
+                    "SELECT stale_reason FROM analysis_run WHERE status = 'STALE'"
                 )
-    finally:
-        connection.close()
+            )
+            stale_run = connection.execute(
+                "SELECT id FROM analysis_run WHERE status = 'STALE' LIMIT 1"
+            ).fetchone()
+            if stale_run is not None:
+                with pytest.raises(sqlite3.IntegrityError):
+                    connection.execute(
+                        "UPDATE analysis_run SET status = 'CURRENT', stale_reason = NULL WHERE id = ?",
+                        (stale_run["id"],),
+                    )
+        finally:
+            connection.close()
 
 
 def test_I_09_analysis_end_to_end_records_hashes_json_and_png(tmp_path: Path) -> None:
@@ -461,9 +470,6 @@ def test_I_15_corrected_dataset_cascades_stale_through_runs_and_artifacts(
 
 
 def test_I_19_old_schema_refuses_and_backup_guidance_is_executable(tmp_path: Path) -> None:
-    from labquorum.cli.main import main as lq_main
-    from labquorum.store.db import SCHEMA_VERSION
-
     old_path = tmp_path / "old-v2.sqlite"
     old = sqlite3.connect(old_path)
     old.execute("CREATE TABLE schema_version(version INTEGER NOT NULL)")
@@ -530,6 +536,27 @@ def _run_file_for_hash(run_id: str, digest: str, tmp_path: Path) -> Path:
         connection.close()
 
 
+def _plate_differences(first: str, second: str) -> dict[str, tuple[str, str]]:
+    first_rows = list(csv.DictReader(StringIO(first, newline="")))
+    second_rows = list(csv.DictReader(StringIO(second, newline="")))
+    differences: dict[str, tuple[str, str]] = {}
+    for first_row, second_row in zip(first_rows, second_rows, strict=True):
+        for field in first_row:
+            if first_row[field] != second_row[field]:
+                differences[field] = (first_row[field], second_row[field])
+    return differences
+
+
+def _changed_plate_wells(first: str, second: str) -> list[str]:
+    first_rows = list(csv.DictReader(StringIO(first, newline="")))
+    second_rows = list(csv.DictReader(StringIO(second, newline="")))
+    return [
+        first_row["well"]
+        for first_row, second_row in zip(first_rows, second_rows, strict=True)
+        if first_row != second_row
+    ]
+
+
 def _staging_root(database: Path) -> Path:
     return database.resolve().with_name(database.name + ".staging")
 
@@ -570,7 +597,7 @@ def _insert_property_graph(
         "INSERT INTO dataset_version "
         "(id, dataset_id, version, relative_path, sha256, byte_count, schema_json, sensitivity, "
         "registered_by, supersedes_id, created_utc) "
-        "VALUES ('DS-ROOT', 'DS-ROOT', 1, 'datasets/root.csv', ?, 0, '{}', 'internal', 'test', NULL, ?)",
+        "VALUES ('DS-ROOT', 'DS-ROOT', 1, 'datasets/root.csv', ?, 1, '{}', 'internal', 'test', NULL, ?)",
         ("0" * 64, "2026-11-05T12:00:00.000000Z"),
     )
     for index in range(6):
@@ -584,7 +611,7 @@ def _insert_property_graph(
         connection.execute(
             "INSERT INTO artifact "
             "(id, run_id, kind, relative_path, sha256, byte_count, status, stale_reason) "
-            "VALUES (?, ?, 'json', ?, ?, 0, 'CURRENT', NULL)",
+            "VALUES (?, ?, 'json', ?, ?, 1, 'CURRENT', NULL)",
             (f"ART-{index}", f"RUN-{index}", f"runs/{index}/summary.json", "0" * 64),
         )
     for edge_code in edge_codes:
@@ -616,8 +643,6 @@ def _stale_nodes(connection: sqlite3.Connection) -> set[tuple[str, str]]:
 
 def _process_is_running(pid: int) -> bool:
     if sys.platform == "win32":
-        import subprocess
-
         result = subprocess.run(
             ["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"],
             capture_output=True,
@@ -626,8 +651,6 @@ def _process_is_running(pid: int) -> bool:
             check=False,
         )
         return f'"{pid}"' in result.stdout
-    import os
-
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
@@ -636,8 +659,6 @@ def _process_is_running(pid: int) -> bool:
 
 
 def _wait_until_stopped(pid: int) -> bool:
-    import time
-
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:
         if not _process_is_running(pid):

@@ -1,0 +1,5 @@
+| path | reason |
+| --- | --- |
+| tests/integration/test_p5_stale.py | Moved standard-library imports to module scope for Ruff; replaced the Hypothesis function-scoped `tmp_path` fixture with a per-example temporary directory after Hypothesis reported the fixture health check; made synthetic fixture assertions explicitly verify only C5 OD590 differs and the corrected 8 ug/mL mean delta is 0.1245; repeated the recipe and asserted identical JSON and PNG hashes; updated the property graph fixture's positive byte counts to satisfy schema constraints. Assertions were strengthened or retained; no behavior check was skipped or weakened. |
+| tests/contract/test_p2_contract.py | Updated C-09 to expect the newly implemented `analyst` profile mapping. The proposer, approver, and unavailable profile assertions remain unchanged. |
+| tests/unit/test_p3_setup.py | Style-only repair of existing import order and Ruff formatting, required by the repository-wide lint and format gate. Test behavior and assertions were not changed. |

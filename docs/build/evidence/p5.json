@@ -1,0 +1,23 @@
+{
+  "red_commit": "d346d1a6a8ba24b6bdd861198c2869ad3457e5e3",
+  "red_tests": [
+    "tests/integration/test_p5_stale.py::test_U_D01_csv_sniffing_handles_delimiters_decimal_comma_bom_and_crlf",
+    "tests/integration/test_p5_stale.py::test_U_D02_profile_reports_types_missing_duplicates_and_out_of_range_od",
+    "tests/integration/test_p5_stale.py::test_U_D04_human_subjects_datasets_are_refused",
+    "tests/integration/test_p5_stale.py::test_U_D05_descriptive_plate_summary_matches_independent_goldens",
+    "tests/integration/test_p5_stale.py::test_U_D06_analysis_timeout_kills_the_process_tree",
+    "tests/integration/test_p5_stale.py::test_U_D07_qc_blanks_are_flagged_without_removing_treatment_wells",
+    "tests/integration/test_p5_stale.py::test_U_D08_unknown_well_is_reported_for_correction_not_auto_matched",
+    "tests/integration/test_p5_stale.py::test_U_D09_formula_cells_remain_inert_and_are_escaped_in_profile",
+    "tests/integration/test_p5_stale.py::test_U_D10_plate_recipe_reports_technical_replicates_without_p_values",
+    "tests/integration/test_p5_stale.py::test_U_S01_dataset_supersession_stales_runs_and_artifacts_with_reason",
+    "tests/integration/test_p5_stale.py::test_U_S03_rerun_has_new_ids_and_never_makes_the_old_run_current",
+    "tests/integration/test_p5_stale.py::test_U_S06_unrelated_dataset_runs_remain_current",
+    "tests/integration/test_p5_stale.py::test_P_07_stale_propagation_is_monotonic_and_complete_against_independent_oracle",
+    "tests/integration/test_p5_stale.py::test_I_09_analysis_end_to_end_records_hashes_json_and_png",
+    "tests/integration/test_p5_stale.py::test_I_15_corrected_dataset_cascades_stale_through_runs_and_artifacts",
+    "tests/integration/test_p5_stale.py::test_I_19_old_schema_refuses_and_backup_guidance_is_executable",
+    "tests/integration/test_p5_stale.py::test_I_27_analyst_tools_reject_traversal_and_expose_no_path_arguments",
+    "tests/integration/test_p5_stale.py::test_C_01_analyst_tool_contract_matches_snapshot"
+  ]
+}
