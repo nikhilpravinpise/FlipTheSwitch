@@ -297,6 +297,23 @@ def test_E2E_02_proposal_only_aborts_when_the_real_thread_has_an_approval_card(
         recorder.run()
 
 
+def test_E2E_02_proposal_only_rechecks_ledger_after_refusal_before_end_card(
+    tmp_path: Path,
+) -> None:
+    recorder, _, _, ledger, _, _ = _make_recorder(tmp_path, proposal_only=True)
+    original_set_shot = recorder._set_shot
+
+    def set_shot(title: str) -> None:
+        original_set_shot(title)
+        if title == "Student cannot approve":
+            ledger.state = "committed"
+
+    recorder._set_shot = set_shot
+
+    with pytest.raises(DemoRecordingError, match="committed unexpectedly"):
+        recorder.run()
+
+
 def test_E2E_02_student_persona_can_be_selected_by_username() -> None:
     config = HarnessConfig(
         mattermost_url="http://example.invalid",
