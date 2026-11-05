@@ -1,0 +1,19 @@
+{
+  "proposer": [
+    "list_instruments",
+    "check_availability",
+    "propose_booking",
+    "cancel_my_proposal",
+    "lab_state"
+  ],
+  "approver": [
+    "get_request",
+    "policy_check",
+    "lab_state",
+    "decline_request",
+    "commit_booking"
+  ],
+  "unavailable": [
+    "capability_status"
+  ]
+}

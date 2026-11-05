@@ -31,8 +31,15 @@ select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PL"]
 # E501 is handled by the formatter; PLR2004 permits intentional test constants such as 50 races.
 ignore = ["E501", "PLR2004"]
 
+[tool.ruff.lint.per-file-ignores]
+# These gate functions mirror ordered acceptance checks and fail-closed probe stages.
+"scripts/gates/common.py" = ["PLR0911", "PLR0912", "PLR0915"]
+"scripts/gates/p2_stdio_probe.py" = ["PLR0911", "PLR0912", "PLR0915"]
+
 [tool.ruff.format]
 line-ending = "lf"
+# Inputs are preserved as supplied under the repository's no-edit rule.
+exclude = ["docs/inputs/**"]
 
 [tool.pyright]
 include = ["src", "tests", "scripts"]
@@ -42,6 +49,7 @@ pythonVersion = "3.12"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 addopts = ["--strict-markers", "--timeout=60", "-m", "not live"]
 markers = [
     "slow: tests that take longer than the normal suite",
