@@ -147,6 +147,66 @@ def _insert_seeded_booking(
     )
 
 
+def _backfill_seed_people(
+    connection: sqlite3.Connection,
+    source: dict[str, Any],
+    anchor_date: date,
+    clock: Clock,
+) -> int:
+    anchor_key = anchor_date.isoformat()
+    zone = ZoneInfo(str(source["timezone"]))
+    existing_people = {str(row["id"]) for row in connection.execute("SELECT id FROM person")}
+    added_people = [
+        person for person in source["people"] if str(person["id"]) not in existing_people
+    ]
+    for person in added_people:
+        connection.execute(
+            "INSERT INTO person(id, display_name, role, timezone) VALUES (?, ?, ?, ?)",
+            (person["id"], person["display_name"], person["role"], person["timezone"]),
+        )
+    added_ids = {str(person["id"]) for person in added_people}
+    for training in source["training"]:
+        if str(training["person_id"]) not in added_ids:
+            continue
+        granted = _local_instant(
+            anchor_date,
+            int(training["granted_offset_days"]),
+            "00:00",
+            zone,
+        )
+        expires = _local_instant(
+            anchor_date,
+            int(training["expires_offset_days"]),
+            "00:00",
+            zone,
+        )
+        connection.execute(
+            "INSERT INTO training(person_id, instrument_id, granted_at_utc, expires_at_utc) "
+            "VALUES (?, ?, ?, ?)",
+            (
+                training["person_id"],
+                training["instrument_id"],
+                utc_timestamp(granted),
+                utc_timestamp(expires),
+            ),
+        )
+    if added_people:
+        append_event(
+            connection,
+            actor="lq",
+            tool="seed_demo",
+            args={"anchor_date": anchor_key, "added_people": sorted(added_ids)},
+            result={
+                "seeded": False,
+                "people": len(added_people),
+                "instruments": 0,
+                "bookings": 0,
+            },
+            clock=clock,
+        )
+    return len(added_people)
+
+
 def seed_demo(
     connection: sqlite3.Connection,
     anchor_date: date,
@@ -177,64 +237,11 @@ def seed_demo(
                     "Demo seed was already loaded with a different anchor date.",
                     {"loaded_anchor_date": marker["value"], "requested_anchor_date": anchor_key},
                 )
-            existing_people = {
-                str(row["id"]) for row in connection.execute("SELECT id FROM person")
-            }
-            added_people = [
-                person for person in source["people"] if str(person["id"]) not in existing_people
-            ]
-            for person in added_people:
-                connection.execute(
-                    "INSERT INTO person(id, display_name, role, timezone) VALUES (?, ?, ?, ?)",
-                    (person["id"], person["display_name"], person["role"], person["timezone"]),
-                )
-            added_ids = {str(person["id"]) for person in added_people}
-            added_training = [
-                training
-                for training in source["training"]
-                if str(training["person_id"]) in added_ids
-            ]
-            for training in added_training:
-                granted = _local_instant(
-                    anchor_date,
-                    int(training["granted_offset_days"]),
-                    "00:00",
-                    zone,
-                )
-                expires = _local_instant(
-                    anchor_date,
-                    int(training["expires_offset_days"]),
-                    "00:00",
-                    zone,
-                )
-                connection.execute(
-                    "INSERT INTO training(person_id, instrument_id, granted_at_utc, expires_at_utc) "
-                    "VALUES (?, ?, ?, ?)",
-                    (
-                        training["person_id"],
-                        training["instrument_id"],
-                        utc_timestamp(granted),
-                        utc_timestamp(expires),
-                    ),
-                )
-            if added_people:
-                append_event(
-                    connection,
-                    actor="lq",
-                    tool="seed_demo",
-                    args={"anchor_date": anchor_key, "added_people": sorted(added_ids)},
-                    result={
-                        "seeded": False,
-                        "people": len(added_people),
-                        "instruments": 0,
-                        "bookings": 0,
-                    },
-                    clock=clock,
-                )
+            added_people_count = _backfill_seed_people(connection, source, anchor_date, clock)
             return {
                 "seeded": False,
                 "anchor_date": anchor_key,
-                "people": len(added_people),
+                "people": added_people_count,
                 "instruments": 0,
                 "bookings": 0,
             }
