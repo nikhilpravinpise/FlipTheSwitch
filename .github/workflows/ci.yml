@@ -13,8 +13,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      # GitHub releases list v10 as the current major: https://github.com/astral-sh/setup-uv/releases
-      - uses: astral-sh/setup-uv@v10
+      # v10.3.3: pin the verified release commit; the v10 alias is absent.
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
         with:
           python-version: "3.12"
       - run: uv sync --locked
