@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
@@ -24,12 +25,13 @@ from labquorum.e2e.assertions import (
     assert_repeat_second_commit,
     assert_restart_safe,
 )
-from labquorum.e2e.cards import find_approval_cards
+from labquorum.e2e.cards import ApprovalCard, find_approval_cards
 from labquorum.e2e.evidence import write_evidence
 from labquorum.e2e.ledger import LedgerInspector
 from labquorum.e2e.mattermost import (
     MattermostAuthenticationError,
     MattermostClient,
+    MattermostPost,
     ReplyTimeout,
 )
 from labquorum.e2e.runner import ScenarioOptions, ScenarioRunner
@@ -382,6 +384,71 @@ def test_E2E_11_runner_rejects_unconfirmed_session_id(tmp_path: Path) -> None:
             evidence_dir=tmp_path / "evidence",
             options=ScenarioOptions(binding=True, session_id="session-123"),
         )
+
+
+def test_E2E_11_fresh_card_remains_pending_in_same_session(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
+    canonical = _card_text(snapshot.requests[0])
+    first_card = ApprovalCard(
+        "A1", "card-1", "channel-1", "switch-bot", canonical, session_id="provider-session"
+    )
+    second_card = ApprovalCard(
+        "A2", "card-2", "channel-1", "switch-bot", canonical, session_id="provider-session"
+    )
+
+    class StubPersona:
+        answer_calls = 0
+
+        def wait_for_approval_card(self, *args: Any, **kwargs: Any) -> ApprovalCard:
+            return second_card
+
+        def answer_card(self, *args: Any, **kwargs: Any) -> object:
+            self.answer_calls += 1
+            return object()
+
+    persona = StubPersona()
+    runner = ScenarioRunner(
+        personas=cast(Any, {"maya": persona, "prof-rao": persona}),
+        ledger=LedgerInspector(tmp_path / "ledger.sqlite"),
+        channel_id="channel-1",
+        evidence_dir=tmp_path / "evidence",
+        options=ScenarioOptions(binding=True, observation_seconds=0),
+    )
+    post = MattermostPost("prompt-2", "channel-1", "maya-id", "repeat", 2000)
+    reply = MattermostPost("reply-2", "channel-1", "labops-id", "AR-0042", 3000)
+    second_attempt = SimpleNamespace(
+        prompt_post=post,
+        reply=reply,
+        request_id="AR-0042",
+        before=snapshot,
+        after_reply=snapshot,
+    )
+    first_attempt = SimpleNamespace(request_id="AR-0041")
+    first_flow = SimpleNamespace(
+        attempt=first_attempt,
+        card=first_card,
+        settled_by="prof-rao",
+        snapshot=snapshot,
+    )
+    commit_calls = 0
+
+    def commit_open_card(opened: object) -> Any:
+        nonlocal commit_calls
+        commit_calls += 1
+        return first_flow
+
+    monkeypatch.setattr(runner, "_open_card", lambda *args: ((first_attempt, first_card), 1))
+    monkeypatch.setattr(runner, "_commit_open_card", commit_open_card)
+    monkeypatch.setattr(runner, "_begin_proposal", lambda prompt: second_attempt)
+
+    result = runner._repeat()
+
+    assert result["second_request_status"] == "pending"
+    assert result["second_commit_audit_count"] == 0
+    assert commit_calls == 1
+    assert persona.answer_calls == 0
 
 
 def test_I_36_user_note_cannot_substitute_instrument(tmp_path: Path) -> None:
