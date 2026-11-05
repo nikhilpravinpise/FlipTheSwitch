@@ -61,6 +61,10 @@ def _parser() -> argparse.ArgumentParser:
     doctor.add_argument("--db", type=Path, default=default_database_path())
     doctor.add_argument("--agents-dir", type=Path, default=REPO_ROOT / "agents")
 
+    backup = commands.add_parser("backup", help="copy a ledger with SQLite's online backup API")
+    backup.add_argument("--db", type=Path, default=default_database_path())
+    backup.add_argument("--output", type=Path, required=True)
+
     request = commands.add_parser("request", help="inspect approval requests")
     request_commands = request.add_subparsers(dest="request_command", required=True)
     request_show = request_commands.add_parser("show", help="show one approval request")
@@ -79,6 +83,42 @@ def _parser() -> argparse.ArgumentParser:
 
 def _json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True)
+
+
+def _backup_database(source_path: Path, output_path: Path) -> dict[str, str]:
+    source = source_path.expanduser().resolve(strict=False)
+    output = output_path.expanduser().resolve(strict=False)
+    if not source.is_file():
+        raise LabQuorumError(ErrorCode.NOT_FOUND, f"Ledger file {source} was not found.")
+    if source == output:
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT, "Backup output must differ from the ledger."
+        )
+    if output.exists():
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"Backup output {output} already exists; choose a new destination.",
+        )
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    source_connection: sqlite3.Connection | None = None
+    backup_connection: sqlite3.Connection | None = None
+    try:
+        source_connection = sqlite3.connect(source, timeout=5)
+        backup_connection = sqlite3.connect(output, timeout=5)
+        source_connection.backup(backup_connection)
+    except BaseException:
+        if backup_connection is not None:
+            backup_connection.close()
+            backup_connection = None
+        output.unlink(missing_ok=True)
+        raise
+    finally:
+        if source_connection is not None:
+            source_connection.close()
+        if backup_connection is not None:
+            backup_connection.close()
+    return {"source": str(source), "backup": str(output), "status": "complete"}
 
 
 def _finding(code: str, severity: str, message: str) -> dict[str, str]:
@@ -428,12 +468,15 @@ def doctor_report(
     }
 
 
-def _run(args: argparse.Namespace) -> int:
+def _run(args: argparse.Namespace) -> int:  # noqa: PLR0911
     path: Path = args.db
     if args.command == "doctor":
         report = doctor_report(path, agents_dir=args.agents_dir)
         print(_json(report))
         return 0 if report["ok"] else 1
+    if args.command == "backup":
+        print(_json(_backup_database(path, args.output)))
+        return 0
     if args.command == "init":
         connection = init_database(path)
         try:

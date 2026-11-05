@@ -9,6 +9,7 @@ class Profile(StrEnum):
     PROPOSER = "proposer"
     APPROVER = "approver"
     UNAVAILABLE = "unavailable"
+    ANALYST = "analyst"
 
 
 PROFILE_TOOLS: dict[Profile, tuple[str, ...]] = {
@@ -27,6 +28,13 @@ PROFILE_TOOLS: dict[Profile, tuple[str, ...]] = {
         "commit_booking",
     ),
     Profile.UNAVAILABLE: ("capability_status",),
+    Profile.ANALYST: (
+        "register_dataset",
+        "dataset_profile",
+        "run_analysis",
+        "list_runs",
+        "run_status",
+    ),
 }
 
 _TOOL_DESCRIPTIONS: dict[str, str] = {
@@ -87,7 +95,7 @@ _AGENT_PROFILES: dict[str, Profile] = {
     "labops": Profile.PROPOSER,
     "pi-desk": Profile.APPROVER,
     "scout": Profile.UNAVAILABLE,
-    "analyst": Profile.UNAVAILABLE,
+    "analyst": Profile.ANALYST,
 }
 
 
