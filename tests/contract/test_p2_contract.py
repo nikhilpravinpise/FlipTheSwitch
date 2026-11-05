@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shutil
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -13,8 +14,10 @@ from typing import Any
 
 from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
+from mcp.types import TextContent
 from syrupy.assertion import SnapshotAssertion
 
+from labquorum.cli.main import _inspect_agent_configs
 from labquorum.domain.errors import ErrorCode
 from labquorum.domain.timeutil import FixedClock
 from labquorum.mcp.profiles import Profile, profile_for_agent, tool_names_for_profile
@@ -111,11 +114,38 @@ def test_C_03_unavailable_profile_exposes_only_capability_status() -> None:
     assert "commit_booking" not in tool_names_for_profile(Profile.PROPOSER)
 
 
-def test_C_09_agent_folder_maps_to_its_expected_mcp_profile() -> None:
+def test_C_09_agent_folder_maps_to_its_expected_mcp_profile(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
     assert profile_for_agent("labops") is Profile.PROPOSER
     assert profile_for_agent("pi-desk") is Profile.APPROVER
     assert profile_for_agent("scout") is Profile.UNAVAILABLE
     assert profile_for_agent("analyst") is Profile.UNAVAILABLE
+    agents_dir = tmp_path / "agents"
+    labops_dir = agents_dir / "labops"
+    labops_dir.mkdir(parents=True)
+    (labops_dir / ".mcp.json").write_text(
+        json.dumps(
+            {
+                "mcpServers": {
+                    "labquorum": {
+                        "command": "uv",
+                        "args": ["run", "lq-mcp", "--profile", "proposer"],
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    original_which = shutil.which
+    monkeypatch.setattr(
+        shutil,
+        "which",
+        lambda name: sys.executable if name == "uv" else original_which(name),
+    )
+    findings = _inspect_agent_configs(agents_dir)
+    assert any(finding["code"] == "MCP_CONFIG_RESOLVED" for finding in findings)
 
 
 def test_C_10_error_enum_is_shared_with_p2_documentation() -> None:
@@ -140,7 +170,12 @@ def test_C_13_commit_schema_and_transaction_require_the_full_decision(
             assert {"request_id", "revision", "content_hash", "decision"}.issubset(
                 commit_tool.inputSchema["required"]
             )
-            decision_properties = properties["decision"]["properties"]
+            decision_schema = properties["decision"]
+            decision_reference = decision_schema.get("$ref")
+            if isinstance(decision_reference, str):
+                definition_name = decision_reference.rsplit("/", maxsplit=1)[-1]
+                decision_schema = commit_tool.inputSchema["$defs"][definition_name]
+            decision_properties = decision_schema["properties"]
             assert {
                 "action",
                 "requester",
@@ -150,6 +185,12 @@ def test_C_13_commit_schema_and_transaction_require_the_full_decision(
                 "request_id",
                 "revision",
             }.issubset(decision_properties)
+            interval_schema = decision_properties["interval"]
+            interval_reference = interval_schema.get("$ref")
+            if isinstance(interval_reference, str):
+                definition_name = interval_reference.rsplit("/", maxsplit=1)[-1]
+                interval_schema = commit_tool.inputSchema["$defs"][definition_name]
+            assert {"start_utc", "end_utc"}.issubset(interval_schema["properties"])
 
         async with _connect("proposer", database) as proposer:
             proposed = _payload(
@@ -209,6 +250,55 @@ def test_C_14_tool_results_are_compact_and_below_the_size_cap(tmp_path: Path) ->
     asyncio.run(exercise())
 
 
+def test_U_B11_tool_rejects_natural_language_time_with_needs_iso_datetime(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "datetime.sqlite"
+    _seed_database(database)
+
+    async def exercise() -> None:
+        async with _connect("proposer", database) as session:
+            result = _payload(
+                await session.call_tool(
+                    "check_availability",
+                    {
+                        "instrument_id": "INS-01",
+                        "start": "Thursday 2 to 5 pm",
+                        "end": PROBE_END,
+                    },
+                )
+            )
+            assert result["error"] == "NEEDS_ISO_DATETIME"
+
+    asyncio.run(exercise())
+
+
+def test_U_B02_conflict_tool_names_owner_and_nearest_same_length_slot(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "conflict.sqlite"
+    _seed_database(database)
+
+    async def exercise() -> None:
+        async with _connect("proposer", database) as session:
+            result = _payload(
+                await session.call_tool(
+                    "propose_booking",
+                    {
+                        "instrument_id": "INS-01",
+                        "project_id": "conflict-check",
+                        "start": "2026-11-06T14:00:00+05:30",
+                        "end": "2026-11-06T15:00:00+05:30",
+                    },
+                )
+            )
+        assert result["error"] == "CONFLICT"
+        assert result["details"]["conflicting_booking"]["owner"] == "lena"
+        assert result["details"]["nearest_free_slot"]["start_utc"] == "2026-11-06T10:15:00Z"
+
+    asyncio.run(exercise())
+
+
 def test_I_02_stdio_lists_profiles_and_calls_each_read_tool_on_seed(tmp_path: Path) -> None:
     database = tmp_path / "stdio.sqlite"
     _seed_database(database)
@@ -259,9 +349,11 @@ def test_I_03_commit_from_proposer_is_an_unknown_tool(tmp_path: Path) -> None:
                 assert "commit_booking" in message
                 assert "unknown" in message or "not found" in message or "not registered" in message
             else:
-                payload = _payload(result)
                 assert result.isError is True
-                assert "commit_booking" in json.dumps(payload).casefold()
+                text = "\n".join(
+                    block.text for block in result.content if isinstance(block, TextContent)
+                )
+                assert "commit_booking" in text.casefold()
 
     asyncio.run(exercise())
 
@@ -291,7 +383,9 @@ def test_I_12_recorded_tool_sequence_replays_identically_on_fresh_seeds(
                     reference = value["$ref"].split(".")
                     resolved: Any = context
                     for part in reference:
-                        resolved = resolved[int(part)] if isinstance(resolved, list) else resolved[part]
+                        resolved = (
+                            resolved[int(part)] if isinstance(resolved, list) else resolved[part]
+                        )
                     arguments[name] = resolved
                 else:
                     arguments[name] = value
