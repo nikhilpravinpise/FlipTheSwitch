@@ -202,6 +202,8 @@ def test_C_12_binding_fails_closed_and_limits_distinct_commits(tmp_path: Path) -
 
     def commit(**arguments: Any) -> dict[str, Any]:
         calls.append(dict(arguments))
+        if arguments == {"request_id": "AR-0001", "revision": 2}:
+            raise LabQuorumError(ErrorCode.DECISION_MISMATCH, "Changed decision fields.")
         return {"request_id": arguments["request_id"], "status": "committed"}
 
     limiter = limiter_type()
@@ -214,8 +216,8 @@ def test_C_12_binding_fails_closed_and_limits_distinct_commits(tmp_path: Path) -
     assert distinct_commit.value.code is ErrorCode.BINDING_COMMIT_LIMIT
     with pytest.raises(LabQuorumError) as changed_retry:
         guarded(request_id="AR-0001", revision=2)
-    assert changed_retry.value.code is ErrorCode.BINDING_COMMIT_LIMIT
-    assert len(calls) == 2
+    assert changed_retry.value.code is ErrorCode.DECISION_MISMATCH
+    assert len(calls) == 3
 
 
 def test_I_13_doctor_reports_and_validates_effective_binding_state(tmp_path: Path) -> None:
