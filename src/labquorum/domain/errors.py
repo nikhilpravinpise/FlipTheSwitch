@@ -54,4 +54,36 @@ class LabQuorumError(Exception):
 
 def error_codes_markdown() -> str:
     """Render all supported error codes as a Markdown table."""
-    raise NotImplementedError
+    meanings = {
+        ErrorCode.CONFLICT: "The requested interval conflicts with a committed booking.",
+        ErrorCode.INSTRUMENT_DOWN: "The instrument is unavailable for the requested interval.",
+        ErrorCode.TRAINING_REQUIRED: "Required training is missing or expired at booking start.",
+        ErrorCode.TOO_LONG: "The requested booking exceeds the instrument block limit.",
+        ErrorCode.OUTSIDE_WINDOW: "The requested booking is beyond the booking window.",
+        ErrorCode.OUTSIDE_HOURS: "The requested interval is outside instrument opening hours.",
+        ErrorCode.IN_PAST: "The requested interval starts before the current time.",
+        ErrorCode.NEEDS_ISO_DATETIME: "The input must be an explicit ISO 8601 datetime.",
+        ErrorCode.AMBIGUOUS_LOCAL_TIME: "The local time occurs twice; provide a UTC offset.",
+        ErrorCode.NONEXISTENT_LOCAL_TIME: "The local time does not exist because of a clock change.",
+        ErrorCode.EXPIRED: "The approval request has expired.",
+        ErrorCode.STALE_REQUEST: "The request revision or content hash is stale.",
+        ErrorCode.DECISION_MISMATCH: "The submitted decision differs from the canonical decision.",
+        ErrorCode.ALREADY_DECIDED: "The request already has a terminal decision.",
+        ErrorCode.DECLINED: "The request was declined and cannot be committed.",
+        ErrorCode.NOT_FOUND: "The requested ledger record does not exist.",
+        ErrorCode.RATE_LIMITED: "The profile exceeded its tool call rate limit.",
+        ErrorCode.INVALID_ARGUMENT: "An argument is invalid or outside the supported format.",
+        ErrorCode.SCHEMA_VERSION_MISMATCH: "The ledger schema version is not supported.",
+        ErrorCode.UNIT_MISMATCH: "Quantities use incompatible units.",
+        ErrorCode.UNKNOWN_HAZARD: "The hazard is unknown and must be reviewed.",
+        ErrorCode.ETHICS_REVIEW_REQUIRED: "The request requires an ethics review.",
+        ErrorCode.TAMPERED: "Stored content failed its integrity check.",
+        ErrorCode.BUDGET_EXCEEDED: "The request exceeded its configured call budget.",
+        ErrorCode.UNRESOLVED: "The requested source could not be resolved.",
+        ErrorCode.MISMATCH: "The source metadata does not match the supplied metadata.",
+        ErrorCode.RETRACTED: "The source has a recorded retraction.",
+        ErrorCode.UNREACHABLE: "The remote source could not be reached.",
+    }
+    rows = ["| Code | Meaning |", "| --- | --- |"]
+    rows.extend(f"| {code.value} | {meanings[code]} |" for code in ErrorCode)
+    return "\n".join(rows)

@@ -17,4 +17,13 @@ class PolicyCheck:
 
 
 def policy_check(checks: Sequence[PolicyCheck]) -> list[dict[str, object]]:
-    raise NotImplementedError
+    """Return JSON-ready named checks without hiding the failure code or reason."""
+    return [
+        {
+            "name": check.name,
+            "passed": check.passed,
+            "code": check.code.value if check.code is not None else None,
+            "reason": check.reason,
+        }
+        for check in checks
+    ]

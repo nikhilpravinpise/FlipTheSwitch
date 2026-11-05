@@ -22,6 +22,10 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/labquorum"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"seed/demo.yaml" = "labquorum/store/demo.yaml"
+"src/labquorum/store/schema.sql" = "labquorum/store/schema.sql"
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
