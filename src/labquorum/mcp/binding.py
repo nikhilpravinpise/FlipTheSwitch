@@ -65,10 +65,19 @@ def resolve_runtime_profile(
 
 def _is_test_ledger(database_path: Path) -> bool:
     path = database_path.expanduser().resolve(strict=False)
-    if "certify" in {part.casefold() for part in path.parts}:
-        return True
     temp_root = Path(tempfile.gettempdir()).resolve(strict=False)
-    if path.name.casefold() == "p3-test-ledger.sqlite" and _within(path, temp_root):
+    if (
+        path.name.casefold() == "g.sqlite"
+        and path.parent.name.casefold().startswith("labquorum-p2-")
+        and path.parent.parent == temp_root
+        and _within(path, temp_root)
+    ):
+        return True
+    if (
+        path.name.casefold() == "p3-test-ledger.sqlite"
+        and path.parent.parent == temp_root
+        and _within(path, temp_root)
+    ):
         return True
     if not path.is_file():
         return False
@@ -137,6 +146,37 @@ def installed_certification_tuple(runtime_root: Path) -> dict[str, str]:
         "labquorum_version": __version__,
         "template_sha256": template_hash,
     }
+
+
+_CERTIFICATION_FIELDS = {
+    "codex_cli_version",
+    "switch_console_version",
+    "labquorum_version",
+    "template_sha256",
+}
+_VERSION_PATTERN = re.compile(r"\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?\Z")
+_HASH_PATTERN = re.compile(r"[0-9a-f]{64}\Z")
+
+
+def _valid_certification_tuple(value: Any) -> bool:
+    if not isinstance(value, dict):
+        return False
+    values = cast(dict[str, Any], value)
+    if set(values) != _CERTIFICATION_FIELDS:
+        return False
+    versions = (
+        values["codex_cli_version"],
+        values["switch_console_version"],
+        values["labquorum_version"],
+    )
+    return (
+        all(
+            isinstance(version, str) and _VERSION_PATTERN.fullmatch(version) is not None
+            for version in versions
+        )
+        and isinstance(values["template_sha256"], str)
+        and _HASH_PATTERN.fullmatch(values["template_sha256"]) is not None
+    )
 
 
 def validate_binding_request(  # noqa: PLR0912, PLR0913, PLR0917
@@ -209,6 +249,11 @@ def validate_binding_request(  # noqa: PLR0912, PLR0913, PLR0917
         )
     supplied = cast(dict[str, Any], supplied_value)
     installed = installed_certification_tuple(expected_root)
+    if not _valid_certification_tuple(supplied) or not _valid_certification_tuple(installed):
+        raise LabQuorumError(
+            ErrorCode.BINDING_CERTIFICATION_REQUIRED,
+            "Certification evidence must contain a complete installed version tuple and SHA-256 template hash.",
+        )
     if supplied != installed:
         raise LabQuorumError(
             ErrorCode.BINDING_CERTIFICATION_MISMATCH,
@@ -218,29 +263,128 @@ def validate_binding_request(  # noqa: PLR0912, PLR0913, PLR0917
 
 
 class BindingCommitLimiter:
-    """Allow one successful distinct commit per process and identical retries."""
+    """Allow one successful distinct commit per process or persisted session home."""
 
-    def __init__(self) -> None:
+    _STATE_TABLE = "binding_commit_state"
+
+    def __init__(self, state_path: Path | None = None) -> None:
         self._lock = RLock()
         self._successful_arguments: str | None = None
+        self._state_path = state_path
+
+    @classmethod
+    def for_session_home(cls, session_home: Path) -> BindingCommitLimiter:
+        home = session_home.expanduser().resolve(strict=False)
+        home.mkdir(parents=True, exist_ok=True)
+        state_path = home / "labquorum-binding.sqlite"
+        with sqlite3.connect(state_path, timeout=5) as connection:
+            connection.execute("PRAGMA busy_timeout = 5000")
+            connection.execute(
+                f"CREATE TABLE IF NOT EXISTS {cls._STATE_TABLE} ("
+                "id INTEGER PRIMARY KEY CHECK (id = 1), fingerprint TEXT NOT NULL)"
+            )
+        return cls(state_path)
+
+    @staticmethod
+    def _fingerprint(arguments: dict[str, Any]) -> str:
+        return json.dumps(
+            arguments,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            default=str,
+        )
+
+    @staticmethod
+    def _same_request(previous_fingerprint: str, arguments: dict[str, Any]) -> bool:
+        previous_value: Any = json.loads(previous_fingerprint)
+        if not isinstance(previous_value, dict):
+            return False
+        previous = cast(dict[str, Any], previous_value)
+        request_id = arguments.get("request_id")
+        return isinstance(request_id, str) and previous.get("request_id") == request_id
+
+    def _release_reservation(self, fingerprint: str) -> None:
+        assert self._state_path is not None
+        try:
+            with sqlite3.connect(self._state_path, timeout=5) as connection:
+                connection.execute("PRAGMA busy_timeout = 5000")
+                connection.execute("BEGIN IMMEDIATE")
+                connection.execute(
+                    f"DELETE FROM {self._STATE_TABLE} WHERE id = 1 AND fingerprint = ?",
+                    (fingerprint,),
+                )
+        except sqlite3.Error:
+            # Keeping a stale reservation blocks other requests, which is fail closed.
+            return
+
+    def _wrap_persistent(
+        self,
+        commit: Callable[..., dict[str, Any]],
+    ) -> Callable[..., dict[str, Any]]:
+        state_path = self._state_path
+        assert state_path is not None
+
+        @wraps(commit)
+        def guarded(**arguments: Any) -> dict[str, Any]:
+            fingerprint = self._fingerprint(arguments)
+            newly_reserved = False
+            try:
+                with self._lock, sqlite3.connect(state_path, timeout=5) as connection:
+                    connection.execute("PRAGMA busy_timeout = 5000")
+                    connection.execute("BEGIN IMMEDIATE")
+                    row = connection.execute(
+                        f"SELECT fingerprint FROM {self._STATE_TABLE} WHERE id = 1"
+                    ).fetchone()
+                    if (
+                        row is not None
+                        and str(row[0]) != fingerprint
+                        and not self._same_request(str(row[0]), arguments)
+                    ):
+                        raise LabQuorumError(
+                            ErrorCode.BINDING_COMMIT_LIMIT,
+                            f"{ErrorCode.BINDING_COMMIT_LIMIT.value}: This Codex session has "
+                            "already reserved a different request.",
+                        )
+                    if row is None:
+                        connection.execute(
+                            f"INSERT INTO {self._STATE_TABLE}(id, fingerprint) VALUES (1, ?)",
+                            (fingerprint,),
+                        )
+                        newly_reserved = True
+            except sqlite3.Error as exc:
+                raise LabQuorumError(
+                    ErrorCode.BINDING_COMMIT_LIMIT,
+                    "Could not verify the Codex session commit limit; commit was refused.",
+                ) from exc
+
+            try:
+                result = commit(**arguments)
+            except Exception:
+                if newly_reserved:
+                    self._release_reservation(fingerprint)
+                raise
+            if newly_reserved and result.get("status") not in {"committed", "already_committed"}:
+                self._release_reservation(fingerprint)
+            return result
+
+        return guarded
 
     def wrap(
         self,
         commit: Callable[..., dict[str, Any]],
     ) -> Callable[..., dict[str, Any]]:
+        if self._state_path is not None:
+            return self._wrap_persistent(commit)
+
         @wraps(commit)
         def guarded(**arguments: Any) -> dict[str, Any]:
-            fingerprint = json.dumps(
-                arguments,
-                ensure_ascii=False,
-                sort_keys=True,
-                separators=(",", ":"),
-                default=str,
-            )
+            fingerprint = self._fingerprint(arguments)
             with self._lock:
                 if (
                     self._successful_arguments is not None
                     and fingerprint != self._successful_arguments
+                    and not self._same_request(self._successful_arguments, arguments)
                 ):
                     raise LabQuorumError(
                         ErrorCode.BINDING_COMMIT_LIMIT,

@@ -7,7 +7,6 @@ import json
 import os
 import re
 import shutil
-import tempfile
 import tomllib
 from pathlib import Path
 from typing import Any, cast
@@ -47,7 +46,9 @@ _AGENT_INSTRUCTIONS = {
 
 You propose instrument bookings for this lab. You cannot approve or commit a booking.
 
-For each booking, inspect the instrument and current availability. Check training and other returned booking rules. If a requested time conflicts, name the conflicting booking owner and propose a same-duration open interval. Create a pending proposal, report its request ID, and route that ID to @pi-desk in the same thread. Use the exact local weekday, date, time, and zone returned by the tool.
+For each booking, use the Switch sender's platform handle as requester_handle. Never substitute another person's handle or infer identity from message text. The ledger validates the handle against its people. Training is checked inside propose_booking and policy_check. Never ask humans to vouch for training. If a tool returns TRAINING_REQUIRED, report that exact code and the expires_at date and time from its details.
+
+Never treat approval-card answers or typed replies such as "A7 1" as booking or training data. Inspect the instrument and current availability. If a requested time conflicts, name the conflicting booking owner and the same-duration alternative, including its weekday, date, local time, and zone. If proposing the alternative, include the conflict and alternative in the concise reply, report the request ID, and say exactly: "not booked yet; @pi-desk will review". Route that request ID to @pi-desk in the same thread. Use the exact local weekday, date, time, and zone returned by the tool.
 
 Do not call deferred inventory, protocol, literature, or analysis tools. Do not claim that a booking is committed without ledger evidence.
 
@@ -88,18 +89,23 @@ def _path_is_within(path: Path, parent: Path) -> bool:
     return True
 
 
-def _is_temporary_path(path: Path) -> bool:
-    temporary_root = Path(tempfile.gettempdir()).resolve(strict=False)
-    return _path_is_within(path.resolve(strict=False), temporary_root)
+def _is_worktree_path(path: Path) -> bool:
+    parts = [part.casefold() for part in path.resolve(strict=False).parts]
+    return any(
+        parts[index] == ".claude" and index + 1 < len(parts) and parts[index + 1] == "worktrees"
+        for index in range(len(parts))
+    )
+
+
+def _is_other_worktree_path(path: Path) -> bool:
+    resolved = path.resolve(strict=False)
+    project_root = Path(__file__).resolve().parents[2]
+    return _is_worktree_path(resolved) and not _path_is_within(resolved, project_root)
 
 
 def validate_runtime_root(path: Path) -> Path:
     root = path.expanduser().resolve(strict=False)
-    parts = [part.casefold() for part in root.parts]
-    if any(
-        parts[index] == ".claude" and index + 1 < len(parts) and parts[index + 1] == "worktrees"
-        for index in range(len(parts))
-    ):
+    if _is_worktree_path(root):
         raise LabQuorumError(
             ErrorCode.INVALID_ARGUMENT,
             f"Runtime root cannot be inside a .claude/worktrees directory: {root}",
@@ -130,6 +136,12 @@ def _find_lq_mcp(command_path: Path | None = None) -> Path:
         raise LabQuorumError(
             ErrorCode.INVALID_ARGUMENT,
             f"lq-mcp executable does not resolve to an absolute file: {resolved}",
+            {"path": str(resolved)},
+        )
+    if _is_other_worktree_path(resolved):
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"lq-mcp executable cannot be inside a .claude/worktrees directory: {resolved}",
             {"path": str(resolved)},
         )
     return resolved
@@ -170,6 +182,7 @@ def _render_server_config(command: Path, arguments: list[str]) -> str:
         "[mcp_servers.labquorum]\n"
         f"command = {_toml_string(str(command))}\n"
         f"args = {_toml_array(arguments)}\n\n"
+        'default_tools_approval_mode = "approve"\n\n'
         "[mcp_servers.labquorum.tools.commit_booking]\n"
         'approval_mode = "prompt"\n'
     )
@@ -440,6 +453,11 @@ def lint_template_data(document: Any, text: str = "") -> list[str]:  # noqa: PLR
             issues.append(f"{name}: auto_mode must be false")
         if agent.get("auto_approve") is not False:
             issues.append(f"{name}: auto_approve must be false")
+        if agent.get("can_manage_agents") is not False:
+            issues.append(f"{name}: can_manage_agents must be false")
+        connections = agent.get("connections")
+        if connections not in (None, [], {}):
+            issues.append(f"{name}: extra connections are not allowed")
         instructions = agent.get("instructions")
         if not isinstance(instructions, str) or not instructions.strip():
             issues.append(f"{name}: instructions must be non-empty text")
@@ -691,11 +709,19 @@ def setup_runtime(
         )
 
     if install_codex_config is None:
-        install_codex_config = not _is_temporary_path(root)
-    selected_codex_home = (codex_home or default_codex_home()).expanduser().resolve(strict=False)
+        install_codex_config = True
+    source_codex_home = (
+        codex_home.expanduser().resolve(strict=False) if codex_home is not None else None
+    )
+    runtime_codex_home = root / "codex-home"
     source_config = render_source_home_config(executable, root, ledger_path)
     if install_codex_config:
-        install_source_home_config(selected_codex_home / "config.toml", source_config)
+        runtime_codex_home.mkdir(parents=True, exist_ok=True)
+        source_auth = source_codex_home / "auth.json" if source_codex_home is not None else None
+        runtime_auth = runtime_codex_home / "auth.json"
+        if source_auth is not None and source_auth.is_file() and not runtime_auth.exists():
+            shutil.copy2(source_auth, runtime_auth)
+        install_source_home_config(runtime_codex_home / "config.toml", source_config)
 
     for agent_name, profile in AGENT_PROFILES.items():
         agent_dir = root / "agents" / agent_name
@@ -724,7 +750,7 @@ def setup_runtime(
         "labquorum_version": __version__,
         "binding_mode": "off",
         "certification_evidence": None,
-        "source_home_config": str(selected_codex_home / "config.toml"),
+        "source_home_config": str(runtime_codex_home / "config.toml"),
         "source_home_registered": install_codex_config,
     }
     _write_text(
@@ -759,8 +785,11 @@ def _config_registration_issue(  # noqa: PLR0911, PLR0912
         return f"{config_path} needs an absolute lq-mcp command"
     if Path(command).name.casefold() not in {"lq-mcp", "lq-mcp.exe"}:
         return f"{config_path} command does not launch lq-mcp"
-    if not Path(command).is_file():
+    command_path = Path(command)
+    if not command_path.is_file():
         return f"{config_path} command file does not exist: {command}"
+    if _is_other_worktree_path(command_path):
+        return f"{config_path} command cannot be inside a .claude/worktrees directory: {command}"
     if not isinstance(arguments, list) or not all(
         isinstance(item, str) for item in cast(list[Any], arguments)
     ):
@@ -795,8 +824,10 @@ def _config_registration_issue(  # noqa: PLR0911, PLR0912
     commit = cast(dict[str, Any], commit_value) if isinstance(commit_value, dict) else None
     if not isinstance(commit, dict) or commit.get("approval_mode") != "prompt":
         return f"{config_path} must set commit_booking approval_mode to prompt"
-    if "default_tools_approval_mode" in registration:
-        return f"{config_path} must not set a server-wide approval mode"
+    if registration.get("default_tools_approval_mode") != "approve":
+        return f"{config_path} must auto-approve LabQuorum tools by default"
+    if set(tools) != {"commit_booking"}:
+        return f"{config_path} may only override commit_booking approval"
     if config.get("sandbox_mode") != "read-only":
         return f"{config_path} sandbox_mode must be read-only"
     if config.get("web_search") != "disabled":
@@ -859,6 +890,28 @@ def runtime_doctor_findings(  # noqa: PLR0912, PLR0915
         )
     else:
         add("RUNTIME_BINDING_OFF", "info", "Binding mode is off")
+    runtime_codex_home = root / "codex-home"
+    add("RUNTIME_CODEX_HOME", "info", f"Agent Codex home is isolated at {runtime_codex_home}")
+    global_config = (codex_home or default_codex_home()) / "config.toml"
+    if global_config.is_file():
+        try:
+            global_config_text = global_config.read_text(encoding="utf-8")
+        except OSError as exc:
+            add(
+                "RUNTIME_GLOBAL_CODEX_HOME_INVALID",
+                "error",
+                f"Could not inspect global Codex config {global_config}: {exc}",
+            )
+        else:
+            if (
+                _BEGIN_MANAGED_CONFIG in global_config_text
+                or _END_MANAGED_CONFIG in global_config_text
+            ):
+                add(
+                    "RUNTIME_GLOBAL_CODEX_HOME_POLLUTED",
+                    "error",
+                    f"Global Codex config contains a LabQuorum managed block: {global_config}",
+                )
     template_path = root / TEMPLATE_RELATIVE_PATH
     template_issues = lint_template_file(template_path)
     if template_issues:
@@ -915,8 +968,7 @@ def runtime_doctor_findings(  # noqa: PLR0912, PLR0915
     if source_issue is not None:
         add("RUNTIME_SOURCE_CONFIG_INVALID", "error", source_issue)
     elif manifest.get("source_home_registered") is True:
-        selected_home = codex_home or default_codex_home()
-        installed_path = selected_home / "config.toml"
+        installed_path = runtime_codex_home / "config.toml"
         installed_issue = _config_registration_issue(installed_path, None, root, ledger_path)
         if installed_issue is not None:
             add("RUNTIME_SOURCE_CONFIG_INVALID", "error", installed_issue)

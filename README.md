@@ -93,6 +93,7 @@ remaining acceptance gates are in [build phases](docs/build/PHASES.md).
 | ALREADY_DECIDED | The request already has a terminal decision. |
 | DECLINED | The request was declined and cannot be committed. |
 | NOT_FOUND | The requested ledger record does not exist. |
+| UNKNOWN_REQUESTER | Requester handle is not in the lab ledger; ask the lab admin to add or correct it. |
 | RATE_LIMITED | The profile exceeded its tool call rate limit. |
 | INVALID_ARGUMENT | An argument is invalid or outside the supported format. |
 | SCHEMA_VERSION_MISMATCH | The ledger schema version is not supported. |
