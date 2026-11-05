@@ -6,16 +6,18 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
+import httpx
+
 from labquorum.domain.canonical import content_hash
 from labquorum.e2e.cards import ApprovalCard
-from labquorum.e2e.config import HarnessConfig, PersonaCredentials
+from labquorum.e2e.config import HarnessConfig, PersonaCredentials, load_config
 from labquorum.e2e.ledger import (
     AuditEvent,
     BookingRecord,
     LedgerSnapshot,
     RequestRecord,
 )
-from labquorum.e2e.mattermost import MattermostPost
+from labquorum.e2e.mattermost import MattermostClient, MattermostPost
 from scripts.demo.record_demo import DemoRecorder, inject_caption, select_student_credentials
 
 
@@ -279,6 +281,97 @@ def test_E2E_02_student_persona_can_be_selected_by_username() -> None:
     selected = select_student_credentials(config, "darved2305")
 
     assert selected.login_id == "darved2305"
+
+
+def test_E2E_02_persona_file_accepts_server_private_room_and_extra_student(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "personas.json"
+    path.write_text(
+        json.dumps(
+            {
+                "server": "https://mattermost.example",
+                "team_id": "team-1",
+                "private_room": {
+                    "id": "room-1",
+                    "name": "lab-quorum",
+                    "display_name": "Lab Quorum",
+                    "type": "P",
+                },
+                "ledger_path": str(tmp_path / "ledger.sqlite"),
+                "personas": {
+                    "maya": {"username": "maya", "password": "maya-secret"},
+                    "prof-rao": {"username": "prof-rao", "password": "rao-secret"},
+                    "darshan": {
+                        "username": "darved2305",
+                        "password": "darshan-secret",
+                    },
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_config(path)
+
+    assert config.mattermost_url == "https://mattermost.example"
+    assert config.channel_id == "room-1"
+    assert config.personas["darshan"].login_id == "darved2305"
+    assert "darshan-secret" not in repr(config)
+
+
+def test_E2E_02_mattermost_session_token_is_available_for_browser_cookie() -> None:
+    client = object.__new__(MattermostClient)
+    client._session_token = "local-test-session-token"
+
+    assert client.session_token == "local-test-session-token"
+
+
+def test_E2E_02_mattermost_room_url_uses_channel_and_team_api_metadata() -> None:
+    client = object.__new__(MattermostClient)
+    client._base_url = "https://mattermost.example"
+    responses = iter(
+        (
+            httpx.Response(200, json={"team_id": "team-1", "name": "lab-room"}),
+            httpx.Response(200, json={"name": "research-team"}),
+        )
+    )
+    calls: list[tuple[str, str]] = []
+
+    def fake_request(method: str, path: str, **_kwargs: Any) -> httpx.Response:
+        calls.append((method, path))
+        return next(responses)
+
+    client._request = fake_request
+
+    room_url = client.room_url("room-1")
+
+    assert room_url == "https://mattermost.example/research-team/channels/lab-room"
+    assert calls == [("GET", "/channels/room-1"), ("GET", "/teams/team-1")]
+
+
+def test_E2E_02_mattermost_wait_for_post_observes_exact_persona_message() -> None:
+    client = object.__new__(MattermostClient)
+    client._usernames = {"user-1": "maya"}
+    post = MattermostPost(
+        post_id="post-1",
+        channel_id="room-1",
+        user_id="user-1",
+        message="@labops propose a booking",
+        create_at=200,
+    )
+    client.get_channel_posts = lambda _channel_id: [post]
+
+    observed = client.wait_for_post(
+        "room-1",
+        from_user="maya",
+        message="@labops propose a booking",
+        after_ms=100,
+        timeout=1,
+        poll_interval=0.5,
+    )
+
+    assert observed == post
 
 
 def _make_recorder(
