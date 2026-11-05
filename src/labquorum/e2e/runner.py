@@ -226,7 +226,6 @@ class ScenarioRunner:
                 after_ms=sent.create_at,
                 timeout=self.timeout,
                 poll_interval=self.poll_interval,
-                root_id=sent.post_id,
             ),
         )
         after = self._timed_step("ledger.snapshot_after_reply", self.ledger.snapshot)
