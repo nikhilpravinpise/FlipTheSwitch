@@ -1,0 +1,18 @@
+{
+  "red_commit": "14526895bd509f793721e90480ce972371a99e85",
+  "red_tests": [
+    "tests/contract/test_p2_contract.py::test_C_01_tool_names_descriptions_and_schemas_match_profile_snapshots",
+    "tests/contract/test_p2_contract.py::test_C_02_only_approver_has_binding_commit_tools",
+    "tests/contract/test_p2_contract.py::test_C_03_unavailable_profile_exposes_only_capability_status",
+    "tests/contract/test_p2_contract.py::test_C_09_agent_folder_maps_to_its_expected_mcp_profile",
+    "tests/contract/test_p2_contract.py::test_C_10_error_enum_is_shared_with_p2_documentation",
+    "tests/contract/test_p2_contract.py::test_C_13_commit_schema_and_transaction_require_the_full_decision",
+    "tests/contract/test_p2_contract.py::test_C_14_tool_results_are_compact_and_below_the_size_cap",
+    "tests/contract/test_p2_contract.py::test_I_02_stdio_lists_profiles_and_calls_each_read_tool_on_seed",
+    "tests/contract/test_p2_contract.py::test_I_03_commit_from_proposer_is_an_unknown_tool",
+    "tests/contract/test_p2_contract.py::test_I_12_recorded_tool_sequence_replays_identically_on_fresh_seeds",
+    "tests/contract/test_p2_contract.py::test_U_G01_rate_guard_is_wired_to_mcp_profile_calls",
+    "tests/unit/test_p2_cli.py::test_I_11_doctor_reports_onedrive_key_and_docker_findings_separately",
+    "tests/unit/test_p2_cli.py::test_I_32_missing_uv_and_bad_ledger_path_have_actionable_errors"
+  ]
+}

@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.uv/
+uv-cache/
+.env
+.env.*
+!.env.example
+var/
+*.sqlite*
+!tests/fixtures/**/*.sqlite*
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.playwright-mcp/

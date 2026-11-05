@@ -1,0 +1,126 @@
+version: 1
+timezone: Asia/Kolkata
+next_request_number: 42
+people:
+  - id: prof-rao
+    display_name: Prof. Asha Rao
+    role: pi
+    timezone: Asia/Kolkata
+  - id: lena
+    display_name: Dr. Lena Okafor
+    role: postdoc
+    timezone: Asia/Kolkata
+  - id: maya
+    display_name: Maya Iyer
+    role: student
+    timezone: Asia/Kolkata
+  - id: dev
+    display_name: Dev Sharma
+    role: ra
+    timezone: Asia/Kolkata
+  - id: jonas
+    display_name: Jonas Weber
+    role: external
+    timezone: Europe/Berlin
+instruments:
+  - id: INS-01
+    name: Plate reader (Tecan Spark)
+    aliases: [plate reader, tecan, the reader]
+    location: Room 3.14
+    requires_training: true
+    max_block_minutes: 240
+    min_gap_minutes: 15
+    booking_window_days: 30
+    status: ok
+  - id: INS-02
+    name: Biosafety cabinet A
+    aliases: [BSC, hood A]
+    location: Room 3.10
+    requires_training: true
+    max_block_minutes: 180
+    min_gap_minutes: 30
+    booking_window_days: 30
+    status: ok
+  - id: INS-03
+    name: Incubator 37C
+    aliases: [incubator]
+    location: Room 3.10
+    requires_training: false
+    max_block_minutes: 1440
+    min_gap_minutes: 0
+    booking_window_days: 30
+    status: ok
+  - id: INS-04
+    name: Confocal (core facility)
+    aliases: [confocal]
+    location: Core, B2
+    requires_training: true
+    max_block_minutes: 120
+    min_gap_minutes: 15
+    booking_window_days: 30
+    status: down_until
+    down_until_offset_days: 5
+opening_hours:
+  monday: ["08:00", "20:00"]
+  tuesday: ["08:00", "20:00"]
+  wednesday: ["08:00", "20:00"]
+  thursday: ["08:00", "20:00"]
+  friday: ["08:00", "20:00"]
+  saturday: ["08:00", "20:00"]
+  sunday: null
+training:
+  - person_id: prof-rao
+    instrument_id: INS-01
+    granted_offset_days: -3650
+    expires_offset_days: 200
+  - person_id: prof-rao
+    instrument_id: INS-02
+    granted_offset_days: -3650
+    expires_offset_days: 200
+  - person_id: prof-rao
+    instrument_id: INS-04
+    granted_offset_days: -3650
+    expires_offset_days: 200
+  - person_id: lena
+    instrument_id: INS-01
+    granted_offset_days: -3650
+    expires_offset_days: 200
+  - person_id: lena
+    instrument_id: INS-02
+    granted_offset_days: -3650
+    expires_offset_days: 200
+  - person_id: maya
+    instrument_id: INS-01
+    granted_offset_days: -3650
+    expires_offset_days: 120
+  - person_id: maya
+    instrument_id: INS-02
+    granted_offset_days: -3650
+    expires_offset_days: 60
+  - person_id: dev
+    instrument_id: INS-01
+    granted_offset_days: -400
+    expires_offset_days: -36
+  - person_id: dev
+    instrument_id: INS-02
+    granted_offset_days: -3650
+    expires_offset_days: 30
+bookings:
+  - id: BK-0041
+    request_id: AR-0041
+    person_id: lena
+    instrument_id: INS-01
+    project_id: demo-project
+    open_day_offset: 0
+    start_time: "14:00"
+    end_time: "15:30"
+    status: committed
+  - id: BK-0040
+    request_id: AR-0040
+    person_id: maya
+    instrument_id: INS-02
+    project_id: demo-project
+    open_day_offset: 0
+    start_time: "10:00"
+    end_time: "12:00"
+    status: committed

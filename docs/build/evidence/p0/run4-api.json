@@ -1,0 +1,57 @@
+{
+  "run": 4,
+  "date": "2026-11-05",
+  "environment": {
+    "switch_console": "0.40.1",
+    "mattermost_api": "v4",
+    "console_cdp": "http://127.0.0.1:9333",
+    "switch_server_api": "http://localhost:52563",
+    "mattermost_api_base": "http://localhost:52564/api/v4"
+  },
+  "rpc": {
+    "procedure_catalog_command": "python scripts/ops/switch_rpc.py list-procedures",
+    "used": [
+      "switchServers.getBundledChatSignIn",
+      "switchServers.getAuthConfig",
+      "managedAgents.list",
+      "managedAgents.update",
+      "managedAgents.setDesiredState",
+      "workspaces.createRoom",
+      "workspaces.searchBridgeDirectory",
+      "workspaces.claimBridgeIdentity"
+    ]
+  },
+  "rooms": {
+    "smoke_switch_room_id": "c461b951-4bbd-4330-96ce-6221b5cbffe7",
+    "smoke_mattermost_channel_id": "m43uifmkdbns7gww81par4sndy",
+    "private_mattermost_channel_id": "awxzakxt1id3jpdzq9fihhdgqr",
+    "user_smoke_post_id": "orka3f8datg6zmh8nc6j5tg8sr",
+    "maya_refusal_probe_post_id": "nm1imss6kfyj88i5i31qx6f5fw"
+  },
+  "results": {
+    "smoke_agent_settings": "PASS: Codex gpt-6-luna, effort high, running",
+    "built_in_claude_agent": "PASS: provider change rejected; agent stopped",
+    "s0_mattermost_mention": "POST accepted; final sentinel reply not captured within 180 seconds after approval prompts",
+    "private_persona_posts": "PASS: prof-rao and maya each posted to lq-p0-run3-private",
+    "prof_rao_claim": "PASS: claimed to signed-in Switch admin",
+    "maya_unclaimed_refusal": "PASS: explicit owner-only refusal received",
+    "maya_switch_account": "BLOCKED: public signup disabled and no supported admin-user RPC found",
+    "codex_rollout_model_effort": "UNVERIFIED: per-session rollout file disappeared during enumeration"
+  },
+  "mattermost_api_paths": [
+    "POST /users/login",
+    "GET /teams/name/switch/channels/name/lq-p0-run4-smoke",
+    "GET /channels/{channel_id}/members",
+    "POST /channels/{channel_id}/members",
+    "POST /posts",
+    "GET /channels/{channel_id}/posts",
+    "GET /users/{user_id}"
+  ],
+  "validation": {
+    "ruff_check": "PASS",
+    "ruff_format_check": "PASS",
+    "pyright": "PASS",
+    "pytest": "FAIL: 82 passed, 2 failed in tests/audit/test_p2_audit.py"
+  },
+  "secrets_written_to_evidence": false
+}

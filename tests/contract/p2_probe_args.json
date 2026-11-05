@@ -1,0 +1,33 @@
+{
+  "propose_booking": {
+    "tool": "propose_booking",
+    "arguments": {
+      "instrument_id": "INS-01",
+      "project_id": "p2-stdio-probe",
+      "start": "2026-11-09T10:00:00+05:30",
+      "end": "2026-11-09T11:00:00+05:30"
+    },
+    "request_id_path": "/request_id"
+  },
+  "get_request": {
+    "tool": "get_request",
+    "arguments": {
+      "request_id": {"$ref": "proposal.request_id"}
+    },
+    "request_paths": {
+      "request_id": "/request_id",
+      "revision": "/revision",
+      "content_hash": "/content_hash",
+      "commit_arguments": ""
+    }
+  },
+  "commit_booking": {
+    "tool": "commit_booking",
+    "arguments": {},
+    "result_paths": {"status": "/status"},
+    "committed_value": "committed",
+    "idempotent_values": ["committed"],
+    "tampered_field_path": "/instrument_name",
+    "error_codes": ["STALE_REQUEST", "DECISION_MISMATCH"]
+  }
+}

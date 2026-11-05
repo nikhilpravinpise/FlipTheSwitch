@@ -1,0 +1,20 @@
+{
+  "red_commit": "98639fc",
+  "red_tests": [
+    "tests/unit/test_p1_domain.py::test_U_B05_down_instrument_fails_with_down_until_time",
+    "tests/unit/test_p1_domain.py::test_U_B06_training_must_be_valid_at_booking_start",
+    "tests/unit/test_p1_domain.py::test_U_G06_error_codes_match_the_generated_readme_table",
+    "tests/unit/test_p1_domain.py::test_serialized_decision_cap_accepts_899_and_rejects_900_unicode_characters",
+    "tests/unit/test_p1_domain.py::test_canonical_json_is_compact_sorted_utf8_with_utc_z_times",
+    "tests/unit/test_p1_error_paths.py::test_connect_closes_connection_when_initial_setup_fails",
+    "tests/unit/test_p1_error_paths.py::test_init_database_closes_connection_when_schema_setup_fails",
+    "tests/integration/test_p1_ledger.py::test_I_10_demo_seed_is_idempotent_and_anchor_date_relative",
+    "tests/integration/test_p1_ledger.py::test_I_10_friday_anchor_seeds_saturday_and_demo_alternative",
+    "tests/integration/test_p1_ledger.py::test_I_10_sunday_anchor_seeds_monday_and_demo_alternative",
+    "tests/integration/test_p1_ledger.py::test_I_19_backup_restore_and_schema_version_mismatch_are_handled",
+    "tests/integration/test_p1_ledger.py::test_audit_verify_reports_internal_consistency_and_checkpoint_limit",
+    "tests/audit/test_p1_boundaries.py::test_exactly_900_character_decision_is_rejected",
+    "tests/audit/test_p1_boundaries.py::test_positive_subsecond_booking_can_be_proposed",
+    "tests/audit/test_p1_boundaries.py::test_seed_bookings_fall_on_next_open_day"
+  ]
+}
