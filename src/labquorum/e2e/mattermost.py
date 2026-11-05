@@ -36,6 +36,13 @@ def agent_username_matches(username: str, alias: str) -> bool:
     return normalized_username in {normalized_alias, f"rao-{normalized_alias}"}
 
 
+def _is_switch_progress_post(message: str) -> bool:
+    normalized = message.strip().casefold()
+    return normalized.startswith(
+        ("**working", "**worked for", "**queued. waiting for the agent to start")
+    ) or "the agent host is offline" in normalized
+
+
 class MattermostTimeout(MattermostError):
     """Raised when a REST request exceeds its configured timeout."""
 
@@ -163,6 +170,8 @@ class MattermostClient:
                 if post.create_at < after_ms:
                     continue
                 if root_id and root_id not in (post.root_id, post.post_id):
+                    continue
+                if _is_switch_progress_post(post.message):
                     continue
                 if agent_username_matches(self._username_for(post.user_id), from_agent):
                     return post
