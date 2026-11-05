@@ -718,6 +718,71 @@ def test_I_41_cli_accepts_stale_reference_arguments() -> None:
     assert args.stale_hash == "a" * 64
 
 
+def test_I_41_runner_rejects_hash_not_in_revision_audit_history(tmp_path: Path) -> None:
+    ledger_path = _make_ledger(tmp_path / "ledger.sqlite")
+    prior = LedgerInspector(ledger_path).snapshot().requests[0]
+    revised_decision = {**prior.decision, "revision": 2}
+    revised_hash = content_hash(revised_decision)
+    with sqlite3.connect(ledger_path) as connection:
+        connection.row_factory = sqlite3.Row
+        connection.execute("BEGIN")
+        append_event(
+            connection,
+            actor="labops",
+            tool="propose_booking",
+            args={},
+            result={
+                "request_id": prior.request_id,
+                "revision": 1,
+                "content_hash": prior.content_hash,
+                "decision": prior.decision,
+            },
+            clock=FixedClock(),
+        )
+        connection.execute(
+            "UPDATE approval_request SET revision = 2, content_hash = ?, decision_json = ? "
+            "WHERE id = ?",
+            (
+                revised_hash,
+                json.dumps(revised_decision, sort_keys=True, separators=(",", ":")),
+                prior.request_id,
+            ),
+        )
+        append_event(
+            connection,
+            actor="labops",
+            tool="revise_request",
+            args={"request_id": prior.request_id, "revision": 1, "new_revision": 2},
+            result={
+                "request_id": prior.request_id,
+                "revision": 2,
+                "content_hash": revised_hash,
+                "decision": revised_decision,
+            },
+            clock=FixedClock(),
+        )
+
+    class StubPersona:
+        def post(self, *_: Any, **__: Any) -> None:
+            raise RuntimeError("Mattermost must not be called for an unaudited stale hash.")
+
+    persona = StubPersona()
+    runner = ScenarioRunner(
+        personas=cast(Any, {"maya": persona, "prof-rao": persona}),
+        ledger=LedgerInspector(ledger_path),
+        channel_id="channel-1",
+        evidence_dir=tmp_path / "evidence",
+        options=ScenarioOptions(
+            stale_request_id=prior.request_id,
+            stale_revision=1,
+            stale_hash="a" * 64,
+        ),
+    )
+
+    with pytest.raises(AssertionError, match="audit"):
+        runner._stale_revision_injection()
+
+
 def test_E2E_15_restart_keeps_request_uncommitted(tmp_path: Path) -> None:
     snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
     assert_restart_safe(snapshot, "AR-0042", card_settled=False)

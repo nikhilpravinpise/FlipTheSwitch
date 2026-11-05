@@ -8,3 +8,4 @@
 - A duplicate visible `instrument_id` field with the correct value currently passes the card matcher. The acceptance test requires ambiguous duplicate canonical fields to fail closed.
 - The repeated-call error probe must come from the thread started by the second proposal. The test includes an unrelated thread with `COMMIT_LIMIT_REACHED` and requires it not to satisfy E2E-11.
 - Pinned Mattermost cards do not expose a verified Console session ID. The test now requires card discovery to omit private post props from its typed card object; E2E-11 records its operator-confirmed Console ID separately.
+- I-41 now has a runner test with a real revision-one hash in the audit history and a bogus stale hash. The current runner reaches the Mattermost post instead of rejecting the unaudited hash before sending it.
