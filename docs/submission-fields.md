@@ -16,7 +16,7 @@ Fill in the details for everyone on your team. You can edit your submission unti
 
 0 of 7 answered
 
-### Part 1 of 3 — Project Details
+### Part 1 of 3 - Project Details
 
 0 of 5 answered
 
@@ -54,7 +54,7 @@ Leave blank if your project doesn't have a live demo.
 
 https://…
 
-### Part 2 of 3 — Optional: Track Details
+### Part 2 of 3 - Optional: Track Details
 
 **Pull requests**
 
@@ -82,7 +82,7 @@ The top 5 posts win a Logitech mechanical keyboard.
 
 https://…
 
-### Part 3 of 3 — How you used Switch
+### Part 3 of 3 - How you used Switch
 
 0 of 2 answered
 
