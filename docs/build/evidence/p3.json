@@ -68,13 +68,15 @@
     "checks": {
       "p3_live_check": "passed",
       "full_p3_live_gate": {
-        "status": "failed_baseline_only",
-        "exit_code": 1,
-        "failed_check": "check 6 gate baseline",
-        "baseline_sha": "ad39706e9ac173b1f3e701056f5be9e66b766338",
-        "failure": "scripts/gates changed since baseline",
-        "all_other_gate_checks": "passed",
-        "baseline_owner": "orchestrator"
+        "status": "passed",
+        "exit_code": 0,
+        "baseline_sha": "2ac7b2e070a7a799cd26d65c42d0c67b13f51cb4",
+        "orchestrator_baseline_commit": "63c5789",
+        "prior_attempt": {
+          "exit_code": 1,
+          "baseline_sha": "ad39706e9ac173b1f3e701056f5be9e66b766338",
+          "failed_check": "check 6 gate baseline"
+        }
       }
     }
   }
