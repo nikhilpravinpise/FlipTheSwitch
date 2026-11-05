@@ -1,0 +1,29 @@
+[
+  {
+    "profile": "proposer",
+    "tool": "propose_booking",
+    "arguments": {
+      "instrument_id": "INS-01",
+      "project_id": "replay-project",
+      "start": "2026-11-09T10:00:00+05:30",
+      "end": "2026-11-09T11:00:00+05:30"
+    }
+  },
+  {
+    "profile": "approver",
+    "tool": "get_request",
+    "arguments": {
+      "request_id": {"$ref": "results.0.request_id"}
+    }
+  },
+  {
+    "profile": "approver",
+    "tool": "commit_booking",
+    "arguments": {
+      "request_id": {"$ref": "results.1.request_id"},
+      "revision": {"$ref": "results.1.revision"},
+      "content_hash": {"$ref": "results.1.content_hash"},
+      "decision": {"$ref": "results.1.decision"}
+    }
+  }
+]
