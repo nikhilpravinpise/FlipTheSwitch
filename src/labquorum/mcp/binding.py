@@ -173,12 +173,18 @@ def validate_binding_request(  # noqa: PLR0913, PLR0917
     if binding == "certify":
         resolved_database = database_path.expanduser().resolve(strict=False)
         resolved_root = runtime_root.expanduser().resolve(strict=False) if runtime_root else None
+        try:
+            independent_database = resolved_database.stat().st_nlink == 1
+        except OSError:
+            independent_database = False
         if not (
             _is_test_ledger(resolved_database) or is_p2_gate_test_ledger(resolved_database)
-        ) or (resolved_root is not None and resolved_database == resolved_root / "ledger.sqlite"):
+        ) or not independent_database or (
+            resolved_root is not None and resolved_database == resolved_root / "ledger.sqlite"
+        ):
             raise LabQuorumError(
                 ErrorCode.BINDING_CERTIFICATION_REQUIRED,
-                "Certify mode requires a disposable P2 or P3 gate ledger under a temporary root.",
+                "Certify mode requires an independent disposable P2 or P3 gate ledger under a temporary root.",
             )
         return
     raise LabQuorumError(
