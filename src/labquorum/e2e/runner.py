@@ -91,6 +91,7 @@ class _BookingAttempt:
     request_id: str
     before: LedgerSnapshot
     after_reply: LedgerSnapshot
+    approval_baseline_post_ids: frozenset[str]
 
 
 @dataclass(frozen=True)
@@ -354,6 +355,7 @@ class ScenarioRunner:
                     root_id=second_attempt.prompt_post.post_id,
                     timeout=min(self.timeout, 10.0),
                     poll_interval=self.poll_interval,
+                    baseline_post_ids=second_attempt.approval_baseline_post_ids,
                 ),
             )
         except ReplyTimeout:
@@ -438,6 +440,7 @@ class ScenarioRunner:
                 root_id=attempt.prompt_post.post_id,
                 timeout=self.timeout,
                 poll_interval=self.poll_interval,
+                baseline_post_ids=attempt.approval_baseline_post_ids,
             ),
         )
         proposal = self.ledger.snapshot()
@@ -506,6 +509,12 @@ class ScenarioRunner:
             stale_revision=self.stale_revision,
             stale_hash=self.stale_hash,
         )
+        approval_baseline_post_ids = self._timed_step(
+            "mattermost.approval_baseline",
+            lambda: frozenset(
+                post.post_id for post in self._maya().get_channel_posts(self.channel_id)
+            ),
+        )
         sent = self._timed_step(
             "mattermost.post_prompt", lambda: self._maya().post(self.channel_id, prompt)
         )
@@ -528,7 +537,7 @@ class ScenarioRunner:
         assert_injection_no_commit(after_reply, current.request_id, "I-41")
         card = self._timed_step(
             "mattermost.find_current_revision_card",
-            lambda: self._wait_for_request_card(current),
+            lambda: self._wait_for_request_card(current, approval_baseline_post_ids),
         )
         assert_card_matches_request(card.message, current)
         observed = self._observe_no_commit(current.request_id, self.observation_seconds)
@@ -576,12 +585,18 @@ class ScenarioRunner:
         )
         return evidence
 
-    def _wait_for_request_card(self, request: RequestRecord) -> ApprovalCard:
+    def _wait_for_request_card(
+        self,
+        request: RequestRecord,
+        baseline_post_ids: frozenset[str],
+    ) -> ApprovalCard:
         deadline = time.monotonic() + self.timeout
         while True:
             posts = self._maya().get_channel_posts(self.channel_id)
             cards = find_approval_cards(posts)
             for card in reversed(cards):
+                if card.post_id in baseline_post_ids:
+                    continue
                 if request.request_id.casefold() not in card.message.casefold():
                     continue
                 try:
@@ -610,6 +625,7 @@ class ScenarioRunner:
                 root_id=attempt.prompt_post.post_id,
                 timeout=self.timeout,
                 poll_interval=self.poll_interval,
+                baseline_post_ids=attempt.approval_baseline_post_ids,
             ),
         )
         request = _require_request(self.ledger.snapshot(), attempt.request_id)
@@ -666,6 +682,7 @@ class ScenarioRunner:
                 root_id=attempt.prompt_post.post_id,
                 timeout=self.timeout,
                 poll_interval=self.poll_interval,
+                baseline_post_ids=attempt.approval_baseline_post_ids,
             ),
         )
         request = _require_request(self.ledger.snapshot(), attempt.request_id)
@@ -705,6 +722,12 @@ class ScenarioRunner:
 
     def _begin_proposal(self, prompt: str) -> _BookingAttempt:
         before = self._timed_step("ledger.snapshot_before", self.ledger.snapshot)
+        approval_baseline_post_ids = self._timed_step(
+            "mattermost.approval_baseline",
+            lambda: frozenset(
+                post.post_id for post in self._maya().get_channel_posts(self.channel_id)
+            ),
+        )
         sent = self._timed_step(
             "mattermost.post_prompt", lambda: self._maya().post(self.channel_id, prompt)
         )
@@ -726,7 +749,14 @@ class ScenarioRunner:
         request_id = self._request_id(reply.message, after, before)
         if after.request(request_id) is None:
             after = self._wait_for_request(request_id)
-        return _BookingAttempt(sent, reply, request_id, before, after)
+        return _BookingAttempt(
+            sent,
+            reply,
+            request_id,
+            before,
+            after,
+            approval_baseline_post_ids,
+        )
 
     def _request_id(
         self,
@@ -853,6 +883,7 @@ class ScenarioRunner:
             "response": attempt.reply.message,
             "prompt_post_id": attempt.prompt_post.post_id,
             "response_post_id": attempt.reply.post_id,
+            "approval_baseline_post_ids": sorted(attempt.approval_baseline_post_ids),
             "request_id": attempt.request_id,
             "request_status_after_proposal": request.status,
             "request_revision": request.revision,

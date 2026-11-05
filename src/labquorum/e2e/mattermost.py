@@ -164,7 +164,7 @@ class MattermostClient:
                 raise ReplyTimeout(f"Reply from {from_agent} timed out after {timeout:g} seconds.")
             time.sleep(min(max(poll_interval, 0.001), remaining))
 
-    def wait_for_approval_card(
+    def wait_for_approval_card(  # noqa: PLR0913
         self,
         channel_id: str,
         *,
@@ -172,6 +172,7 @@ class MattermostClient:
         timeout: float = 180.0,
         poll_interval: float = 0.5,
         root_id: str | None = None,
+        baseline_post_ids: frozenset[str] = frozenset(),
     ) -> ApprovalCard:
         """Poll posts for a Switch card with its typed-answer instruction."""
         deadline = time.monotonic() + timeout
@@ -181,6 +182,7 @@ class MattermostClient:
                 post
                 for post in posts
                 if post.create_at >= after_ms
+                and post.post_id not in baseline_post_ids
                 and (root_id is None or root_id in (post.root_id, post.post_id))
             )
             if cards:
