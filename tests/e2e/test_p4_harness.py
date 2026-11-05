@@ -306,6 +306,20 @@ def test_approval_card_discovery_excludes_switch_action_tokens() -> None:
     assert card.options == ((1, "Allow once"), (2, "Decline"))
 
 
+def test_card_discovery_does_not_treat_private_props_as_session_id() -> None:
+    card_post = {
+        "id": "card-1",
+        "channel_id": "channel-1",
+        "user_id": "switch-bot",
+        "message": "Reply with `A7` and your choice, e.g. `A7 1`.",
+        "props": {"session_id": "unverified-private-prop"},
+    }
+
+    [card] = find_approval_cards([card_post])
+
+    assert card.session_id is None
+
+
 def test_settled_card_can_be_read_after_switch_deletes_it(
     fake_mattermost: tuple[str, FakeMattermostState],
 ) -> None:
