@@ -10,11 +10,11 @@ from typing import Any, cast
 
 import pytest
 
+from labquorum import provisioning as provisioning_module
 from labquorum.domain.errors import ErrorCode, LabQuorumError
 from labquorum.mcp import binding
 from labquorum.mcp import server as mcp_server
 from labquorum.mcp.profiles import Profile
-from labquorum import provisioning as provisioning_module
 from labquorum.provisioning import (
     _template,
     lint_template_data,
@@ -161,6 +161,22 @@ def test_C_11_windows_agent_write_deny_preserves_read_access() -> None:
     assert build_deny_entry("S-1-5-21-1-2-3-1000") == (
         "*S-1-5-21-1-2-3-1000:(OI)(CI)(WD,AD,WEA,WA,DE,DC,WDAC,WO)"
     )
+
+
+def test_C_11_agent_directory_write_probe_checks_file_creation(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    probe = getattr(provisioning_module, "_agent_directory_write_issue", None)
+    assert callable(probe), "doctor needs an actual filesystem write probe"
+    issue = probe(tmp_path)
+    assert issue is not None and "writable" in issue
+
+    def denied_probe(**_kwargs: Any) -> Any:
+        raise PermissionError("write denied")
+
+    monkeypatch.setattr(provisioning_module.tempfile, "mkstemp", denied_probe)
+    assert probe(tmp_path) is None
 
 
 def test_C_07_template_lint_rejects_agent_management_and_extra_connections(
