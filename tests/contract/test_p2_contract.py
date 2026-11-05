@@ -168,30 +168,25 @@ def test_C_13_commit_schema_and_transaction_require_the_full_decision(
             listing = await approver.list_tools()
             commit_tool = next(tool for tool in listing.tools if tool.name == "commit_booking")
             properties = commit_tool.inputSchema["properties"]
-            assert {"request_id", "revision", "content_hash", "decision"}.issubset(
-                commit_tool.inputSchema["required"]
-            )
-            decision_schema = properties["decision"]
-            decision_reference = decision_schema.get("$ref")
-            if isinstance(decision_reference, str):
-                definition_name = decision_reference.rsplit("/", maxsplit=1)[-1]
-                decision_schema = commit_tool.inputSchema["$defs"][definition_name]
-            decision_properties = decision_schema["properties"]
-            assert {
-                "action",
-                "requester",
-                "resource",
-                "interval",
-                "project",
+            expected_arguments = {
                 "request_id",
                 "revision",
-            }.issubset(decision_properties)
-            interval_schema = decision_properties["interval"]
-            interval_reference = interval_schema.get("$ref")
-            if isinstance(interval_reference, str):
-                definition_name = interval_reference.rsplit("/", maxsplit=1)[-1]
-                interval_schema = commit_tool.inputSchema["$defs"][definition_name]
-            assert {"start_utc", "end_utc"}.issubset(interval_schema["properties"])
+                "content_hash",
+                "action",
+                "instrument_id",
+                "instrument_name",
+                "requester_handle",
+                "requester_display_name",
+                "project_untrusted_text",
+                "start_local",
+                "end_local",
+                "start_utc",
+                "end_utc",
+            }
+            assert set(commit_tool.inputSchema["required"]) == expected_arguments
+            assert set(properties) == expected_arguments
+            assert "decision" not in properties
+            assert properties["project_untrusted_text"]["maxLength"] == 120
 
         async with _connect("proposer", database) as proposer:
             proposed = _payload(
@@ -209,28 +204,20 @@ def test_C_13_commit_schema_and_transaction_require_the_full_decision(
             request = _payload(
                 await approver.call_tool("get_request", {"request_id": proposed["request_id"]})
             )
-            bad_decision = dict(request["decision"])
-            bad_decision["project"] = "tampered-project"
             encoded_args = json.dumps(
-                {
-                    "request_id": request["request_id"],
-                    "revision": request["revision"],
-                    "content_hash": request["content_hash"],
-                    "decision": request["decision"],
-                },
+                request,
                 ensure_ascii=False,
                 separators=(",", ":"),
             )
             assert len(encoded_args) < 900
+            assert set(proposed) == set(request)
+            assert "Fri 6 Nov 2026" in request["start_local"] or "Mon 9 Nov 2026" in request["start_local"]
+            tampered = dict(request)
+            tampered["project_untrusted_text"] = "tampered-project"
             tampered = _payload(
                 await approver.call_tool(
                     "commit_booking",
-                    {
-                        "request_id": request["request_id"],
-                        "revision": request["revision"],
-                        "content_hash": request["content_hash"],
-                        "decision": bad_decision,
-                    },
+                    tampered,
                 )
             )
             assert tampered["error"] == "DECISION_MISMATCH"
@@ -389,7 +376,13 @@ def test_I_03_commit_from_proposer_is_an_unknown_tool(tmp_path: Path) -> None:
 def test_I_12_recorded_tool_sequence_replays_identically_on_fresh_seeds(
     tmp_path: Path,
 ) -> None:
-    sequence = json.loads(REPLAY_PATH.read_text(encoding="utf-8"))
+    recording = json.loads(REPLAY_PATH.read_text(encoding="utf-8"))
+    assert isinstance(recording, dict)
+    provenance = recording["provenance"]
+    assert provenance["transport"] == "MCP stdio"
+    assert provenance["seed"]["anchor_date"] == "2026-11-06"
+    assert provenance["clock_now"] == "2026-11-05T12:00:00Z"
+    sequence = recording["steps"]
     assert isinstance(sequence, list)
 
     def replay(database: Path) -> list[dict[str, Any]]:
@@ -417,12 +410,14 @@ def test_I_12_recorded_tool_sequence_replays_identically_on_fresh_seeds(
                     arguments[name] = resolved
                 else:
                     arguments[name] = value
-            result = runtimes[step["profile"]].invoke(step["tool"], arguments)
+            result = runtimes[step["profile"]].tool_method(step["tool"])(**arguments)
             assert "error" not in result
             results.append(result)
         return results
 
-    assert replay(tmp_path / "first.sqlite") == replay(tmp_path / "second.sqlite")
+    expected = [step["expected"] for step in sequence]
+    assert replay(tmp_path / "first.sqlite") == expected
+    assert replay(tmp_path / "second.sqlite") == expected
 
 
 def test_U_G01_rate_guard_is_wired_to_mcp_profile_calls(tmp_path: Path) -> None:
