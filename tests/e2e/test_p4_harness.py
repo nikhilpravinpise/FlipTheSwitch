@@ -230,9 +230,11 @@ def test_mattermost_client_reports_http_timeout(
     base_url, state = fake_mattermost
     state.delay_channel_posts = 0.1
 
-    with MattermostClient(base_url, "maya", "fake-password", timeout=0.01) as client:
-        with pytest.raises(MattermostTimeout, match="timed out"):
-            client.get_channel_posts("channel-1")
+    with (
+        MattermostClient(base_url, "maya", "fake-password", timeout=0.01) as client,
+        pytest.raises(MattermostTimeout, match="timed out"),
+    ):
+        client.get_channel_posts("channel-1")
 
 
 def test_mattermost_client_auth_failure_does_not_expose_password(
