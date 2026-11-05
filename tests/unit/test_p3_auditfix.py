@@ -167,7 +167,10 @@ def test_C_11_agent_directory_write_probe_checks_file_creation(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    probe = getattr(provisioning_module, "_agent_directory_write_issue", None)
+    probe = cast(
+        Callable[[Path], str | None],
+        getattr(provisioning_module, "_agent_directory_write_issue", None),
+    )
     assert callable(probe), "doctor needs an actual filesystem write probe"
     issue = probe(tmp_path)
     assert issue is not None and "writable" in issue
