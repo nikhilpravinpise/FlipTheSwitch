@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 import tempfile
-import json
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -17,7 +17,7 @@ from hypothesis.stateful import RuleBasedStateMachine, invariant, rule, run_stat
 from labquorum.cli.main import main as lq_main
 from labquorum.domain.booking import Booking, Interval, nearest_free_slot
 from labquorum.domain.errors import ErrorCode, LabQuorumError
-from labquorum.domain.timeutil import FixedClock, parse_iso_datetime, utc_timestamp
+from labquorum.domain.timeutil import parse_iso_datetime, utc_timestamp
 from labquorum.store.audit import verify
 from labquorum.store.db import (
     database_info,
@@ -177,9 +177,10 @@ class ApprovalLifecycleMachine(RuleBasedStateMachine):
                 clock=self.clock,
             )
         except LabQuorumError:
-            assert int(
-                self.connection.execute("SELECT count(*) FROM approval_request").fetchone()[0]
-            ) == count_before
+            assert (
+                int(self.connection.execute("SELECT count(*) FROM approval_request").fetchone()[0])
+                == count_before
+            )
             return
         self.requests[proposal["request_id"]] = {
             "status": "pending",
@@ -188,7 +189,9 @@ class ApprovalLifecycleMachine(RuleBasedStateMachine):
             "expires_utc": proposal["expires_utc"],
         }
 
-    @rule(index=st.integers(min_value=0, max_value=20), hour=st.integers(min_value=16, max_value=19))
+    @rule(
+        index=st.integers(min_value=0, max_value=20), hour=st.integers(min_value=16, max_value=19)
+    )
     def revise(self, index: int, hour: int) -> None:
         pending = self._pending_ids()
         if not pending:
@@ -496,7 +499,9 @@ def test_U_L02_every_audit_field_and_middle_insertion_or_deletion_is_detected(
         connection.execute("RELEASE audit_field_edit")
 
     connection.execute("SAVEPOINT audit_sequence_edit")
-    connection.execute("UPDATE audit_event SET seq = ? WHERE seq = ?", (last_sequence + 1, last_sequence))
+    connection.execute(
+        "UPDATE audit_event SET seq = ? WHERE seq = ?", (last_sequence + 1, last_sequence)
+    )
     assert verify(connection) == last_sequence + 1
     connection.execute("ROLLBACK TO audit_sequence_edit")
     connection.execute("RELEASE audit_sequence_edit")
@@ -527,16 +532,16 @@ def test_U_L04_injected_clock_drives_timestamped_repository_operations(
     seeded_ledger: tuple[sqlite3.Connection, Any],
 ) -> None:
     connection, clock = seeded_ledger
-    assert connection.execute("SELECT ts_utc FROM audit_event WHERE seq = 1").fetchone()[0] == utc_timestamp(
-        clock.now()
-    )
+    assert connection.execute("SELECT ts_utc FROM audit_event WHERE seq = 1").fetchone()[
+        0
+    ] == utc_timestamp(clock.now())
     proposal = _propose(connection, clock)
     assert connection.execute(
         "SELECT created_utc FROM approval_request WHERE id = ?", (proposal["request_id"],)
     ).fetchone()[0] == utc_timestamp(clock.now())
-    assert connection.execute("SELECT ts_utc FROM audit_event ORDER BY seq DESC LIMIT 1").fetchone()[0] == utc_timestamp(
-        clock.now()
-    )
+    assert connection.execute(
+        "SELECT ts_utc FROM audit_event ORDER BY seq DESC LIMIT 1"
+    ).fetchone()[0] == utc_timestamp(clock.now())
 
     clock.advance(timedelta(minutes=1))
     revised = revise_request(
@@ -618,7 +623,9 @@ def _assert_seeded_alternative_for_anchor(
         assert str(row["end_utc"]) == utc_timestamp(at(expected_open_day, 15, 30))
         existing = Booking(
             "BK-0041",
-            Interval(parse_iso_datetime(str(row["start_utc"])), parse_iso_datetime(str(row["end_utc"]))),
+            Interval(
+                parse_iso_datetime(str(row["start_utc"])), parse_iso_datetime(str(row["end_utc"]))
+            ),
         )
         alternative = nearest_free_slot(
             make_policy(),

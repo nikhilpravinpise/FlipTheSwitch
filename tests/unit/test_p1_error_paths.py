@@ -28,8 +28,8 @@ from labquorum.domain.canonical import canonical_json
 from labquorum.domain.errors import ErrorCode, LabQuorumError
 from labquorum.domain.guards import RateGuard
 from labquorum.domain.timeutil import FixedClock, format_interval, parse_iso_datetime, utc_timestamp
-from labquorum.store.audit import append_event, tail
 from labquorum.store import db as db_module
+from labquorum.store.audit import append_event, tail
 from labquorum.store.db import immediate_transaction, init_database, open_database
 from labquorum.store.repos import (
     cancel_booking,

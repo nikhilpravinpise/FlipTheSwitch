@@ -419,9 +419,7 @@ class LedgerBookingMachine(RuleBasedStateMachine):
                     second_start = parse_iso_datetime(second["start_utc"]).astimezone(UTC)
                     second_end = parse_iso_datetime(second["end_utc"]).astimezone(UTC)
                     gap = timedelta(minutes=15)
-                    assert not (
-                        first_start < second_end + gap and first_end + gap > second_start
-                    )
+                    assert not (first_start < second_end + gap and first_end + gap > second_start)
 
     def teardown(self) -> None:
         self.connection.close()
