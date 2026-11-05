@@ -688,6 +688,42 @@ def test_E2E_04_pi_approval_matches_card_and_commits_once(tmp_path: Path) -> Non
     assert_approval(snapshot, "AR-0042", card_text, "prof-rao")
 
 
+def test_E2E_03_flat_live_card_matches_the_complete_decision(tmp_path: Path) -> None:
+    snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
+    request = snapshot.requests[0]
+    decision = {
+        "action": "commit_booking",
+        "end_local": "Fri 6 Nov 2026 16:45 IST",
+        "end_utc": "2026-11-06T11:15:00.000000Z",
+        "instrument_id": "INS-01",
+        "instrument_name": "Plate reader (Tecan Spark)",
+        "project_untrusted_text": "booking request",
+        "request_id": "AR-0042",
+        "requester_display_name": "Maya Iyer",
+        "requester_handle": "maya",
+        "revision": 1,
+        "start_local": "Fri 6 Nov 2026 15:45 IST",
+        "start_utc": "2026-11-06T10:15:00.000000Z",
+    }
+    flat_request = replace(
+        request,
+        decision=decision,
+        content_hash=content_hash(decision),
+        project="booking request",
+        start_utc=decision["start_utc"],
+        end_utc=decision["end_utc"],
+    )
+    card_text = "\n".join(f"{key}: {value}" for key, value in decision.items() if key != "revision")
+    card_text = f"{card_text}\nrevision: {decision['revision']}\ncontent_hash: {flat_request.content_hash}"
+
+    assert_card_matches_request(card_text, flat_request)
+    assert_read_propose_smoke(
+        "Dr. Lena Okafor conflicts 14:00-15:30. Proposed 15:45-16:45. Request AR-0042.",
+        "AR-0042",
+        replace(snapshot, requests=(flat_request,)),
+    )
+
+
 def test_E2E_04_open_card_wait_uses_the_proposal_thread(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
