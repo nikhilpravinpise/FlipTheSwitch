@@ -234,6 +234,24 @@ def test_C_12_certify_mode_rejects_a_ledger_because_its_folder_is_named_certify(
     assert refused.value.code is ErrorCode.BINDING_CERTIFICATION_REQUIRED
 
 
+def test_C_12_certify_mode_accepts_only_the_p2_temporary_gate_ledger(
+    tmp_path: Path,
+) -> None:
+    p2_root = tmp_path / "labquorum-p2-contract"
+    p2_root.mkdir()
+    p2_database = p2_root / "g.sqlite"
+    p2_database.touch()
+    binding.validate_binding_request("certify", Profile.APPROVER, p2_database, None, None, tmp_path)
+
+    other_database = tmp_path / "g.sqlite"
+    other_database.touch()
+    with pytest.raises(LabQuorumError) as refused:
+        binding.validate_binding_request(
+            "certify", Profile.APPROVER, other_database, None, None, tmp_path
+        )
+    assert refused.value.code is ErrorCode.BINDING_CERTIFICATION_REQUIRED
+
+
 def test_C_12_commit_limiter_persists_one_distinct_commit_across_instances(
     tmp_path: Path,
 ) -> None:
