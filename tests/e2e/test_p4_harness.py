@@ -691,7 +691,7 @@ def test_E2E_04_pi_approval_matches_card_and_commits_once(tmp_path: Path) -> Non
 def test_E2E_03_flat_live_card_matches_the_complete_decision(tmp_path: Path) -> None:
     snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
     request = snapshot.requests[0]
-    decision = {
+    decision: dict[str, Any] = {
         "action": "commit_booking",
         "end_local": "Fri 6 Nov 2026 16:45 IST",
         "end_utc": "2026-11-06T11:15:00.000000Z",
@@ -717,10 +717,15 @@ def test_E2E_03_flat_live_card_matches_the_complete_decision(tmp_path: Path) -> 
     card_text = f"{card_text}\nrevision: {decision['revision']}\ncontent_hash: {flat_request.content_hash}"
 
     assert_card_matches_request(card_text, flat_request)
+    flat_booking = replace(
+        snapshot.bookings[0],
+        start_utc=flat_request.start_utc,
+        end_utc=flat_request.end_utc,
+    )
     assert_read_propose_smoke(
         "Dr. Lena Okafor conflicts 14:00-15:30. Proposed 15:45-16:45. Request AR-0042.",
         "AR-0042",
-        replace(snapshot, requests=(flat_request,)),
+        replace(snapshot, requests=(flat_request,), bookings=(flat_booking,)),
     )
 
 
