@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import tempfile
 import tomllib
 from pathlib import Path
 from typing import Any
@@ -84,13 +85,7 @@ def test_C_04_setup_assigns_approve_to_non_commit_tools_and_prompt_to_commit(
 
 def test_C_05_setup_rejects_mcp_executable_inside_a_worktree(tmp_path: Path) -> None:
     command = _command(
-        tmp_path
-        / ".claude"
-        / "worktrees"
-        / "builder"
-        / ".venv"
-        / "Scripts"
-        / "lq-mcp.exe"
+        tmp_path / ".claude" / "worktrees" / "builder" / ".venv" / "Scripts" / "lq-mcp.exe"
     )
     with pytest.raises(LabQuorumError):
         setup_runtime(tmp_path / "runtime", command_path=command)
@@ -108,8 +103,7 @@ def test_C_11_doctor_reports_runtime_codex_home_and_rejects_global_managed_block
     setup_runtime(root, command_path=command)
     findings = runtime_doctor_findings(root)
     assert any(
-        item["code"] == "RUNTIME_CODEX_HOME"
-        and str(root / "codex-home") in item["message"]
+        item["code"] == "RUNTIME_CODEX_HOME" and str(root / "codex-home") in item["message"]
         for item in findings
     )
 
@@ -121,8 +115,7 @@ def test_C_11_doctor_reports_runtime_codex_home_and_rejects_global_managed_block
     )
     findings = runtime_doctor_findings(root)
     assert any(
-        item["code"] == "RUNTIME_GLOBAL_CODEX_HOME_POLLUTED"
-        and item["severity"] == "error"
+        item["code"] == "RUNTIME_GLOBAL_CODEX_HOME_POLLUTED" and item["severity"] == "error"
         for item in findings
     )
 
@@ -132,13 +125,7 @@ def test_C_11_doctor_rejects_an_mcp_command_inside_a_worktree(tmp_path: Path) ->
     stable = _command(root / "venv" / "Scripts" / "lq-mcp.exe")
     setup_runtime(root, command_path=stable)
     worktree_command = _command(
-        tmp_path
-        / ".claude"
-        / "worktrees"
-        / "other"
-        / ".venv"
-        / "Scripts"
-        / "lq-mcp.exe"
+        tmp_path / ".claude" / "worktrees" / "other" / ".venv" / "Scripts" / "lq-mcp.exe"
     )
     config_path = root / "agents" / "labops" / ".codex" / "config.toml"
     contents = config_path.read_text(encoding="utf-8")
@@ -198,18 +185,20 @@ def test_C_12_certify_mode_rejects_a_ledger_because_its_folder_is_named_certify(
     ledger.touch()
 
     with pytest.raises(LabQuorumError) as refused:
-        binding.validate_binding_request(
-            "certify", Profile.APPROVER, ledger, None, None, tmp_path
-        )
+        binding.validate_binding_request("certify", Profile.APPROVER, ledger, None, None, tmp_path)
     assert refused.value.code is ErrorCode.BINDING_CERTIFICATION_REQUIRED
+
+
+def test_C_12_certify_mode_accepts_the_isolated_p2_gate_ledger() -> None:
+    gate_root = Path(tempfile.gettempdir()) / "labquorum-p2-test-fixture"
+    ledger = gate_root / "g.sqlite"
+
+    binding.validate_binding_request("certify", Profile.APPROVER, ledger, None, None, gate_root)
 
 
 def test_C_12_commit_limiter_persists_one_distinct_commit_across_instances(
     tmp_path: Path,
 ) -> None:
-    factory = getattr(binding.BindingCommitLimiter, "for_session_home", None)
-    assert callable(factory), "binding limiter needs a Codex-session-scoped persistent mode"
-
     state_home = tmp_path / "session home"
     first_calls: list[dict[str, Any]] = []
 
@@ -217,7 +206,7 @@ def test_C_12_commit_limiter_persists_one_distinct_commit_across_instances(
         first_calls.append(dict(arguments))
         return {"request_id": arguments["request_id"], "status": "committed"}
 
-    limiter = factory(state_home)
+    limiter = binding.BindingCommitLimiter.for_session_home(state_home)
     first = {"request_id": "AR-0001", "revision": 1}
     assert limiter.wrap(first_commit)(**first)["status"] == "committed"
 
@@ -227,7 +216,7 @@ def test_C_12_commit_limiter_persists_one_distinct_commit_across_instances(
         second_calls.append(dict(arguments))
         return {"request_id": arguments["request_id"], "status": "committed"}
 
-    resumed_limiter = factory(state_home)
+    resumed_limiter = binding.BindingCommitLimiter.for_session_home(state_home)
     with pytest.raises(LabQuorumError) as refused:
         resumed_limiter.wrap(second_commit)(request_id="AR-0002", revision=1)
     assert refused.value.code is ErrorCode.BINDING_COMMIT_LIMIT
