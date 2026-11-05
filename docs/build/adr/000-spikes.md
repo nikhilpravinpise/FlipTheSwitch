@@ -225,3 +225,25 @@ The session-home derivation is `sha256(sessionId)` under `root/provider-home`, a
 | `uv run pytest` | PASS, 101 passed in 53.92 seconds |
 | `git diff --check` | PASS, exit code 0; Git warned that the ADR working copy uses CRLF and will be normalized to LF |
 | U+2014 scan of Run 5 files | PASS, zero occurrences in `000-spikes.md` and `run5-api.json` |
+## Run 7 - 2026-11-05
+
+Scope: API-only onboarding of Darshan Ved following the accepted 19:12 access-control decision. Mattermost remained tailnet-only. The Switch Console RPC opened its authenticated Gateway origin, and all account, identity, and membership changes used HTTP APIs. No UI clicks or typing were used.
+
+### Account discovery and Switch identity
+
+| Area | API calls and result |
+| --- | --- |
+| Mattermost session | `switchServers.getBundledChatSignIn` supplied the local `@user` login to `POST /api/v4/users/login`. Password and bearer token stayed in process memory and were not recorded. `GET /api/v4/users/me` verified the session as `@user`. |
+| Darshan lookup | `GET /api/v4/users?sort=create_at&per_page=50` returned HTTP 400. `POST /api/v4/users/search` for `darshan`, `darved`, `Darshan Ved`, and `darshanmved` returned HTTP 200 and matched Mattermost user `darved2305`, email `darshanmved@gmail.com`, id `uis47eufo3njdjobcuigp8ky1o`. |
+| Switch user | `GET /gateway/users` confirmed the email was not already present. Admin-authenticated `POST /gateway/users` created `Darshan Ved (student)` with role `user`; it returned HTTP 200 and the follow-up `GET /gateway/users` verified the same record. A high-entropy initial password was generated in memory and not recorded. The admin-only route and request fields are in pinned Switch source `core/switch_core/gateway/auth_routes.py:501-531`. |
+| Identity claim | `POST /gateway/collaborations/{bridge_id}/identities` with Mattermost's user id, username `darved2305`, and the new Switch user id returned HTTP 200. The response listed `Darshan Ved (student)` as the claimant. The claim request's optional target `user_id` is in `core/switch_core/gateway/schemas.py:740-752`; the route and admin check are in `core/switch_core/gateway/collaborations.py:815-862`. |
+
+The Console API session path is pinned at `console/apps/switch-console-desktop/src/main/core/switch-servers/controller.ts:622-637` and `auth.ts:31-33, 76-83, 128-142`. The Mattermost API shapes follow the official [users](https://docs.mattermost.com/api/reference/users) and [channels](https://docs.mattermost.com/api/reference/channels) references.
+
+### Room membership and issue follow-up
+
+The Switch workspace room list contained `rao-labquorum`; its Mattermost private channel slug is `rao-labquorum-cb95ddef`. Direct Mattermost channel lookup also found the private persona test room `lq-p0-run3-private` (display name `LabQuorum P0 Run 3`). As `@user`, `POST /api/v4/channels/{channel_id}/members` added Darshan to both rooms and returned HTTP 201 for each. `GET /api/v4/channels/{channel_id}/members/{user_id}` returned HTTP 200 for both, listing Darshan as `channel_user`.
+
+Issue #1 was updated with both room names and the requested first message: `@labops, can I book INS-01 for 60 minutes on the next open day between 14:00 and 17:00?`. The invite link was not reposted.
+
+No password or token was written to this file. The Switch account's generated initial password was not retained, so direct password sign-in to Switch would need a secure reset or setup path if Darshan needs one.
