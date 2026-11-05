@@ -233,6 +233,51 @@ def test_E2E_01_mattermost_reply_matches_rao_labops_username(
     assert reply.message == "Request AR-0042 remains pending."
 
 
+@pytest.mark.parametrize(
+    "progress_message",
+    ["**Working… 26s**\nLast: labquorum.propose_booking", "**Worked for 53s. 7 tool calls.**"],
+)
+@pytest.mark.block_network(allowed_hosts=[r"^127\.0\.0\.1$"])
+def test_E2E_01_mattermost_reply_skips_switch_progress_posts(
+    fake_mattermost: tuple[str, FakeMattermostState],
+    progress_message: str,
+) -> None:
+    base_url, state = fake_mattermost
+    with MattermostClient(base_url, "maya", "fake-password", timeout=1) as client:
+        sent = client.post("channel-1", "@labops, check the booking")
+        state.add_post(
+            channel_id="channel-1",
+            user_id="rao-labops-id",
+            message=progress_message,
+            root_id=sent.post_id,
+            create_at=sent.create_at + 1,
+        )
+
+        def add_final_reply() -> None:
+            time.sleep(0.025)
+            state.add_post(
+                channel_id="channel-1",
+                user_id="rao-labops-id",
+                message="Request AR-0042 is pending with no commit.",
+                root_id=sent.post_id,
+                create_at=sent.create_at + 2,
+            )
+
+        worker = threading.Thread(target=add_final_reply)
+        worker.start()
+        reply = client.wait_for_reply(
+            "channel-1",
+            from_agent="labops",
+            after_ms=sent.create_at,
+            root_id=sent.post_id,
+            timeout=0.25,
+            poll_interval=0.005,
+        )
+        worker.join(timeout=1)
+
+    assert reply.message == "Request AR-0042 is pending with no commit."
+
+
 def test_E2E_11_second_commit_error_matches_rao_pi_desk_username(tmp_path: Path) -> None:
     class StubPersona:
         def get_channel_posts(self, channel_id: str) -> list[MattermostPost]:
