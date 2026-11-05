@@ -71,7 +71,7 @@ def approval_decision(  # noqa: PLR0913
 
 def serialize_decision(decision: dict[str, Any]) -> str:
     rendered = canonical_json(decision)
-    if len(rendered) > 900:
+    if len(rendered) >= 900:
         raise LabQuorumError(
             ErrorCode.INVALID_ARGUMENT,
             "Canonical approval decision exceeds 900 characters.",

@@ -111,7 +111,7 @@ bookings:
     person_id: lena
     instrument_id: INS-01
     project_id: demo-project
-    start_day_offset: 0
+    open_day_offset: 0
     start_time: "14:00"
     end_time: "15:30"
     status: committed
@@ -120,7 +120,7 @@ bookings:
     person_id: maya
     instrument_id: INS-02
     project_id: demo-project
-    start_day_offset: 0
+    open_day_offset: 0
     start_time: "10:00"
     end_time: "12:00"
     status: committed

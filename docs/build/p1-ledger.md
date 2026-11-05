@@ -28,11 +28,19 @@
 | Approval requests use only pending, committed, declined, and expired states. Expiry is inclusive at `now >= expires_utc`; revision, decision bytes, and content hash must match. | `U-B09`, `U-A01`, `U-A05`, `U-A06`, `U-A07`, `U-A08`, `U-A10`, `P-05` |
 | Commit rechecks booking policy within `BEGIN IMMEDIATE`, allows exactly one conflicting writer, and returns an identical repeat without a second audit effect. | `U-A02`, `U-A03`, `U-A09`, `I-01`, `I-25`, `P-01` |
 | A cancellation releases its slot once; a declined or expired request cannot commit. | `U-B12`, `U-A01`, `U-A05`, `U-A06`, `P-01`, `P-05` |
-| Canonical JSON is stable, compact, UTF-8, sorted, rejects floating point values, and normalizes aware times to UTC `Z`. | `P-08` |
-| Audit records form a SHA-256 chain; a raw edit is reported at the first invalid sequence. | `U-L01`, `U-L02`, `I-20` |
-| Demo seed is anchor-date-relative and idempotent. Schema version mismatch is rejected; journal mode is selected from the SQLite runtime version. | `I-10`, `I-19`, `I-20` |
+| Canonical JSON is stable, compact, UTF-8, sorted, rejects floating point values, and normalizes aware times to fixed-width UTC `Z`. | `P-08` |
+| Audit records form a SHA-256 chain; edits, middle insertions and deletions are reported at the first inconsistent sequence. | `U-L01`, `U-L02`, `I-20` |
+| Demo seed is idempotent and places bookings on the next scheduled open day strictly after the anchor. Schema version mismatch is rejected; journal mode is selected from the SQLite runtime version. | `I-10`, `I-19`, `I-20` |
 | Error values are closed, policy checks are structured, and per-profile rate limits use the injected clock. | `U-G01`, `U-G06`, `U-A04` |
 
 ## Runtime measurement
 
 Measured on the Windows build machine using the P1 race and journal-mode tests: SQLite `3.53.1`, journal mode `wal`. The configured selection is WAL for SQLite `>= 3.51.3` and DELETE otherwise.
+
+## Stored timestamps and compatibility
+
+Database timestamps use the fixed-width format `YYYY-MM-DDTHH:MM:SS.ffffffZ`. SQLite checks this shape before storing timestamps, and time comparisons use the resulting lexically ordered UTC values. This changed representation is schema version 2. Version 1 ledgers are refused by both `open_database` and `init_database`; no in-place migration is performed.
+
+Run `uv run python scripts/generate_error_codes.py` to update the marked error-code table in `README.md` from `ErrorCode`.
+
+`lq audit verify` reports internal chain consistency. Without an external checkpoint, a truncated suffix or a fully recomputed chain cannot be detected.

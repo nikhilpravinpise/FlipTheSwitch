@@ -138,6 +138,6 @@ def format_interval(start: datetime, end: datetime, timezone: str | ZoneInfo) ->
 
 
 def utc_timestamp(value: datetime) -> str:
-    """Serialize an aware datetime as an ISO timestamp ending in Z."""
+    """Serialize an aware datetime as fixed-width UTC YYYY-MM-DDTHH:MM:SS.ffffffZ."""
     _require_aware(value)
-    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
+    return value.astimezone(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z")

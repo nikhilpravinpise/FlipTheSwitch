@@ -12,7 +12,7 @@ from pathlib import Path
 
 from labquorum.domain.errors import ErrorCode, LabQuorumError
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 BUSY_TIMEOUT_MS = 5_000
 
 
@@ -104,17 +104,22 @@ def _connect(path: Path) -> sqlite3.Connection:
         timeout=BUSY_TIMEOUT_MS / 1_000,
         isolation_level=None,
     )
-    connection.row_factory = sqlite3.Row
-    connection.execute("PRAGMA foreign_keys = ON")
-    connection.execute(f"PRAGMA busy_timeout = {BUSY_TIMEOUT_MS}")
-    requested_mode = select_journal_mode(sqlite3.sqlite_version_info)
-    actual_mode = str(connection.execute(f"PRAGMA journal_mode = {requested_mode}").fetchone()[0])
-    if actual_mode.casefold() != requested_mode.casefold():
-        connection.close()
-        raise LabQuorumError(
-            ErrorCode.INVALID_ARGUMENT,
-            f"SQLite selected journal mode {actual_mode}, expected {requested_mode}.",
+    try:
+        connection.row_factory = sqlite3.Row
+        connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute(f"PRAGMA busy_timeout = {BUSY_TIMEOUT_MS}")
+        requested_mode = select_journal_mode(sqlite3.sqlite_version_info)
+        actual_mode = str(
+            connection.execute(f"PRAGMA journal_mode = {requested_mode}").fetchone()[0]
         )
+        if actual_mode.casefold() != requested_mode.casefold():
+            raise LabQuorumError(
+                ErrorCode.INVALID_ARGUMENT,
+                f"SQLite selected journal mode {actual_mode}, expected {requested_mode}.",
+            )
+    except BaseException:
+        connection.close()
+        raise
     return connection
 
 
@@ -151,25 +156,31 @@ def init_database(path: Path) -> sqlite3.Connection:
     _reject_onedrive(resolved)
     resolved.parent.mkdir(parents=True, exist_ok=True)
     connection = _connect(resolved)
-    version_table = connection.execute(
-        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'schema_version'"
-    ).fetchone()
-    if version_table is not None:
-        versions = connection.execute("SELECT version FROM schema_version").fetchall()
-        if versions and (len(versions) != 1 or int(versions[0]["version"]) != SCHEMA_VERSION):
-            connection.close()
-            found = int(versions[0]["version"]) if versions else None
-            raise LabQuorumError(
-                ErrorCode.SCHEMA_VERSION_MISMATCH,
-                f"Ledger schema version {found} is unsupported; expected {SCHEMA_VERSION}.",
-                {"found": found, "expected": SCHEMA_VERSION},
-            )
+    try:
+        version_table = connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'schema_version'"
+        ).fetchone()
+        if version_table is not None:
+            versions = connection.execute("SELECT version FROM schema_version").fetchall()
+            if versions and (len(versions) != 1 or int(versions[0]["version"]) != SCHEMA_VERSION):
+                found = int(versions[0]["version"]) if versions else None
+                raise LabQuorumError(
+                    ErrorCode.SCHEMA_VERSION_MISMATCH,
+                    f"Ledger schema version {found} is unsupported; expected {SCHEMA_VERSION}.",
+                    {"found": found, "expected": SCHEMA_VERSION},
+                )
 
-    schema_path = resources.files("labquorum.store").joinpath("schema.sql")
-    connection.executescript(schema_path.read_text(encoding="utf-8"))
-    if version_table is None or not connection.execute("SELECT 1 FROM schema_version").fetchone():
-        connection.execute("INSERT INTO schema_version(version) VALUES (?)", (SCHEMA_VERSION,))
-    _check_schema_version(connection)
+        schema_path = resources.files("labquorum.store").joinpath("schema.sql")
+        connection.executescript(schema_path.read_text(encoding="utf-8"))
+        if (
+            version_table is None
+            or not connection.execute("SELECT 1 FROM schema_version").fetchone()
+        ):
+            connection.execute("INSERT INTO schema_version(version) VALUES (?)", (SCHEMA_VERSION,))
+        _check_schema_version(connection)
+    except BaseException:
+        connection.close()
+        raise
     return connection
 
 

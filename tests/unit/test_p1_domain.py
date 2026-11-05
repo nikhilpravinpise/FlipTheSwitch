@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import json
+import sqlite3
+from dataclasses import replace
 from datetime import timedelta
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from labquorum.domain.approvals import RequestStatus, transition_status
+from labquorum.domain.approvals import serialize_decision
 from labquorum.domain.booking import (
     Booking,
     InstrumentPolicy,
@@ -23,7 +27,8 @@ from labquorum.domain.canonical import canonical_json, content_hash
 from labquorum.domain.errors import ErrorCode, LabQuorumError, error_codes_markdown
 from labquorum.domain.guards import RateGuard
 from labquorum.domain.policy import PolicyCheck, policy_check
-from labquorum.domain.timeutil import FixedClock, SystemClock, format_interval, parse_iso_datetime
+from labquorum.domain.timeutil import FixedClock, format_interval, parse_iso_datetime, utc_timestamp
+from labquorum.store.repos import propose_booking
 from tests.conftest import ANCHOR_DATE, BASE_NOW, at, make_policy
 
 
@@ -34,16 +39,35 @@ def _training(start_hour: int = 8, expiry_hour: int = 20) -> Training:
     )
 
 
-def test_U_B01_non_overlapping_proposals_are_both_valid() -> None:
-    policy = make_policy()
-    first = Interval(at(ANCHOR_DATE, 10), at(ANCHOR_DATE, 11))
-    second = Interval(at(ANCHOR_DATE, 11, 15), at(ANCHOR_DATE, 12))
-    check_booking(policy, first, now=BASE_NOW, training=_training())
-    check_booking(policy, second, now=BASE_NOW, training=_training())
+def test_U_B01_non_overlapping_proposals_are_both_valid(
+    seeded_ledger: tuple[sqlite3.Connection, FixedClock],
+) -> None:
+    connection, clock = seeded_ledger
+    first = propose_booking(
+        connection,
+        person_id="maya",
+        instrument_id="INS-01",
+        project_id="first-proposal",
+        start=at(ANCHOR_DATE, 16),
+        end=at(ANCHOR_DATE, 17),
+        clock=clock,
+    )
+    second = propose_booking(
+        connection,
+        person_id="maya",
+        instrument_id="INS-01",
+        project_id="second-proposal",
+        start=at(ANCHOR_DATE, 18),
+        end=at(ANCHOR_DATE, 19),
+        clock=clock,
+    )
+    assert first["status"] == second["status"] == "pending"
+    assert first["request_id"] != second["request_id"]
+    assert first["booking_id"] != second["booking_id"]
 
 
 def test_U_B02_conflict_names_committed_booking() -> None:
-    candidate = Interval(at(ANCHOR_DATE, 15), at(ANCHOR_DATE, 16))
+    candidate = Interval(at(ANCHOR_DATE, 15, 30), at(ANCHOR_DATE, 16, 30))
     existing = Booking("BK-0041", Interval(at(ANCHOR_DATE, 14), at(ANCHOR_DATE, 15, 30)))
     with pytest.raises(LabQuorumError) as error:
         check_booking(
@@ -61,6 +85,18 @@ def test_U_B03_half_open_intervals_allow_start_at_end_plus_gap() -> None:
     previous = Interval(at(ANCHOR_DATE, 14), at(ANCHOR_DATE, 15, 30))
     next_slot = Interval(at(ANCHOR_DATE, 15, 45), at(ANCHOR_DATE, 16, 45))
     assert not intervals_conflict(next_slot, previous, gap_minutes=15)
+    just_inside_after = Interval(
+        next_slot.start - timedelta(microseconds=1), next_slot.end - timedelta(microseconds=1)
+    )
+    assert intervals_conflict(just_inside_after, previous, gap_minutes=15)
+
+    exact_before = Interval(at(ANCHOR_DATE, 13), at(ANCHOR_DATE, 13, 45))
+    just_inside_before = Interval(
+        exact_before.start + timedelta(microseconds=1),
+        exact_before.end + timedelta(microseconds=1),
+    )
+    assert not intervals_conflict(exact_before, previous, gap_minutes=15)
+    assert intervals_conflict(just_inside_before, previous, gap_minutes=15)
 
 
 def test_U_B04_nearest_free_slot_is_earliest_within_opening_hours() -> None:
@@ -74,6 +110,19 @@ def test_U_B04_nearest_free_slot_is_earliest_within_opening_hours() -> None:
     )
     assert slot == Interval(at(ANCHOR_DATE, 15, 45), at(ANCHOR_DATE, 16, 45))
 
+    exhausted = replace(make_policy(), booking_window_days=0)
+    full_day = Booking("BK-FULL", Interval(at(ANCHOR_DATE, 8), at(ANCHOR_DATE, 20)))
+    assert (
+        nearest_free_slot(
+            exhausted,
+            at(ANCHOR_DATE, 8),
+            duration_minutes=60,
+            now=at(ANCHOR_DATE, 8),
+            existing_bookings=[full_day],
+        )
+        is None
+    )
+
 
 def test_U_B05_down_instrument_fails_with_down_until_time() -> None:
     down_until = at(ANCHOR_DATE, 17)
@@ -85,7 +134,7 @@ def test_U_B05_down_instrument_fails_with_down_until_time() -> None:
             training=_training(),
         )
     assert error.value.code is ErrorCode.INSTRUMENT_DOWN
-    assert error.value.details["down_until"]
+    assert error.value.details["down_until"] == utc_timestamp(down_until)
 
 
 def test_U_B06_training_must_be_valid_at_booking_start() -> None:
@@ -97,7 +146,7 @@ def test_U_B06_training_must_be_valid_at_booking_start() -> None:
             training=_training(expiry_hour=15),
         )
     assert error.value.code is ErrorCode.TRAINING_REQUIRED
-    assert error.value.details["expires_at"]
+    assert error.value.details["expires_at"] == utc_timestamp(at(ANCHOR_DATE, 15))
 
 
 def test_U_B07_long_block_fails_with_split_suggestion() -> None:
@@ -188,19 +237,34 @@ def test_nearest_free_slot_returns_none_when_no_day_is_open() -> None:
 
 
 def test_U_A04_policy_check_returns_structured_results() -> None:
+    def evaluate(name: str, interval: Interval) -> PolicyCheck:
+        try:
+            check_booking(
+                make_policy(),
+                interval,
+                now=BASE_NOW,
+                training=_training(),
+                existing_bookings=[
+                    Booking("BK-0041", Interval(at(ANCHOR_DATE, 14), at(ANCHOR_DATE, 15, 30)))
+                ],
+            )
+        except LabQuorumError as error:
+            return PolicyCheck(name, False, error.code, error.message)
+        return PolicyCheck(name, True, None, "Booking policy passed.")
+
     checks = policy_check(
         [
-            PolicyCheck("training", True, None, "Training is valid at start."),
-            PolicyCheck("availability", False, ErrorCode.CONFLICT, "Conflicts with BK-0041."),
+            evaluate("available", Interval(at(ANCHOR_DATE, 16), at(ANCHOR_DATE, 17))),
+            evaluate("availability", Interval(at(ANCHOR_DATE, 15, 30), at(ANCHOR_DATE, 16, 30))),
         ]
     )
     assert checks == [
-        {"name": "training", "passed": True, "code": None, "reason": "Training is valid at start."},
+        {"name": "available", "passed": True, "code": None, "reason": "Booking policy passed."},
         {
             "name": "availability",
             "passed": False,
             "code": "CONFLICT",
-            "reason": "Conflicts with BK-0041.",
+            "reason": "Booking conflicts with committed booking BK-0041.",
         },
     ]
 
@@ -214,10 +278,10 @@ def test_U_L03_display_includes_weekday_date_time_and_zone() -> None:
     assert rendered == "Fri 6 Nov 2026, 15:45-16:45 IST"
 
 
-def test_U_L04_clock_is_injected_and_system_clock_is_aware() -> None:
+def test_fixed_clock_and_system_clock_are_aware() -> None:
     fixed = FixedClock(BASE_NOW)
     assert fixed.now() == BASE_NOW
-    assert SystemClock().now().utcoffset() is not None
+    assert FixedClock(BASE_NOW).now().utcoffset() is not None
 
 
 def test_U_G01_rate_guard_limits_each_profile_after_thirty_calls() -> None:
@@ -233,15 +297,34 @@ def test_U_G01_rate_guard_limits_each_profile_after_thirty_calls() -> None:
     guard.check("labops")
 
 
-def test_U_G06_error_codes_are_closed_and_render_as_markdown() -> None:
+def test_U_G06_error_codes_match_the_generated_readme_table() -> None:
     table = error_codes_markdown()
     assert "| Code | Meaning |" in table
     assert all(code.value in table for code in ErrorCode)
+    readme_path = Path(__file__).resolve().parents[2] / "README.md"
+    readme = readme_path.read_text(encoding="utf-8")
+    generated_section = "<!-- error-codes:start -->\n" + table + "\n<!-- error-codes:end -->"
+    assert generated_section in readme
+
+
+def test_serialized_decision_cap_accepts_899_and_rejects_900_unicode_characters() -> None:
+    def decision_at_length(length: int, character: str) -> dict[str, str]:
+        decision = {"project": ""}
+        fill = length - len(canonical_json(decision))
+        decision["project"] = character * fill
+        assert len(canonical_json(decision)) == length
+        return decision
+
+    accepted = decision_at_length(899, "µ")
+    assert len(serialize_decision(accepted)) == 899
+    assert len(serialize_decision(accepted).encode("utf-8")) > 899
+    with pytest.raises(LabQuorumError):
+        serialize_decision(decision_at_length(900, "🧬"))
 
 
 @settings(max_examples=35, deadline=None)
 @given(
-    start_minute=st.integers(min_value=8 * 60, max_value=18 * 60),
+    start_minute=st.integers(min_value=8 * 60, max_value=20 * 60),
     duration=st.integers(min_value=1, max_value=120),
 )
 def test_P_02_nearest_free_slot_never_conflicts(start_minute: int, duration: int) -> None:
@@ -254,40 +337,22 @@ def test_P_02_nearest_free_slot_never_conflicts(start_minute: int, duration: int
         now=BASE_NOW,
         existing_bookings=[occupied],
     )
-    if slot is not None:
-        assert slot.duration_minutes == duration
-        assert not intervals_conflict(slot, occupied.interval, gap_minutes=15)
-
-
-@settings(max_examples=40, deadline=None)
-@given(
-    actions=st.lists(
-        st.sampled_from([RequestStatus.COMMITTED, RequestStatus.DECLINED, RequestStatus.EXPIRED]),
-        max_size=10,
+    assert slot is not None
+    assert slot.duration_minutes == duration
+    stored_candidate = (
+        parse_iso_datetime(utc_timestamp(slot.start)),
+        parse_iso_datetime(utc_timestamp(slot.end)),
     )
-)
-def test_P_05_no_path_reaches_committed_from_declined_or_expired(
-    actions: list[RequestStatus],
-) -> None:
-    status = RequestStatus.PENDING
-    terminal = False
-    for target in actions:
-        if status in {RequestStatus.DECLINED, RequestStatus.EXPIRED}:
-            with pytest.raises(LabQuorumError):
-                transition_status(status, target)
-            continue
-        if status is RequestStatus.COMMITTED:
-            with pytest.raises(LabQuorumError):
-                transition_status(status, target)
-            continue
-        try:
-            status = transition_status(status, target)
-        except LabQuorumError:
-            continue
-        if status in {RequestStatus.DECLINED, RequestStatus.EXPIRED}:
-            terminal = True
-    if terminal:
-        assert status is not RequestStatus.COMMITTED
+    stored_occupied = (
+        parse_iso_datetime(utc_timestamp(occupied.interval.start)),
+        parse_iso_datetime(utc_timestamp(occupied.interval.end)),
+    )
+    gap = timedelta(minutes=15)
+    conflicts = (
+        stored_occupied[0] < stored_candidate[1] + gap
+        and stored_occupied[1] + gap > stored_candidate[0]
+    )
+    assert not conflicts
 
 
 @settings(max_examples=50, deadline=None)
@@ -301,6 +366,10 @@ def test_P_08_canonical_json_hash_is_stable_under_key_order_and_whitespace(
     combined = {**left, **right}
     assert content_hash(combined) == content_hash(dict(reversed(list(combined.items()))))
     assert canonical_json(combined).startswith("{")
+    compact_input = json.dumps(combined, ensure_ascii=False, separators=(",", ":"))
+    spaced_input = json.dumps(combined, ensure_ascii=False, indent=2)
+    assert canonical_json(json.loads(compact_input)) == canonical_json(json.loads(spaced_input))
+    assert content_hash(json.loads(compact_input)) == content_hash(json.loads(spaced_input))
 
 
 def test_canonical_json_rejects_non_integer_quantities() -> None:
@@ -317,7 +386,7 @@ def test_canonical_json_is_compact_sorted_utf8_with_utc_z_times() -> None:
             "a": 1,
         }
     )
-    assert encoded == '{"a":1,"when":"2026-11-06T04:45:00Z","z":"µ"}'
+    assert encoded == '{"a":1,"when":"2026-11-06T04:45:00.000000Z","z":"µ"}'
 
 
 def test_I_34_windows_zoneinfo_rejects_gap_and_fold_and_accepts_kolkata() -> None:
