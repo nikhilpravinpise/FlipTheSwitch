@@ -83,14 +83,19 @@ def _check_template(template: dict[str, Any]) -> None:
                 f"probe args section is missing: {', '.join(sorted(required_keys - section.keys()))}"
             )
     paths = getter["request_paths"]
-    if not isinstance(paths, dict) or not {
-        "request_id",
-        "revision",
-        "content_hash",
-        "decision",
-    }.issubset(paths):
+    if (
+        not isinstance(paths, dict)
+        or not {"request_id", "revision", "content_hash"}.issubset(paths)
+        or not ({"decision", "commit_arguments"} & paths.keys())
+    ):
         raise RuntimeError(
-            "get_request.request_paths must locate id, revision, content_hash and decision"
+            "get_request.request_paths must locate id, revision, content_hash and either "
+            "decision (nested contract) or commit_arguments (flat card contract)"
+        )
+    if "commit_arguments" in paths and not isinstance(committer.get("tampered_field_path"), str):
+        raise RuntimeError(
+            "flat card contract requires commit_booking.tampered_field_path (a JSON Pointer "
+            "to a decision field other than request_id, revision or content_hash)"
         )
     result_paths = committer["result_paths"]
     if not isinstance(result_paths, dict) or not isinstance(result_paths.get("status"), str):
@@ -221,14 +226,16 @@ async def _verify_tool_sets(expected: dict[str, Any], database: Path) -> None:
 
 def _echoed_fields(payload: Mapping[str, Any], paths: Mapping[str, Any]) -> dict[str, Any]:
     values: dict[str, Any] = {}
-    for field in ("request_id", "revision", "content_hash", "decision"):
+    fields = ("request_id", "revision", "content_hash") + tuple(
+        name for name in ("decision", "commit_arguments") if name in paths
+    )
+    for field in fields:
         pointer = paths[field]
         if not isinstance(pointer, str):
             raise ValueError(f"get_request.request_paths.{field} must be a JSON Pointer")
-        values[field] = _pointer(payload, pointer)
-    if any(
-        values[field] is None for field in ("request_id", "revision", "content_hash", "decision")
-    ):
+        # The empty JSON Pointer refers to the whole document (RFC 6901 section 5).
+        values[field] = payload if pointer == "" else _pointer(payload, pointer)
+    if any(values[field] is None for field in fields):
         raise ValueError("get_request did not return all fields required for a commit")
     return values
 
@@ -329,8 +336,14 @@ async def _round_trip(template: dict[str, Any], database: Path) -> None:
         if echoed["request_id"] != context["proposal"]["request_id"]:
             raise RuntimeError("get_request returned a different request ID than propose_booking")
         context["request"].update(echoed)
-        commit_args = _call_arguments(committer_section, context)
-        for field in ("request_id", "revision", "content_hash", "decision"):
+        flat = "commit_arguments" in echoed
+        if flat:
+            commit_args = copy.deepcopy(echoed["commit_arguments"])
+            if not isinstance(commit_args, dict):
+                raise RuntimeError("get_request commit_arguments must be a JSON object")
+        else:
+            commit_args = _call_arguments(committer_section, context)
+        for field in ("request_id", "revision", "content_hash") + (() if flat else ("decision",)):
             if commit_args.get(field) != echoed[field]:
                 raise RuntimeError(f"commit_booking did not echo the exact get_request {field}")
 
@@ -366,10 +379,16 @@ async def _round_trip(template: dict[str, Any], database: Path) -> None:
             )
         print("PASS approver commit_booking idempotent repeat")
 
-        tampered_args = copy.deepcopy(commit_args)
-        tampered_args["decision"] = _tamper_decision(
-            echoed["decision"], committer_section.get("tampered_decision_path")
-        )
+        if flat:
+            tampered_field = str(committer_section["tampered_field_path"])
+            if tampered_field.lstrip("/") in {"request_id", "revision", "content_hash"}:
+                raise RuntimeError("tampered_field_path must name a decision field")
+            tampered_args = _tamper_decision(commit_args, tampered_field)
+        else:
+            tampered_args = copy.deepcopy(commit_args)
+            tampered_args["decision"] = _tamper_decision(
+                echoed["decision"], committer_section.get("tampered_decision_path")
+            )
         tampered_payload, tampered_text, tampered_error = await _invoke(
             approver, committer_section, "commit_booking", tampered_args
         )

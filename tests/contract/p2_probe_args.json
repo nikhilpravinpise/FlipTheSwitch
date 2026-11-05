@@ -18,21 +18,16 @@
       "request_id": "/request_id",
       "revision": "/revision",
       "content_hash": "/content_hash",
-      "decision": "/decision"
+      "commit_arguments": ""
     }
   },
   "commit_booking": {
     "tool": "commit_booking",
-    "arguments": {
-      "request_id": {"$ref": "request.request_id"},
-      "revision": {"$ref": "request.revision"},
-      "content_hash": {"$ref": "request.content_hash"},
-      "decision": {"$ref": "request.decision"}
-    },
+    "arguments": {},
     "result_paths": {"status": "/status"},
     "committed_value": "committed",
     "idempotent_values": ["committed"],
-    "tampered_decision_path": "/project",
+    "tampered_field_path": "/instrument_name",
     "error_codes": ["STALE_REQUEST", "DECISION_MISMATCH"]
   }
 }
