@@ -1114,6 +1114,7 @@ def test_E2E_11_fresh_card_remains_pending_in_same_session(
         request_id="AR-0042",
         before=snapshot,
         after_reply=snapshot,
+        approval_baseline_post_ids=frozenset(),
     )
     first_attempt = SimpleNamespace(request_id="AR-0041")
     first_flow = SimpleNamespace(
