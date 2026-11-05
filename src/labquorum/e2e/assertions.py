@@ -9,6 +9,7 @@ from typing import Any, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from labquorum.domain.canonical import content_hash
+from labquorum.domain.timeutil import format_local_instant
 from labquorum.e2e.ledger import LedgerSnapshot, RequestRecord
 
 
@@ -268,21 +269,40 @@ def assert_restart_safe(
 
 def _assert_card_matches(card_text: str, request: RequestRecord) -> None:
     _assert_request_canonical(request)
-    interval = request.decision.get("interval")
-    if not isinstance(interval, Mapping):
-        raise ScenarioAssertionError("The persisted request has no canonical interval.")
-    interval_mapping = cast(Mapping[str, Any], interval)
+    decision = request.decision
+    interval_mapping = _decision_interval(decision)
     values: dict[str, tuple[tuple[str, ...], Any]] = {
         "action": (("action",), "commit_booking"),
         "request_id": (("request_id",), request.request_id),
         "revision": (("revision",), request.revision),
         "content_hash": (("content_hash",), request.content_hash),
-        "requester": (("requester_handle", "requester"), request.requester),
-        "resource": (("instrument_id", "resource"), request.resource),
-        "project": (("project_untrusted_text", "project"), request.project),
+        "requester": (
+            ("requester_handle", "requester"),
+            decision.get("requester", decision.get("requester_handle")),
+        ),
+        "resource": (
+            ("instrument_id", "resource"),
+            decision.get("resource", decision.get("instrument_id")),
+        ),
+        "project": (
+            ("project_untrusted_text", "project"),
+            decision.get("project", decision.get("project_untrusted_text")),
+        ),
         "start_utc": (("start_utc",), interval_mapping.get("start_utc")),
         "end_utc": (("end_utc",), interval_mapping.get("end_utc")),
     }
+    if "interval" not in decision:
+        values.update(
+            {
+                "instrument_name": (("instrument_name",), decision.get("instrument_name")),
+                "requester_display_name": (
+                    ("requester_display_name",),
+                    decision.get("requester_display_name"),
+                ),
+                "start_local": (("start_local",), decision.get("start_local")),
+                "end_local": (("end_local",), decision.get("end_local")),
+            }
+        )
     card_fields = _visible_card_fields(card_text)
     missing: list[str] = []
     for field_name, (aliases, expected) in values.items():
@@ -303,25 +323,56 @@ def _assert_card_matches(card_text: str, request: RequestRecord) -> None:
 
 def _assert_request_canonical(request: RequestRecord) -> None:
     decision = request.decision
-    interval_value = decision.get("interval")
-    if not isinstance(interval_value, Mapping):
-        raise ScenarioAssertionError("The persisted request has no canonical interval.")
-    interval = cast(Mapping[str, Any], interval_value)
+    interval = _decision_interval(decision)
+    requester = decision.get("requester", decision.get("requester_handle"))
+    resource = decision.get("resource", decision.get("instrument_id"))
+    project = decision.get("project", decision.get("project_untrusted_text"))
     matches = (
         decision.get("action") == "commit_booking",
         decision.get("request_id") == request.request_id,
         decision.get("revision") == request.revision,
-        decision.get("requester") == request.requester,
-        decision.get("resource") == request.resource,
-        decision.get("project") == request.project,
+        requester == request.requester,
+        resource == request.resource,
+        project == request.project,
         interval.get("start_utc") == request.start_utc,
         interval.get("end_utc") == request.end_utc,
         content_hash(decision).casefold() == request.content_hash.casefold(),
     )
+    if "interval" not in decision:
+        try:
+            local_values_match = (
+                isinstance(request.resource_timezone, str)
+                and decision.get("start_local")
+                == format_local_instant(
+                    _parse_aware_timestamp(request.start_utc), request.resource_timezone
+                )
+                and decision.get("end_local")
+                == format_local_instant(
+                    _parse_aware_timestamp(request.end_utc), request.resource_timezone
+                )
+            )
+        except (ValueError, ZoneInfoNotFoundError):
+            local_values_match = False
+        matches += (
+            isinstance(decision.get("instrument_name"), str)
+            and bool(decision.get("instrument_name")),
+            isinstance(decision.get("requester_display_name"), str)
+            and bool(decision.get("requester_display_name")),
+            local_values_match,
+        )
     if not all(matches):
         raise ScenarioAssertionError(
             "The persisted request fields do not match its canonical decision and hash."
         )
+
+
+def _decision_interval(decision: Mapping[str, Any]) -> Mapping[str, Any]:
+    interval = decision.get("interval")
+    if isinstance(interval, Mapping):
+        return cast(Mapping[str, Any], interval)
+    if "start_utc" in decision and "end_utc" in decision:
+        return decision
+    raise ScenarioAssertionError("The persisted request has no canonical interval.")
 
 
 def _visible_card_fields(card_text: str) -> dict[str, list[str]]:
