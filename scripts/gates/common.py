@@ -368,6 +368,9 @@ def _check_red_replay(phase: str) -> str | None:
     if resolved.returncode != 0:
         return f"red_commit {red_commit} is not an available commit"
     commit_sha = resolved.stdout.strip()
+    ancestor = _run(["git", "merge-base", "--is-ancestor", commit_sha, "HEAD"])
+    if ancestor.returncode != 0:
+        return f"red_commit {red_commit} is not an ancestor of HEAD"
     temp_root = Path(tempfile.mkdtemp(prefix="labquorum-red-")).resolve()
     worktree_path = temp_root / "worktree"
     junit_path = temp_root / "red-junit.xml"
