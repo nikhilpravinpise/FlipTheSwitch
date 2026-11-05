@@ -121,7 +121,9 @@ def test_C_09_agent_folder_maps_to_its_expected_mcp_profile(
 ) -> None:
     assert profile_for_agent("labops") is Profile.PROPOSER
     assert profile_for_agent("pi-desk") is Profile.APPROVER
-    assert profile_for_agent("scout") is Profile.UNAVAILABLE
+    scout_profile = profile_for_agent("scout")
+    assert scout_profile is not None
+    assert scout_profile.value == "librarian"
     assert profile_for_agent("analyst") is Profile.UNAVAILABLE
     agents_dir = tmp_path / "agents"
     labops_dir = agents_dir / "labops"

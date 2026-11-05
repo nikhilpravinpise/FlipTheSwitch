@@ -15,6 +15,7 @@ from labquorum.scholarly.verify import (
     Verdict,
     normalize_doi,
     normalize_title,
+    verify_bibliography,
     verify_citation,
 )
 
@@ -38,16 +39,22 @@ def test_P_04_doi_normalization_is_idempotent(value: str) -> None:
     assert normalize_doi(normalized) == normalized
 
 
-def test_U_C02_exact_normalized_title_or_needs_review() -> None:
-    assert normalize_title("<i>ＡlphaFold</i>: \textit{accurate} structure") == (
+def test_U_C02_exact_normalized_title_or_needs_review(tmp_path) -> None:
+    assert normalize_title(r"<i>ＡlphaFold</i>: \textit{accurate} structure") == (
         "alphafold accurate structure"
     )
     claim = CitationClaim(doi="10.1038/example", title="A study of the evidence")
-    crossref = CrossrefClient(transport=httpx.MockTransport(lambda request: httpx.Response(200)))
+    crossref = CrossrefClient(
+        cache_dir=tmp_path,
+        transport=httpx.MockTransport(lambda request: httpx.Response(200)),
+    )
     result = verify_citation(
         claim,
         crossref=crossref,
-        openalex=OpenAlexClient(transport=httpx.MockTransport(lambda request: httpx.Response(404))),
+        openalex=OpenAlexClient(
+            cache_dir=tmp_path,
+            transport=httpx.MockTransport(lambda request: httpx.Response(404)),
+        ),
         checked_at=CHECKED_AT,
         record={
             "DOI": "10.1038/example",
@@ -58,6 +65,50 @@ def test_U_C02_exact_normalized_title_or_needs_review() -> None:
         source="crossref",
     )
     assert result.verdict is Verdict.NEEDS_REVIEW
+
+
+@pytest.mark.parametrize(
+    ("supplied_title", "expected"),
+    [
+        ("Accurate protein structure prediction", Verdict.NEEDS_REVIEW),
+        (
+            "Highly accurate protein structure prediction with AlphaFold is definitive",
+            Verdict.NEEDS_REVIEW,
+        ),
+        ("Highly accurate protein structure prediction with AlphaFold", Verdict.VERIFIED),
+    ],
+)
+def test_U_C02_title_search_candidates_require_exact_full_title(
+    supplied_title: str,
+    expected: Verdict,
+    tmp_path,
+) -> None:
+    def search_response(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "results": [
+                    {
+                        "doi": "https://doi.org/10.1038/s41586-021-03819-2",
+                        "title": "Highly accurate protein structure prediction with AlphaFold",
+                        "publication_year": 2021,
+                        "authorships": [{"author": {"display_name": "John Jumper"}}],
+                        "is_retracted": False,
+                        "locations": [],
+                    }
+                ]
+            },
+        )
+
+    result = verify_citation(
+        CitationClaim(title=supplied_title),
+        openalex=OpenAlexClient(
+            cache_dir=tmp_path,
+            transport=httpx.MockTransport(search_response),
+        ),
+        checked_at=CHECKED_AT,
+    )
+    assert result.verdict is expected
 
 
 @pytest.mark.parametrize(
@@ -80,6 +131,10 @@ def test_U_C03_first_author_surname_is_accent_and_case_insensitive(
         checked_at=CHECKED_AT,
     )
     assert result.verdict is Verdict.VERIFIED
+    assert result.fields["message"] == (
+        "metadata matched; no retraction signal found in checked sources as of "
+        "2026-11-05; claim support not established"
+    )
 
 
 @pytest.mark.parametrize(
@@ -123,6 +178,7 @@ def test_U_C05_crossref_retraction_update_returns_notice_doi() -> None:
     )
     assert result.verdict is Verdict.RETRACTED
     assert result.fields["retraction_doi"] == "10.1038/s41598-023-44593-7"
+    assert result.fields["retraction_signal_source"] == "Crossref"
 
 
 def test_U_C06_openalex_is_retracted_returns_retracted() -> None:
@@ -138,6 +194,32 @@ def test_U_C06_openalex_is_retracted_returns_retracted() -> None:
         checked_at=CHECKED_AT,
     )
     assert result.verdict is Verdict.RETRACTED
+    assert result.fields["retraction_signal_source"] == "OpenAlex"
+
+
+@pytest.mark.parametrize(
+    "claimed_title",
+    [
+        "Highly accurate protein structure prediction",
+        "Highly accurate protein structure prediction with AlphaFold is definitive",
+    ],
+)
+def test_I_35_exact_doi_with_truncated_or_qualified_title_needs_review(
+    claimed_title: str,
+) -> None:
+    result = verify_citation(
+        CitationClaim(doi="10.1038/s41586-021-03819-2", title=claimed_title),
+        record={
+            "DOI": "10.1038/s41586-021-03819-2",
+            "title": ["Highly accurate protein structure prediction with AlphaFold"],
+            "author": [{"family": "Jumper"}],
+            "published": {"date-parts": [[2021]]},
+        },
+        source="crossref",
+        checked_at=CHECKED_AT,
+    )
+    assert result.verdict is Verdict.NEEDS_REVIEW
+    assert result.verdict is not Verdict.VERIFIED
 
 
 def test_U_C07_preprint_with_published_version_returns_note() -> None:
@@ -196,6 +278,98 @@ def test_U_C12_correction_returns_verified_with_note() -> None:
         checked_at=CHECKED_AT,
     )
     assert result.verdict is Verdict.VERIFIED_WITH_NOTE
+
+
+def test_U_C09_bibliography_deduplicates_by_doi_and_title_author_year(tmp_path) -> None:
+    def crossref_response(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "message": {
+                    "DOI": "10.1000/example",
+                    "title": ["A complete title"],
+                    "author": [{"family": "Smith"}],
+                    "published": {"date-parts": [[2020]]},
+                }
+            },
+        )
+
+    def openalex_response(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "results": [
+                    {
+                        "doi": "https://doi.org/10.1000/example",
+                        "title": "A complete title",
+                        "publication_year": 2020,
+                        "authorships": [{"author": {"display_name": "Jane Smith"}}],
+                    }
+                ]
+            },
+        )
+
+    crossref = CrossrefClient(
+        cache_dir=tmp_path,
+        contact_email="labquorum-dev@example.invalid",
+        transport=httpx.MockTransport(crossref_response),
+    )
+    openalex = OpenAlexClient(
+        cache_dir=tmp_path,
+        transport=httpx.MockTransport(openalex_response),
+    )
+    result = verify_bibliography(
+        [
+            CitationClaim(doi="10.1000/example", title="A complete title"),
+            CitationClaim(doi="DOI:10.1000/EXAMPLE.", title="Different supplied title"),
+            CitationClaim(title="A complete title", first_author="Smith", year=2020),
+            CitationClaim(title="A complete title", first_author="Smith", year=2020),
+        ],
+        crossref=crossref,
+        openalex=openalex,
+        checked_at=CHECKED_AT,
+    )
+    assert result["unique_count"] == 2
+    assert result["duplicates"] == [
+        {"duplicate_index": 1, "canonical_index": 0},
+        {"duplicate_index": 3, "canonical_index": 2},
+    ]
+
+
+def test_U_C12_datacite_doi_falls_back_to_openalex(tmp_path) -> None:
+    doi = "10.5281/zenodo.1234567"
+
+    def crossref_miss(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(404, json={"status": "error", "message": "not found"})
+
+    def openalex_hit(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "doi": f"https://doi.org/{doi}",
+                "title": "A complete title",
+                "publication_year": 2020,
+                "authorships": [{"author": {"display_name": "Jane Smith"}}],
+                "is_retracted": False,
+                "locations": [],
+            },
+        )
+
+    result = verify_citation(
+        CitationClaim(doi=doi, title="A complete title", first_author="Smith", year=2020),
+        crossref=CrossrefClient(
+            cache_dir=tmp_path,
+            contact_email="labquorum-dev@example.invalid",
+            transport=httpx.MockTransport(crossref_miss),
+        ),
+        openalex=OpenAlexClient(
+            cache_dir=tmp_path,
+            transport=httpx.MockTransport(openalex_hit),
+        ),
+        checked_at=CHECKED_AT,
+    )
+    assert result.verdict is Verdict.VERIFIED
+    assert result.fields["checked_sources"] == ["Crossref", "OpenAlex"]
 
 
 def test_I_06_request_budget_exhaustion_is_a_domain_error() -> None:

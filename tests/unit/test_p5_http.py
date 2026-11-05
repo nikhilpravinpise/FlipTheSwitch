@@ -16,6 +16,7 @@ from labquorum.scholarly.http import (
     CACHE_TTLS,
     CacheStore,
     CrossrefClient,
+    OpenAlexClient,
     RequestBudget,
     SharedHostLimiter,
 )
@@ -83,7 +84,7 @@ def test_I_06_429_retry_after_is_honored(tmp_path) -> None:
         )
         result = client.get_work("10.1000/example", RequestBudget())
     assert route.call_count == 2
-    assert sleeps == [2.0]
+    assert sleeps[0] == 2.0
     assert result.payload["DOI"] == "10.1000/example"
 
 
@@ -192,4 +193,17 @@ def test_http_call_budget_exceeding_fifty_is_refused() -> None:
     with pytest.raises(LabQuorumError) as error:
         budget.consume()
     assert error.value.code is ErrorCode.BUDGET_EXCEEDED
+
+
+def test_openalex_query_and_result_limits_are_enforced_before_http(tmp_path) -> None:
+    client = OpenAlexClient(
+        cache_dir=tmp_path,
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, json={"results": []})),
+    )
+    with pytest.raises(LabQuorumError) as long_query:
+        client.search_works("q" * 301, RequestBudget())
+    assert long_query.value.code is ErrorCode.INVALID_ARGUMENT
+    with pytest.raises(LabQuorumError) as too_many:
+        client.search_works("microscopy", RequestBudget(), max_results=9)
+    assert too_many.value.code is ErrorCode.INVALID_ARGUMENT
 

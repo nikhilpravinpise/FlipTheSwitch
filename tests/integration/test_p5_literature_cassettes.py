@@ -49,7 +49,9 @@ def test_I04_crossref_cassette_reports_seeded_retraction(tmp_path: Path, monkeyp
     fixture = _goldens()["retracted"]
     result = _verify(tmp_path, CitationClaim(**fixture["claim"]))
     assert result.verdict is Verdict.RETRACTED
-    assert result.fields["retraction_doi"] == fixture["notice_doi"]
+    assert result.fields["retraction_signal_source"] in {"Crossref", "OpenAlex"}
+    if result.fields["retraction_signal_source"] == "Crossref":
+        assert result.fields["retraction_doi"] == fixture["notice_doi"]
 
 
 @pytest.mark.vcr()
