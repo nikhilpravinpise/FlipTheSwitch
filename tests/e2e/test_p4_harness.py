@@ -410,8 +410,7 @@ def test_E2E_01_read_propose_smoke_checks_conflict_slot_and_pending_request(
 def test_E2E_01_read_propose_smoke_requires_conflict_language(tmp_path: Path) -> None:
     snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
     reply = (
-        "Lena has a 14:00-15:30 INS-01 booking. "
-        "The 15:45-16:45 slot is proposed. Request AR-0042."
+        "Lena has a 14:00-15:30 INS-01 booking. The 15:45-16:45 slot is proposed. Request AR-0042."
     )
 
     with pytest.raises(AssertionError, match="conflict"):
