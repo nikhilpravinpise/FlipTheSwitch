@@ -21,7 +21,10 @@
       "name": "rao-labquorum",
       "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
       "private": true,
-      "aliases": ["labops", "pi-desk"]
+      "aliases": [
+        "labops",
+        "pi-desk"
+      ]
     },
     "agents": {
       "labops": {
@@ -81,6 +84,82 @@
           "failed_check": "check 6 gate baseline"
         }
       }
+    }
+  },
+  "audit_fix_validation": {
+    "source_home": {
+      "path": "%LOCALAPPDATA%\\LabQuorum\\codex-home",
+      "global_config_check": "passed by lq doctor and setup regression test",
+      "server_default_approval_mode": "approve",
+      "commit_booking_approval_mode": "prompt",
+      "production_binding": "off",
+      "stable_executable": "%LOCALAPPDATA%\\LabQuorum\\venv\\Scripts\\lq-mcp.exe"
+    },
+    "console_and_doctor": {
+      "launch_console_ps1": "passed after production config restore; CDP Chrome/146 ready",
+      "doctor": "passed; runtime CODEX_HOME, binding off, both write probes and source registration valid",
+      "warnings": [
+        "OPENALEX_KEY_MISSING"
+      ],
+      "docker": "available"
+    },
+    "certify_hardlink_regression": {
+      "test": "tests/unit/test_p3_auditfix.py::test_C_12_certify_mode_rejects_a_hard_link_to_runtime_ledger",
+      "red": "failed as expected: DID NOT RAISE LabQuorumError",
+      "green_command": "uv run pytest tests/unit/test_p3_auditfix.py::test_C_12_certify_mode_rejects_a_hard_link_to_runtime_ledger tests/unit/test_p3_auditfix.py::test_C_12_certify_mode_rejects_a_ledger_because_its_folder_is_named_certify tests/unit/test_p3_auditfix.py::test_C_12_certify_mode_accepts_only_the_p2_temporary_gate_ledger -q",
+      "green_result": "3 passed in 0.79s"
+    },
+    "api_approval_smoke": {
+      "status": "inconclusive",
+      "read_only": {
+        "prompt_post_id": "aon44wq9p3fhtdwm1utfx3z9cy",
+        "prompt_utc": "2026-11-05T16:34:46.284Z",
+        "switch_summary_post_id": "spriy99i8tb6bqn71se3epayyy",
+        "summary_utc": "2026-11-05T16:34:54.562Z",
+        "tool_calls_reported": 2,
+        "approval_request_seen": false,
+        "tool_names_and_result_verified": false
+      },
+      "commit_booking": {
+        "fresh_request_id": "AR-0046",
+        "request_created_utc": "2026-11-05T16:59:22.620219Z",
+        "request_status_after_smoke": "pending",
+        "reset_post_id": "tkt9r3j4qjnbxkg6r1yhsrma6y",
+        "prompt_post_id": "pe91mbk15b817qi8bscuayq16y",
+        "approval_card_seen": false,
+        "commit_audit_event_count": 0
+      },
+      "production_config_restored_byte_for_byte": true,
+      "production_ledger_counts_unchanged": true,
+      "post_restore_reset_id": "h7ouxmafqp8tfdspmay87rs9jr"
+    },
+    "rollout_turn_context": {
+      "status": "unverified",
+      "rollout_paths_listed": 4,
+      "readable_turn_context_records": 0,
+      "note": "Enumerated Switch rollout paths disappeared before they could be opened."
+    },
+    "switch_control_plane": {
+      "template_can_manage_agents": false,
+      "template_auto_mode": false,
+      "template_auto_approve": false,
+      "template_connections_empty": true,
+      "host_switch_tool_inventory": "UNVERIFIED",
+      "host_controlled_allowlist": "UNVERIFIED"
+    },
+    "final_acceptance": {
+      "uv_sync_locked": "PASS in P3, P2 and P1 common gates",
+      "uv_run_python_scripts_gates_p3_py_live": "PASS; live Switch wiring, certify probe and common gate",
+      "uv_run_python_scripts_gates_p2_py": "PASS; contract, stdio probe and tamper rejection",
+      "uv_run_python_scripts_gates_p1_py": "PASS; 129 tests, 94.05% coverage and race test",
+      "uv_run_ruff_check_dot": "PASS",
+      "uv_run_ruff_format_check_dot": "PASS; 138 files already formatted",
+      "uv_run_pyright": "PASS; 0 errors, 0 warnings, 0 informations",
+      "git_diff_check": "PASS; Git reported only CRLF to LF normalization for p3.json",
+      "p3_test_commit": "9ed619d",
+      "p3_fix_commit": "8f55be0",
+      "format_followup_commit": "64ca5a9",
+      "p3_gate_first_attempt_after_hardlink_change": "FAIL only because binding.py needed Ruff formatting; the formatted rerun passed."
     }
   }
 }
