@@ -286,6 +286,37 @@ def test_approval_card_discovery_and_persona_answer(
     assert sent.root_id == card_post["id"]
 
 
+@pytest.mark.block_network(allowed_hosts=[r"^127\.0\.0\.1$"])
+def test_E2E_04_approval_card_wait_ignores_baseline_posts(
+    fake_mattermost: tuple[str, FakeMattermostState],
+) -> None:
+    base_url, state = fake_mattermost
+    old_card = state.add_post(
+        channel_id="channel-1",
+        user_id="switch-bot",
+        message="Reply with `A1` and your choice, e.g. `A1 1`.",
+        root_id="prompt-1",
+        create_at=1000,
+    )
+    new_card = state.add_post(
+        channel_id="channel-1",
+        user_id="switch-bot",
+        message="Reply with `A2` and your choice, e.g. `A2 1`.",
+        root_id="prompt-1",
+        create_at=2000,
+    )
+
+    with MattermostClient(base_url, "maya", "fake-password", timeout=1) as client:
+        card = client.wait_for_approval_card(
+            "channel-1",
+            after_ms=0,
+            root_id="prompt-1",
+            baseline_post_ids=frozenset({old_card["id"]}),
+        )
+
+    assert card.post_id == new_card["id"]
+
+
 def test_approval_card_discovery_excludes_switch_action_tokens() -> None:
     card_post = {
         "id": "card-1",
