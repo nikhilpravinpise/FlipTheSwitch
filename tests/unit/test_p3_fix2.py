@@ -6,6 +6,8 @@ import tomllib
 from datetime import UTC, date, datetime
 from pathlib import Path
 
+import yaml
+
 from labquorum.domain.timeutil import FixedClock
 from labquorum.mcp.server import create_runtime
 from labquorum.provisioning import setup_runtime
@@ -121,10 +123,14 @@ def test_C_04_setup_requires_threaded_user_facing_agent_replies(tmp_path: Path) 
     root = tmp_path / "runtime"
     command = _command(root / "venv" / "Scripts" / "lq-mcp.exe")
     setup_runtime(root, command_path=command, codex_home=tmp_path / "source-codex-home")
+    template_path = root / "switch" / "labquorum.template.yaml"
+    template = yaml.safe_load(template_path.read_text(encoding="utf-8"))
+    assert isinstance(template, dict)
+    template_agents = {agent["name"]: agent["instructions"] for agent in template["agents"]}
     labops = (root / "agents" / "labops" / "AGENTS.md").read_text(encoding="utf-8")
     pi_desk = (root / "agents" / "pi-desk" / "AGENTS.md").read_text(encoding="utf-8")
 
-    for instructions in (labops, pi_desk):
+    for instructions in (labops, pi_desk, *template_agents.values()):
         normalized = instructions.casefold()
         assert "for every incoming room message" in normalized
         assert "call post_message" in normalized
@@ -140,11 +146,16 @@ def test_C_04_setup_requires_threaded_user_facing_agent_replies(tmp_path: Path) 
         "status",
     ):
         assert required in labops_instructions
+        assert required in template_agents["labops"].casefold()
 
     pi_instructions = pi_desk.casefold()
     assert "initiate one commit_booking call" in pi_instructions
     assert "wait for the native codex approval prompt" in pi_instructions
     assert "do not wait for the approval prompt before calling commit_booking" in pi_instructions
+
+    pi_template_instructions = template_agents["pi-desk"].casefold()
+    assert "initiate one commit_booking call" in pi_template_instructions
+    assert "wait for the native codex approval prompt" in pi_template_instructions
 
 
 def test_C_04_runtime_codex_toml_approves_only_noncommit_labquorum_tools(
