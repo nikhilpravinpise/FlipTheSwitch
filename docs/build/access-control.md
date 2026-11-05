@@ -16,10 +16,14 @@ Decided and applied Thu 5 Nov 2026, 18:20 IST. Goal: Darshan (remote teammate, s
 
 ## Application layer
 
-- Mattermost: Darshan gets a normal (non-admin) account `darshan` through an invite-only link; open signup stays disabled.
+- Mattermost: Darshan gets a normal (non-admin) account `darshan` through the team invite link (open signup is currently on; see the 19:12 decision below).
 - Switch: his identity is claimed to a separate Switch user with role `user` (not admin, not owner of any agent). Addressing makes `@pi-desk` owner-only, so he cannot instruct it or answer its approval cards; he can address `@labops` (anyone).
 - GitHub: write access as a collaborator on the private repository (team member), working through branches and PRs.
 
 ## Revoking
 
 `tailscale serve --http=8065 off` stops sharing immediately; `tailscale switch <nikhil profile>` or `tailscale logout` leaves Darshan's tailnet; deactivating his Mattermost account and Switch user removes chat access.
+
+## Decision: open signup while Mattermost is tailnet-only (5 Nov 2026, 19:12 IST)
+
+Mattermost's `EnableOpenServer` is on in the Switch-provisioned instance, and the only operator session available to automation is `@user` (team member, not system admin), so it cannot be switched off from our side. Because Mattermost is reachable only through `tailscale serve` inside Darshan's tailnet (his own devices plus `labquorum-host`; never public), open signup does not expose the server to anyone outside the team. We accept it for the build window, share the team invite link with Darshan, and record the risk. If a Mattermost system-admin path is found, or before any wider exposure, open signup must be disabled.
