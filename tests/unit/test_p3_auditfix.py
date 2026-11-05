@@ -234,6 +234,34 @@ def test_C_12_certify_mode_rejects_a_ledger_because_its_folder_is_named_certify(
     assert refused.value.code is ErrorCode.BINDING_CERTIFICATION_REQUIRED
 
 
+def test_C_12_certify_mode_rejects_a_hard_link_to_runtime_ledger(
+    tmp_path: Path,
+) -> None:
+    runtime_root = tmp_path / "labquorum-p3-hardlink"
+    runtime_root.mkdir()
+    runtime_ledger = runtime_root / "ledger.sqlite"
+    runtime_ledger.write_bytes(b"runtime ledger")
+    database = runtime_root / "p3-test-ledger.sqlite"
+    database.hardlink_to(runtime_ledger)
+    (runtime_root / "runtime.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "runtime_root": str(runtime_root),
+                "ledger_path": str(runtime_ledger),
+                "binding_mode": "off",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(LabQuorumError) as refused:
+        binding.validate_binding_request(
+            "certify", Profile.APPROVER, database, runtime_root, None, tmp_path
+        )
+    assert refused.value.code is ErrorCode.BINDING_CERTIFICATION_REQUIRED
+
+
 def test_C_12_certify_mode_accepts_only_the_p2_temporary_gate_ledger(
     tmp_path: Path,
 ) -> None:
