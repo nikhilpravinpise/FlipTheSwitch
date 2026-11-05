@@ -57,6 +57,18 @@ Template import, Playwright two-persona harness against real Mattermost, read/pr
 
 Ordered by demo value: stale-detection/dataset provenance, literature verify_citation with cassettes, inventory holds. Each expansion is its own sub-phase with the same gate rules.
 
-## P6 - Ship
+## P6 - Production readiness, release and ship ("deployed and production ready", Nikhil 5 Nov 15:30)
 
-README (how Switch is used, agents, chat setup, how to run, honest limits), `docs/test-evidence.md`, demo video, Wispr scorecard, public repo, submission.
+Definition: anyone can install a tagged release on a clean Windows or Ubuntu machine, set it up against their own Switch Console in one documented path, and run it reliably; the team's deployment is Nikhil's laptop Switch server reached by Darshan over Tailscale. A remote host (AWS runbook in `remote-host.md`) is optional and only after P4 passes locally. No public live instance (it would spend Codex quota on strangers).
+
+Phase gate (`scripts/gates/p6.py`, written by a gate author before the phase starts) requires:
+1. Clean install from the tag: `uv tool install git+https://github.com/nikhilpravinpise/FlipTheSwitch@vX.Y.Z` then `lq setup` (writes agent folders, per-agent Codex configuration and the Switch template with absolute paths under a stable runtime root, default `%LOCALAPPDATA%\LabQuorum\` / `$XDG_DATA_HOME/labquorum`, never inside a git worktree) then `lq doctor` exits 0. CI runs this on windows-latest and ubuntu-latest without Switch.
+2. Stable runtime paths: Console agent directories and the ledger live under the runtime root; `lq doctor` fails if an agent directory is inside `.claude/worktrees/` or OneDrive.
+3. `lq backup` and `lq restore` round-trip a seeded ledger with audit verification; restore refuses a mismatched schema version.
+4. CI green on both OSes: lint, types, tests, gitleaks secret scan, dependency vulnerability audit.
+5. Fail-closed binding: `lq-mcp` without an explicit, verified agent profile exposes no binding tool; binding commits are disabled unless the P4 certification evidence file exists and matches the installed tuple.
+6. Docs: README (what it is, how Switch is used, agents, channel setup, quickstart, security model and honest limits, generated error-code table), `docs/test-evidence.md`, `SECURITY.md`, `CONTRIBUTING.md`, LICENSE.
+7. Darshan runs the README quickstart verbatim on his own machine and reports success (GitHub issue #4).
+8. Release: tag `v1.0.0` with generated release notes (no hand-edited CHANGELOG), PR merged to `main` after all gates pass, repository made public only after everything is complete and a final secret review passes.
+
+Ship items: demo video under 3:00, both Wispr cards exported at the end, blog (Darshan), submission text for Nikhil to paste.
