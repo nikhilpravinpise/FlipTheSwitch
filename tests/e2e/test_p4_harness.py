@@ -263,6 +263,24 @@ def test_approval_card_discovery_and_persona_answer(
     assert sent.root_id == card_post["id"]
 
 
+def test_approval_card_discovery_excludes_switch_action_tokens() -> None:
+    card_post = {
+        "id": "card-1",
+        "channel_id": "channel-1",
+        "user_id": "switch-bot",
+        "message": "Reply with `A7` and your choice, e.g. `A7 1`.",
+        "props": {
+            "attachments": [{"text": "1. Allow once\n2. Decline"}],
+            "actions": [{"id": "approve", "token": "never-copy-this-switch-token"}],
+        },
+    }
+
+    [card] = find_approval_cards([card_post])
+
+    assert "1. Allow once" in card.message
+    assert "never-copy-this-switch-token" not in card.message
+
+
 def test_settled_card_can_be_read_after_switch_deletes_it(
     fake_mattermost: tuple[str, FakeMattermostState],
 ) -> None:
