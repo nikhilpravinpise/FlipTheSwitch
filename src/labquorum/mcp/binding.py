@@ -177,10 +177,10 @@ def validate_binding_request(  # noqa: PLR0913, PLR0917
             independent_database = resolved_database.stat().st_nlink == 1
         except OSError:
             independent_database = False
-        if not (
-            _is_test_ledger(resolved_database) or is_p2_gate_test_ledger(resolved_database)
-        ) or not independent_database or (
-            resolved_root is not None and resolved_database == resolved_root / "ledger.sqlite"
+        if (
+            not (_is_test_ledger(resolved_database) or is_p2_gate_test_ledger(resolved_database))
+            or not independent_database
+            or (resolved_root is not None and resolved_database == resolved_root / "ledger.sqlite")
         ):
             raise LabQuorumError(
                 ErrorCode.BINDING_CERTIFICATION_REQUIRED,
