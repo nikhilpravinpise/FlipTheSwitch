@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
+import os
 import sqlite3
 import sys
 from collections.abc import Sequence
@@ -142,7 +143,18 @@ def create_server(  # noqa: PLR0913
     names = list(tool_names_for_profile(runtime.profile))
     if effective_binding == "off" and "commit_booking" in names:
         names.remove("commit_booking")
-    limiter = BindingCommitLimiter() if effective_binding in {"certify", "on"} else None
+    limiter = None
+    if effective_binding in {"certify", "on"}:
+        codex_home = os.environ.get("CODEX_HOME")
+        if codex_home:
+            state_home = Path(codex_home)
+        elif runtime_root is not None:
+            state_home = runtime_root / "codex-home"
+        else:
+            state_home = (
+                (database_path or default_database_path()).expanduser().resolve(strict=False).parent
+            )
+        limiter = BindingCommitLimiter.for_session_home(state_home)
     for name in names:
         method = runtime.tool_method(name)
         if name == "commit_booking" and limiter is not None:

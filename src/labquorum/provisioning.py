@@ -7,6 +7,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import tempfile
 import tomllib
 from pathlib import Path
@@ -88,6 +89,14 @@ def _path_is_within(path: Path, parent: Path) -> bool:
     return True
 
 
+def _is_worktree_path(path: Path) -> bool:
+    parts = [part.casefold() for part in path.resolve(strict=False).parts]
+    return any(
+        parts[index] == ".claude" and index + 1 < len(parts) and parts[index + 1] == "worktrees"
+        for index in range(len(parts))
+    )
+
+
 def _is_temporary_path(path: Path) -> bool:
     temporary_root = Path(tempfile.gettempdir()).resolve(strict=False)
     return _path_is_within(path.resolve(strict=False), temporary_root)
@@ -115,21 +124,85 @@ def validate_runtime_root(path: Path) -> Path:
     return root
 
 
-def _find_lq_mcp(command_path: Path | None = None) -> Path:
-    candidate = command_path
-    if candidate is None:
-        executable = shutil.which("lq-mcp")
-        candidate = Path(executable) if executable is not None else None
-    if candidate is None:
+def _install_runtime_lq_mcp(runtime_root: Path) -> Path:
+    uv = shutil.which("uv")
+    if uv is None:
         raise LabQuorumError(
             ErrorCode.INVALID_ARGUMENT,
-            "Could not find lq-mcp on PATH. Install LabQuorum with uv and retry setup.",
+            "Could not find uv to install the stable runtime lq-mcp executable.",
         )
+    repository_root = Path(__file__).resolve().parents[2]
+    environment = os.environ.copy()
+    environment["UV_PROJECT_ENVIRONMENT"] = str(runtime_root / "venv")
+    environment["UV_OFFLINE"] = "1"
+    try:
+        subprocess.run(
+            [
+                uv,
+                "sync",
+                "--locked",
+                "--offline",
+                "--no-dev",
+                "--no-editable",
+                "--project",
+                str(repository_root),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=300,
+            env=environment,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        detail = getattr(exc, "stderr", None) or str(exc)
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"Could not install the runtime lq-mcp executable with the locked dependencies: {detail}",
+        ) from exc
+    scripts_dir = "Scripts" if os.name == "nt" else "bin"
+    executable_name = "lq-mcp.exe" if os.name == "nt" else "lq-mcp"
+    return runtime_root / "venv" / scripts_dir / executable_name
+
+
+def _find_lq_mcp(
+    command_path: Path | None = None,
+    *,
+    runtime_root: Path | None = None,
+) -> Path:
+    candidate = command_path
+    if candidate is None:
+        if runtime_root is None:
+            executable = shutil.which("lq-mcp")
+            candidate = Path(executable) if executable is not None else None
+        else:
+            candidate = _install_runtime_lq_mcp(runtime_root)
+    if candidate is None:
+        raise LabQuorumError(ErrorCode.INVALID_ARGUMENT, "Could not locate lq-mcp.")
     resolved = candidate.expanduser().resolve(strict=False)
     if not resolved.is_absolute() or not resolved.is_file():
         raise LabQuorumError(
             ErrorCode.INVALID_ARGUMENT,
             f"lq-mcp executable does not resolve to an absolute file: {resolved}",
+            {"path": str(resolved)},
+        )
+    if resolved.name.casefold() not in {"lq-mcp", "lq-mcp.exe"}:
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"MCP command must be the lq-mcp executable: {resolved}",
+            {"path": str(resolved)},
+        )
+    if _is_worktree_path(resolved):
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"lq-mcp executable cannot be inside a .claude/worktrees path: {resolved}",
+            {"path": str(resolved)},
+        )
+    if onedrive_warning(resolved) is not None:
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"lq-mcp executable cannot be under OneDrive: {resolved}",
             {"path": str(resolved)},
         )
     return resolved
@@ -170,6 +243,7 @@ def _render_server_config(command: Path, arguments: list[str]) -> str:
         "[mcp_servers.labquorum]\n"
         f"command = {_toml_string(str(command))}\n"
         f"args = {_toml_array(arguments)}\n\n"
+        'default_tools_approval_mode = "approve"\n\n'
         "[mcp_servers.labquorum.tools.commit_booking]\n"
         'approval_mode = "prompt"\n'
     )
@@ -186,6 +260,8 @@ def render_source_home_config(
         'web_search = "disabled"\n\n'
         "[features]\n"
         "shell_tool = false\n\n"
+        "[sandbox_workspace_write]\n"
+        "network_access = false\n\n"
         + _render_server_config(command, _source_arguments(runtime_root, ledger_path))
     )
 
@@ -201,6 +277,8 @@ def render_agent_config(
         'web_search = "disabled"\n\n'
         "[features]\n"
         "shell_tool = false\n\n"
+        "[sandbox_workspace_write]\n"
+        "network_access = false\n\n"
         + _render_server_config(
             command,
             _agent_arguments(profile, runtime_root, ledger_path),
@@ -400,8 +478,6 @@ def lint_template_data(document: Any, text: str = "") -> list[str]:  # noqa: PLR
         "can_manage_agents",
         "instructions",
         "connections",
-        "isolation",
-        "join",
     }
     found_agents: dict[str, dict[str, Any]] = {}
     for entry in agents:
@@ -440,6 +516,10 @@ def lint_template_data(document: Any, text: str = "") -> list[str]:  # noqa: PLR
             issues.append(f"{name}: auto_mode must be false")
         if agent.get("auto_approve") is not False:
             issues.append(f"{name}: auto_approve must be false")
+        if agent.get("can_manage_agents") is not False:
+            issues.append(f"{name}: can_manage_agents must be false")
+        if "connections" in agent and agent.get("connections") != []:
+            issues.append(f"{name}: connections must be empty")
         instructions = agent.get("instructions")
         if not isinstance(instructions, str) or not instructions.strip():
             issues.append(f"{name}: instructions must be non-empty text")
@@ -567,7 +647,7 @@ def _set_root_value(text: str, key: str, value: str) -> str:
 
 def _set_feature(text: str) -> str:
     try:
-        document = tomllib.loads(text) if text.strip() else {}
+        document = cast(dict[str, object], tomllib.loads(text) if text.strip() else {})
     except tomllib.TOMLDecodeError as exc:
         raise LabQuorumError(
             ErrorCode.INVALID_ARGUMENT,
@@ -608,6 +688,50 @@ def _set_feature(text: str) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _set_workspace_network_access(text: str) -> str:
+    try:
+        document = tomllib.loads(text) if text.strip() else {}
+    except tomllib.TOMLDecodeError as exc:
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"Codex config is invalid TOML: {exc}",
+        ) from exc
+    sandbox = document.get("sandbox_workspace_write")
+    sandbox_table = cast(dict[str, object], sandbox) if isinstance(sandbox, dict) else None
+    if sandbox_table is not None and sandbox_table.get("network_access") is False:
+        return text
+    lines = text.splitlines()
+    table_index = next(
+        (
+            index
+            for index, line in enumerate(lines)
+            if re.fullmatch(r"\s*\[sandbox_workspace_write\]\s*(?:#.*)?", line)
+        ),
+        None,
+    )
+    if table_index is None:
+        if "sandbox_workspace_write" in document:
+            raise LabQuorumError(
+                ErrorCode.INVALID_ARGUMENT,
+                "Codex sandbox_workspace_write must use a table for safe setup merging.",
+            )
+        if lines and lines[-1].strip():
+            lines.append("")
+        lines.extend(["[sandbox_workspace_write]", "network_access = false"])
+        return "\n".join(lines) + "\n"
+    end_index = next(
+        (index for index in range(table_index + 1, len(lines)) if re.match(r"\s*\[", lines[index])),
+        len(lines),
+    )
+    setting_pattern = re.compile(r"^\s*network_access\s*=")
+    for index in range(table_index + 1, end_index):
+        if setting_pattern.match(lines[index]):
+            lines[index] = "network_access = false"
+            return "\n".join(lines) + "\n"
+    lines.insert(end_index, "network_access = false")
+    return "\n".join(lines) + "\n"
+
+
 def install_source_home_config(config_path: Path, source_config: str) -> None:
     """Install a managed source-home entry while preserving unrelated TOML."""
     config_path = config_path.expanduser().resolve(strict=False)
@@ -639,6 +763,7 @@ def install_source_home_config(config_path: Path, source_config: str) -> None:
     merged = _set_root_value(base, "sandbox_mode", "read-only")
     merged = _set_root_value(merged, "web_search", "disabled")
     merged = _set_feature(merged)
+    merged = _set_workspace_network_access(merged)
     if should_append_server:
         fragment_lines = source_config.splitlines()
         fragment = "\n".join(
@@ -647,6 +772,7 @@ def install_source_home_config(config_path: Path, source_config: str) -> None:
             if not line.startswith("sandbox_mode =")
             and not line.startswith("web_search =")
             and line not in {"[features]", "shell_tool = false"}
+            and line not in {"[sandbox_workspace_write]", "network_access = false"}
         )
         if merged and not merged.endswith("\n"):
             merged += "\n"
@@ -671,6 +797,118 @@ def install_source_home_config(config_path: Path, source_config: str) -> None:
         config_path.chmod(0o600)
 
 
+def _copy_codex_auth_once(source_home: Path, runtime_home: Path) -> None:
+    source_auth = source_home / "auth.json"
+    runtime_auth = runtime_home / "auth.json"
+    if runtime_auth.exists() or source_auth.resolve(strict=False) == runtime_auth.resolve(
+        strict=False
+    ):
+        return
+    if not source_auth.is_file():
+        return
+    runtime_home.mkdir(parents=True, exist_ok=True)
+    try:
+        with source_auth.open("rb") as source, runtime_auth.open("xb") as destination:
+            shutil.copyfileobj(source, destination)
+    except FileExistsError:
+        return
+    except OSError as exc:
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"Could not copy Codex authentication into the runtime home: {exc}",
+        ) from exc
+    if os.name != "nt":
+        runtime_auth.chmod(0o600)
+
+
+def _current_windows_user_sid() -> str:
+    whoami = shutil.which("whoami.exe") or shutil.which("whoami")
+    if whoami is None:
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT, "Could not resolve the current Windows SID."
+        )
+    try:
+        result = subprocess.run(
+            [whoami, "/user", "/fo", "csv", "/nh"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=5,
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        raise LabQuorumError(
+            ErrorCode.INVALID_ARGUMENT,
+            f"Could not resolve the current Windows SID: {exc}",
+        ) from exc
+    match = re.search(r"S-1-\d+(?:-\d+)+", result.stdout)
+    if match is None:
+        raise LabQuorumError(ErrorCode.INVALID_ARGUMENT, "whoami did not report a Windows SID.")
+    return match.group(0)
+
+
+def _change_agent_directory_write_policy(  # noqa: PLR0912
+    runtime_root: Path, *, readonly: bool
+) -> None:
+    if _is_temporary_path(runtime_root):
+        return
+    agent_directories = [runtime_root / "agents" / name for name in AGENT_PROFILES]
+    if os.name == "nt":
+        icacls = shutil.which("icacls.exe") or shutil.which("icacls")
+        if icacls is None:
+            raise LabQuorumError(
+                ErrorCode.INVALID_ARGUMENT, "Could not find icacls to protect agents."
+            )
+        sid = _current_windows_user_sid()
+        for directory in agent_directories:
+            if not directory.is_dir():
+                continue
+            command = [icacls, str(directory)]
+            if readonly:
+                command.extend(["/deny", f"*{sid}:(OI)(CI)(W)"])
+            else:
+                command.extend(["/remove:d", f"*{sid}"])
+            command.extend(["/T", "/C", "/Q"])
+            try:
+                subprocess.run(
+                    command,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    timeout=20,
+                    check=True,
+                )
+            except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+                detail = getattr(exc, "stderr", None) or str(exc)
+                raise LabQuorumError(
+                    ErrorCode.INVALID_ARGUMENT,
+                    f"Could not set the agent directory write policy on {directory}: {detail}",
+                ) from exc
+        return
+
+    for directory in agent_directories:
+        if not directory.is_dir():
+            continue
+        entries = list(directory.rglob("*"))
+        if readonly:
+            entries.sort(key=lambda item: item.is_dir(), reverse=True)
+        else:
+            entries.sort(key=lambda item: not item.is_dir())
+        for entry in entries:
+            if entry.is_symlink():
+                continue
+            mode = entry.stat().st_mode
+            if entry.is_dir():
+                next_mode = mode & ~0o222 if readonly else mode | 0o700
+            else:
+                next_mode = mode & ~0o222 if readonly else mode | 0o600
+            entry.chmod(next_mode)
+        mode = directory.stat().st_mode
+        directory.chmod(mode & ~0o222 if readonly else mode | 0o700)
+
+
 def setup_runtime(
     runtime_root: Path,
     *,
@@ -679,7 +917,7 @@ def setup_runtime(
     install_codex_config: bool | None = None,
 ) -> dict[str, Any]:
     root = validate_runtime_root(runtime_root)
-    executable = _find_lq_mcp(command_path)
+    executable = _find_lq_mcp(command_path, runtime_root=root)
     ledger_path = (root / "ledger.sqlite").resolve(strict=False)
     template = _template(root)
     template_text = yaml.safe_dump(template, allow_unicode=True, sort_keys=False)
@@ -690,12 +928,15 @@ def setup_runtime(
             "Generated Switch template failed lint: " + "; ".join(template_issues),
         )
 
-    if install_codex_config is None:
-        install_codex_config = not _is_temporary_path(root)
-    selected_codex_home = (codex_home or default_codex_home()).expanduser().resolve(strict=False)
+    # These arguments remain accepted for callers from earlier P3 builds. The
+    # setup command must never read or write a user's Codex config file.
+    del install_codex_config
+    runtime_codex_home = (root / "codex-home").resolve(strict=False)
+    source_codex_home = (codex_home or default_codex_home()).expanduser().resolve(strict=False)
+    _change_agent_directory_write_policy(root, readonly=False)
     source_config = render_source_home_config(executable, root, ledger_path)
-    if install_codex_config:
-        install_source_home_config(selected_codex_home / "config.toml", source_config)
+    _copy_codex_auth_once(source_codex_home, runtime_codex_home)
+    install_source_home_config(runtime_codex_home / "config.toml", source_config)
 
     for agent_name, profile in AGENT_PROFILES.items():
         agent_dir = root / "agents" / agent_name
@@ -709,6 +950,8 @@ def setup_runtime(
                 f"Generated {agent_name} Codex config is invalid TOML: {exc}",
             ) from exc
         _write_text(agent_dir / ".codex" / "config.toml", agent_config)
+
+    _change_agent_directory_write_policy(root, readonly=True)
 
     template_path = root / TEMPLATE_RELATIVE_PATH
     _write_text(template_path, template_text)
@@ -724,8 +967,9 @@ def setup_runtime(
         "labquorum_version": __version__,
         "binding_mode": "off",
         "certification_evidence": None,
-        "source_home_config": str(selected_codex_home / "config.toml"),
-        "source_home_registered": install_codex_config,
+        "codex_home": str(runtime_codex_home),
+        "source_home_config": str(runtime_codex_home / "config.toml"),
+        "source_home_registered": True,
     }
     _write_text(
         root / RUNTIME_MANIFEST_NAME,
@@ -761,6 +1005,13 @@ def _config_registration_issue(  # noqa: PLR0911, PLR0912
         return f"{config_path} command does not launch lq-mcp"
     if not Path(command).is_file():
         return f"{config_path} command file does not exist: {command}"
+    resolved_command = Path(command).resolve(strict=False)
+    if _is_worktree_path(resolved_command):
+        return (
+            f"{config_path} lq-mcp command is inside a .claude/worktrees path: {resolved_command}"
+        )
+    if onedrive_warning(resolved_command) is not None:
+        return f"{config_path} lq-mcp command is under OneDrive: {resolved_command}"
     if not isinstance(arguments, list) or not all(
         isinstance(item, str) for item in cast(list[Any], arguments)
     ):
@@ -795,8 +1046,8 @@ def _config_registration_issue(  # noqa: PLR0911, PLR0912
     commit = cast(dict[str, Any], commit_value) if isinstance(commit_value, dict) else None
     if not isinstance(commit, dict) or commit.get("approval_mode") != "prompt":
         return f"{config_path} must set commit_booking approval_mode to prompt"
-    if "default_tools_approval_mode" in registration:
-        return f"{config_path} must not set a server-wide approval mode"
+    if registration.get("default_tools_approval_mode") != "approve":
+        return f"{config_path} must approve non-commit labquorum tools by default"
     if config.get("sandbox_mode") != "read-only":
         return f"{config_path} sandbox_mode must be read-only"
     if config.get("web_search") != "disabled":
@@ -807,6 +1058,12 @@ def _config_registration_issue(  # noqa: PLR0911, PLR0912
         or cast(dict[str, Any], features).get("shell_tool") is not False
     ):
         return f"{config_path} features.shell_tool must be false"
+    workspace_sandbox = config.get("sandbox_workspace_write")
+    if (
+        not isinstance(workspace_sandbox, dict)
+        or cast(dict[str, Any], workspace_sandbox).get("network_access") is not False
+    ):
+        return f"{config_path} sandbox_workspace_write.network_access must be false"
     return None
 
 
@@ -829,6 +1086,30 @@ def runtime_doctor_findings(  # noqa: PLR0912, PLR0915
         add("RUNTIME_ROOT_MISSING", "error", f"Runtime root does not exist: {root}")
         return findings
     add("RUNTIME_ROOT_SAFE", "info", f"Runtime root is safe: {root}")
+    runtime_codex_home = (root / "codex-home").resolve(strict=False)
+    add(
+        "RUNTIME_CODEX_HOME",
+        "info",
+        f"LabQuorum agents use Codex home {runtime_codex_home}; launch Switch Console with this CODEX_HOME.",
+    )
+    global_codex_config = Path.home() / ".codex" / "config.toml"
+    try:
+        global_config_text = global_codex_config.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        pass
+    except OSError as exc:
+        add(
+            "RUNTIME_GLOBAL_CODEX_HOME_UNREADABLE",
+            "error",
+            f"Could not check the user Codex config at {global_codex_config}: {exc}",
+        )
+    else:
+        if _BEGIN_MANAGED_CONFIG in global_config_text or _END_MANAGED_CONFIG in global_config_text:
+            add(
+                "RUNTIME_GLOBAL_CODEX_HOME_POLLUTED",
+                "error",
+                f"Remove the LabQuorum managed block from the user Codex config at {global_codex_config}.",
+            )
     manifest_path = root / RUNTIME_MANIFEST_NAME
     try:
         manifest_value: Any = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -846,6 +1127,12 @@ def runtime_doctor_findings(  # noqa: PLR0912, PLR0915
             "RUNTIME_ROOT_MISMATCH",
             "error",
             "Runtime manifest root does not match the requested root",
+        )
+    if manifest.get("codex_home") != str(runtime_codex_home):
+        add(
+            "RUNTIME_CODEX_HOME_MISMATCH",
+            "error",
+            "Runtime manifest Codex home does not match setup",
         )
     ledger_path = (root / "ledger.sqlite").resolve(strict=False)
     if manifest.get("ledger_path") != str(ledger_path):
@@ -886,6 +1173,25 @@ def runtime_doctor_findings(  # noqa: PLR0912, PLR0915
         ):
             add("RUNTIME_AGENT_MISSING", "error", f"{agent_name} folder or AGENTS.md is missing")
             continue
+        if not _is_temporary_path(root):
+            if os.access(agent_dir, os.W_OK):
+                add(
+                    "RUNTIME_AGENT_WRITABLE",
+                    "error",
+                    f"{agent_name} agent directory is writable by the current user: {agent_dir}",
+                )
+            else:
+                add(
+                    "RUNTIME_AGENT_READONLY",
+                    "info",
+                    f"{agent_name} agent directory denies writes to the current user.",
+                )
+        else:
+            add(
+                "RUNTIME_AGENT_TEST_ROOT",
+                "warning",
+                f"{agent_name} uses a temporary test runtime without OS write protection.",
+            )
         config_path = agent_dir / ".codex" / "config.toml"
         issue = _config_registration_issue(config_path, profile, root, ledger_path)
         if issue is not None:
@@ -915,8 +1221,13 @@ def runtime_doctor_findings(  # noqa: PLR0912, PLR0915
     if source_issue is not None:
         add("RUNTIME_SOURCE_CONFIG_INVALID", "error", source_issue)
     elif manifest.get("source_home_registered") is True:
-        selected_home = codex_home or default_codex_home()
-        installed_path = selected_home / "config.toml"
+        installed_path = runtime_codex_home / "config.toml"
+        if manifest.get("source_home_config") != str(installed_path):
+            add(
+                "RUNTIME_SOURCE_CONFIG_INVALID",
+                "error",
+                "Runtime manifest source-home config must be under runtime-root/codex-home.",
+            )
         installed_issue = _config_registration_issue(installed_path, None, root, ledger_path)
         if installed_issue is not None:
             add("RUNTIME_SOURCE_CONFIG_INVALID", "error", installed_issue)
@@ -929,7 +1240,7 @@ def runtime_doctor_findings(  # noqa: PLR0912, PLR0915
     else:
         add(
             "RUNTIME_SOURCE_CONFIG_FRAGMENT",
-            "info",
-            f"Codex source-home registration is ready to merge from {source_path}",
+            "error",
+            f"Codex source-home registration is not installed at {runtime_codex_home / 'config.toml'}",
         )
     return findings

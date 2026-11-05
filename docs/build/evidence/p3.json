@@ -1,15 +1,18 @@
 {
-  "red_commit": "f3cf6c9707b27ec6da9e57ef869fbe1ad73f7275",
+  "red_commit": "d45bff5",
   "red_tests": [
     "tests/unit/test_p3_setup.py::test_C_04_setup_sets_prompt_for_commit_booking_only",
-    "tests/unit/test_p3_setup.py::test_C_05_per_agent_configs_expose_only_their_booking_profile",
-    "tests/unit/test_p3_setup.py::test_C_06_home_registration_is_cwd_scoped_and_restricts_codex_tools",
-    "tests/unit/test_p3_setup.py::test_C_07_template_lint_enforces_provider_model_effort_and_addressing",
-    "tests/unit/test_p3_setup.py::test_C_08_template_lint_rejects_bad_names_mentions_and_em_dash",
-    "tests/unit/test_p3_setup.py::test_C_09_setup_writes_absolute_codex_mcp_profiles_without_duplicate_flags",
-    "tests/unit/test_p3_setup.py::test_C_11_doctor_rejects_invalid_runtime_configuration",
-    "tests/unit/test_p3_setup.py::test_C_12_binding_fails_closed_and_limits_distinct_commits",
-    "tests/unit/test_p3_setup.py::test_I_13_doctor_reports_and_validates_effective_binding_state"
+    "tests/unit/test_p3_auditfix.py::test_C_04_setup_uses_runtime_codex_home_without_reading_user_config",
+    "tests/unit/test_p3_auditfix.py::test_C_04_setup_assigns_approve_to_non_commit_tools_and_prompt_to_commit",
+    "tests/unit/test_p3_auditfix.py::test_C_05_setup_rejects_mcp_executable_inside_a_worktree",
+    "tests/unit/test_p3_auditfix.py::test_C_11_doctor_reports_runtime_codex_home_and_rejects_global_managed_block",
+    "tests/unit/test_p3_auditfix.py::test_C_11_doctor_rejects_an_mcp_command_inside_a_worktree",
+    "tests/unit/test_p3_auditfix.py::test_C_07_template_lint_rejects_agent_management_and_extra_connections",
+    "tests/unit/test_p3_auditfix.py::test_C_12_binding_on_rejects_fabricated_tuple_even_if_it_matches_installed_values",
+    "tests/unit/test_p3_auditfix.py::test_C_12_certify_mode_rejects_a_ledger_because_its_folder_is_named_certify",
+    "tests/unit/test_p3_auditfix.py::test_C_12_commit_limiter_persists_one_distinct_commit_across_instances",
+    "tests/unit/test_p3_auditfix.py::test_C_12_certify_server_binds_limiter_to_codex_home",
+    "tests/unit/test_p3_auditfix.py::test_C_06_launch_console_script_sets_runtime_home_and_waits_for_cdp"
   ],
   "live": {
     "status": "smoke_passed",

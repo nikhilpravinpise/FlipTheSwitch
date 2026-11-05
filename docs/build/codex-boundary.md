@@ -4,6 +4,12 @@
 
 Evidence below refers to the pinned Switch root `C:/Users/Nikhil/.claude/jobs/85ca08fa/tmp/ref/switch-v0.40.1/`; `S:` prefixes paths under it. Documentation describes current Codex, not proof of CLI 0.166.0 behavior; all runtime conclusions need the stated installed-version tests.
 
+## P3 audit fix status
+
+Setup now stores Codex configuration under `<runtime-root>/codex-home`, keeps the user's global config untouched, installs a stable `lq-mcp` executable under the runtime root, and sets workspace network access, web search, and the shell tool off. Switch still changes the effective sandbox to `workspace-write`, so setup and the Console launcher apply an OS write deny to the two agent folders and verify that a write fails. `lq doctor` reports the runtime Codex home, rejects a managed block in `~/.codex/config.toml`, and rejects worktree MCP executables.
+
+Binding `on` is disabled until a trusted P4 certificate verifier and complete P4 record exist. The persistent one-commit reservation is scoped to the managed Codex session home for a future certified mode. The host-injected `switch` MCP registration remains separate: its complete tool inventory and an effective minimal allowlist are still UNVERIFIED, so do not enable its control-plane mutators based on source-home configuration.
+
 ## Launch and configuration
 
 - Switch spawns `codex app-server`, feature arguments, mode `-c` overrides, then MCP `-c` overrides, with `cwd=input.cwd` and supplied environment. Thread start/resume gets that cwd, configured sandbox if found, reviewer and optional policy; turn start sends model and effort. [S:console/packages/agent-providers/src/codex/codex-adapter.ts:354-370,401-409,453-473]

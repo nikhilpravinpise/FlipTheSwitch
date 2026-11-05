@@ -21,8 +21,8 @@ from labquorum.domain.errors import ErrorCode, LabQuorumError
 from labquorum.mcp.profiles import Profile
 
 _AGENT_PROFILES = {"labops": Profile.PROPOSER, "pi-desk": Profile.APPROVER}
-_MARKER_TABLE = "labquorum_test_marker"
-_MARKER_VALUE = "p3-certify-only"
+_TEST_LEDGER_NAME = "p3-test-ledger.sqlite"
+_TEST_RUNTIME_PREFIX = "labquorum-p3-"
 
 
 def _within(path: Path, parent: Path) -> bool:
@@ -65,28 +65,29 @@ def resolve_runtime_profile(
 
 def _is_test_ledger(database_path: Path) -> bool:
     path = database_path.expanduser().resolve(strict=False)
-    if "certify" in {part.casefold() for part in path.parts}:
-        return True
     temp_root = Path(tempfile.gettempdir()).resolve(strict=False)
-    if path.name.casefold() == "p3-test-ledger.sqlite" and _within(path, temp_root):
-        return True
-    if not path.is_file():
+    if (
+        not _within(path, temp_root)
+        or path.name.casefold() != _TEST_LEDGER_NAME
+        or not path.parent.name.casefold().startswith(_TEST_RUNTIME_PREFIX)
+        or "certify" in {part.casefold() for part in path.parts}
+    ):
         return False
     try:
-        with sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True) as connection:
-            table = connection.execute(
-                "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
-                (_MARKER_TABLE,),
-            ).fetchone()
-            if table is None:
-                return False
-            row = connection.execute(
-                f"SELECT 1 FROM {_MARKER_TABLE} WHERE marker = ? LIMIT 1",
-                (_MARKER_VALUE,),
-            ).fetchone()
-            return row is not None
-    except sqlite3.Error:
+        manifest_value = json.loads((path.parent / "runtime.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
         return False
+    if not isinstance(manifest_value, dict):
+        return False
+    manifest = cast(dict[str, object], manifest_value)
+    return (
+        manifest.get("schema_version") == 1
+        and manifest.get("runtime_root") == str(path.parent)
+        and manifest.get("ledger_path") == str(path.parent / "ledger.sqlite")
+        and manifest.get("binding_mode") == "off"
+        and path != path.parent / "ledger.sqlite"
+        and path.is_file()
+    )
 
 
 def installed_certification_tuple(runtime_root: Path) -> dict[str, str]:
@@ -139,7 +140,7 @@ def installed_certification_tuple(runtime_root: Path) -> dict[str, str]:
     }
 
 
-def validate_binding_request(  # noqa: PLR0912, PLR0913, PLR0917
+def validate_binding_request(  # noqa: PLR0913, PLR0917
     binding: str,
     profile: Profile,
     database_path: Path,
@@ -158,71 +159,35 @@ def validate_binding_request(  # noqa: PLR0912, PLR0913, PLR0917
             "Only the approver profile can expose commit_booking.",
         )
     if binding == "certify":
-        if not _is_test_ledger(database_path):
+        resolved_database = database_path.expanduser().resolve(strict=False)
+        resolved_root = runtime_root.expanduser().resolve(strict=False) if runtime_root else None
+        if not _is_test_ledger(resolved_database) or (
+            resolved_root is not None and resolved_database == resolved_root / "ledger.sqlite"
+        ):
             raise LabQuorumError(
                 ErrorCode.BINDING_CERTIFICATION_REQUIRED,
-                "Certify mode requires a marker ledger or a ledger under a certify directory.",
+                "Certify mode requires the disposable P3 gate ledger under its temporary runtime root.",
             )
         return
-    if runtime_root is None or certification_evidence is None:
-        raise LabQuorumError(
-            ErrorCode.BINDING_CERTIFICATION_REQUIRED,
-            "Binding on requires runtime-root and a certification evidence file.",
-        )
-    expected_root = runtime_root.expanduser().resolve(strict=False)
-    expected_database = (expected_root / "ledger.sqlite").resolve(strict=False)
-    if database_path.expanduser().resolve(strict=False) != expected_database:
-        raise LabQuorumError(
-            ErrorCode.BINDING_CERTIFICATION_REQUIRED,
-            "Binding on requires the runtime root's ledger.sqlite.",
-        )
-    profile_at_cwd = resolve_runtime_profile(None, expected_root, cwd)
-    if profile_at_cwd is not Profile.APPROVER:
-        raise LabQuorumError(
-            ErrorCode.BINDING_CERTIFICATION_REQUIRED,
-            "Binding on is available only from the pi-desk runtime folder.",
-        )
-    evidence_path = certification_evidence.expanduser().resolve(strict=False)
-    if not evidence_path.is_absolute() or not evidence_path.is_file():
-        raise LabQuorumError(
-            ErrorCode.BINDING_CERTIFICATION_REQUIRED,
-            "Binding certification evidence must be an existing absolute file.",
-        )
-    try:
-        evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise LabQuorumError(
-            ErrorCode.BINDING_CERTIFICATION_REQUIRED,
-            f"Could not read certification evidence: {exc}",
-        ) from exc
-    if not isinstance(evidence, dict):
-        raise LabQuorumError(
-            ErrorCode.BINDING_CERTIFICATION_REQUIRED,
-            "Certification evidence must contain a certified_tuple object.",
-        )
-    evidence_object = cast(dict[str, Any], evidence)
-    supplied_value = evidence_object.get("certified_tuple")
-    if not isinstance(supplied_value, dict):
-        raise LabQuorumError(
-            ErrorCode.BINDING_CERTIFICATION_REQUIRED,
-            "Certification evidence must contain a certified_tuple object.",
-        )
-    supplied = cast(dict[str, Any], supplied_value)
-    installed = installed_certification_tuple(expected_root)
-    if supplied != installed:
-        raise LabQuorumError(
-            ErrorCode.BINDING_CERTIFICATION_MISMATCH,
-            "Certification evidence tuple does not match the installed runtime tuple.",
-            {"installed": installed},
-        )
+    raise LabQuorumError(
+        ErrorCode.BINDING_CERTIFICATION_REQUIRED,
+        "Binding on is disabled until a trusted P4 certificate verifier and complete P4 record exist.",
+    )
 
 
 class BindingCommitLimiter:
-    """Allow one successful distinct commit per process and identical retries."""
+    """Allow one distinct commit per process or persistent Codex session."""
 
-    def __init__(self) -> None:
+    def __init__(self, state_path: Path | None = None) -> None:
         self._lock = RLock()
         self._successful_arguments: str | None = None
+        self._state_path = state_path
+
+    @classmethod
+    def for_session_home(cls, session_home: Path) -> BindingCommitLimiter:
+        """Bind a commit reservation to the persistent Codex session home."""
+        state_path = session_home.expanduser().resolve(strict=False) / "labquorum-commit.sqlite"
+        return cls(state_path)
 
     def wrap(
         self,
@@ -230,14 +195,10 @@ class BindingCommitLimiter:
     ) -> Callable[..., dict[str, Any]]:
         @wraps(commit)
         def guarded(**arguments: Any) -> dict[str, Any]:
-            fingerprint = json.dumps(
-                arguments,
-                ensure_ascii=False,
-                sort_keys=True,
-                separators=(",", ":"),
-                default=str,
-            )
+            fingerprint = _argument_fingerprint(arguments)
             with self._lock:
+                if self._state_path is not None:
+                    return self._guard_persistent(commit, arguments, fingerprint)
                 if (
                     self._successful_arguments is not None
                     and fingerprint != self._successful_arguments
@@ -256,3 +217,55 @@ class BindingCommitLimiter:
                 return result
 
         return guarded
+
+    def _guard_persistent(
+        self,
+        commit: Callable[..., dict[str, Any]],
+        arguments: dict[str, Any],
+        fingerprint: str,
+    ) -> dict[str, Any]:
+        assert self._state_path is not None
+        self._state_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with sqlite3.connect(self._state_path, timeout=5) as connection:
+                connection.execute("PRAGMA busy_timeout = 5000")
+                connection.execute(
+                    "CREATE TABLE IF NOT EXISTS binding_commit_guard ("
+                    "id INTEGER PRIMARY KEY CHECK (id = 1), fingerprint TEXT NOT NULL)"
+                )
+                connection.execute("BEGIN IMMEDIATE")
+                row = connection.execute(
+                    "SELECT fingerprint FROM binding_commit_guard WHERE id = 1"
+                ).fetchone()
+                if row is not None and row[0] != fingerprint:
+                    raise _commit_limit_error()
+                if row is None:
+                    connection.execute(
+                        "INSERT INTO binding_commit_guard(id, fingerprint) VALUES (1, ?)",
+                        (fingerprint,),
+                    )
+                connection.commit()
+        except sqlite3.Error as exc:
+            raise LabQuorumError(
+                ErrorCode.BINDING_CERTIFICATION_REQUIRED,
+                f"Could not persist the Codex-session commit reservation: {exc}",
+            ) from exc
+        return commit(**arguments)
+
+
+def _argument_fingerprint(arguments: dict[str, Any]) -> str:
+    return json.dumps(
+        arguments,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str,
+    )
+
+
+def _commit_limit_error() -> LabQuorumError:
+    return LabQuorumError(
+        ErrorCode.BINDING_COMMIT_LIMIT,
+        f"{ErrorCode.BINDING_COMMIT_LIMIT.value}: This Codex session has already reserved "
+        "a different booking commit.",
+    )

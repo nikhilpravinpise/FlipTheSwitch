@@ -11,7 +11,8 @@ from typing import Any, cast
 import pytest
 
 from labquorum.domain.errors import ErrorCode, LabQuorumError
-from labquorum.mcp import binding, server as mcp_server
+from labquorum.mcp import binding
+from labquorum.mcp import server as mcp_server
 from labquorum.mcp.profiles import Profile
 from labquorum.provisioning import (
     _template,

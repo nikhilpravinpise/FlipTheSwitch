@@ -476,6 +476,7 @@ def _run(args: argparse.Namespace) -> int:  # noqa: PLR0911
         if runtime_root is not None:
             resolved_root = runtime_root.expanduser().resolve(strict=False)
             report["runtime_root"] = str(resolved_root)
+            report["codex_home"] = str(resolved_root / "codex-home")
             report["findings"].extend(runtime_doctor_findings(resolved_root))
             report["ok"] = not any(item["severity"] == "error" for item in report["findings"])
         print(_json(report))
