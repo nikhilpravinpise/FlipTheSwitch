@@ -77,6 +77,23 @@ def test_I_19_restore_refuses_schema_version_mismatch_and_preserves_target(
     assert destination.read_bytes() == original_bytes
 
 
+def test_I_19_restore_refuses_overwrite_without_force(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    backup = tmp_path / "backup.sqlite"
+    destination = tmp_path / "existing.sqlite"
+    _seed_ledger(backup)
+    _seed_ledger(destination)
+    original_bytes = destination.read_bytes()
+
+    status = _run_cli(["restore", "--from", str(backup), "--db", str(destination)])
+
+    assert status != 0
+    assert ErrorCode.INVALID_ARGUMENT.value in capsys.readouterr().err
+    assert destination.read_bytes() == original_bytes
+
+
 def test_I_19_restore_refuses_corrupt_file_and_preserves_target(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
