@@ -264,7 +264,7 @@ def test_E2E_02_proposal_only_writes_honest_end_card_and_edit_list(
     edit_list = (tmp_path / "shots.md").read_text(encoding="utf-8")
 
     assert result["mode"] == "proposal-only"
-    assert result["end_card"] == "Proposal only - pending; not committed"
+    assert result["end_card"] == "Proposal only - not booked"
     assert not clicks
     assert "wait_for_approval_card" not in pi.calls
     assert ledger.state == "proposal"
@@ -272,7 +272,7 @@ def test_E2E_02_proposal_only_writes_honest_end_card_and_edit_list(
     assert timing["sequence_elapsed_seconds"] < 180
     assert timing["steps"]
     assert timing["shots"]
-    assert "Proposal only - pending; not committed" in edit_list
+    assert "Proposal only - not booked" in edit_list
     assert "under 3:00" in edit_list
     assert student_page.overlays[-1]["end_card"] == result["end_card"]
     assert pi_page.overlays[-1]["end_card"] == result["end_card"]
