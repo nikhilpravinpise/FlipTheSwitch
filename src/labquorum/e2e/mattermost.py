@@ -149,6 +149,13 @@ class MattermostClient:
         ]
         return sorted(parsed, key=lambda post: post.create_at)
 
+    def get_post(self, post_id: str) -> MattermostPost:
+        """Fetch one post by ID using the caller's channel read permission."""
+        if not post_id:
+            raise ValueError("Mattermost post ID is required.")
+        response = self._request("GET", f"/posts/{post_id}")
+        return self._parse_post(self._json_object(response))
+
     def username_for(self, user_id: str) -> str:
         """Resolve a post author with the Mattermost user lookup endpoint."""
         return self._username_for(user_id)
@@ -230,17 +237,15 @@ class MattermostClient:
         """Return the updated card text and actor once Switch names its settler."""
         deadline = time.monotonic() + timeout
         while True:
-            posts = self.get_channel_posts(card.channel_id, include_deleted=True)
-            updated = next((post for post in posts if post.post_id == card.post_id), None)
-            if updated is not None:
-                message = post_text(updated)
-                actor = settled_by(message)
-                if actor is not None:
-                    if actor != expected_settler.casefold():
-                        raise MattermostError(
-                            f"Approval card was settled by {actor}, expected {expected_settler}."
-                        )
-                    return message, actor
+            updated = self.get_post(card.post_id)
+            message = post_text(updated)
+            actor = settled_by(message)
+            if actor is not None:
+                if actor != expected_settler.casefold():
+                    raise MattermostError(
+                        f"Approval card was settled by {actor}, expected {expected_settler}."
+                    )
+                return message, actor
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise ReplyTimeout(f"Approval card was not shown as settled by {expected_settler}.")
