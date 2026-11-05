@@ -9,3 +9,4 @@
 - The repeated-call error probe must come from the thread started by the second proposal. The test includes an unrelated thread with `COMMIT_LIMIT_REACHED` and requires it not to satisfy E2E-11.
 - Pinned Mattermost cards do not expose a verified Console session ID. The test now requires card discovery to omit private post props from its typed card object; E2E-11 records its operator-confirmed Console ID separately.
 - I-41 now has a runner test with a real revision-one hash in the audit history and a bogus stale hash. The current runner reaches the Mattermost post instead of rejecting the unaudited hash before sending it.
+- The approval flow test now requires card polling to stay on the thread started by the proposal. The current runner searches the entire channel and can select an unrelated card before the canonical field check.

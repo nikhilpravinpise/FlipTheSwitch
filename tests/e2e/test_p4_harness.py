@@ -427,6 +427,49 @@ def test_E2E_04_pi_approval_matches_card_and_commits_once(tmp_path: Path) -> Non
     assert_approval(snapshot, "AR-0042", card_text, "prof-rao")
 
 
+def test_E2E_04_open_card_wait_uses_the_proposal_thread(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ledger = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite"))
+    request = ledger.snapshot().requests[0]
+    prompt = MattermostPost("prompt-1", "channel-1", "maya-id", "proposal", 1000)
+    attempt = SimpleNamespace(
+        prompt_post=prompt,
+        request_id=request.request_id,
+        after_reply=ledger.snapshot(),
+    )
+    card = ApprovalCard(
+        "A7",
+        "card-1",
+        "channel-1",
+        "switch-bot",
+        _card_text(request),
+        options=((1, "Allow once"), (2, "Decline")),
+    )
+
+    class StubPersona:
+        root_id: str | None = None
+
+        def wait_for_approval_card(self, channel_id: str, **kwargs: Any) -> ApprovalCard:
+            assert channel_id == "channel-1"
+            self.root_id = kwargs.get("root_id")
+            return card
+
+    persona = StubPersona()
+    runner = ScenarioRunner(
+        personas=cast(Any, {"maya": persona, "prof-rao": persona}),
+        ledger=ledger,
+        channel_id="channel-1",
+        evidence_dir=tmp_path / "evidence",
+    )
+    monkeypatch.setattr(runner, "_begin_proposal", lambda _: attempt)
+
+    runner._open_card("proposal", "allow")
+
+    assert persona.root_id == prompt.post_id
+
+
 def test_E2E_04_card_rejects_duplicate_canonical_field(tmp_path: Path) -> None:
     snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
     request = snapshot.requests[0]
