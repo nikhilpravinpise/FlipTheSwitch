@@ -12,6 +12,7 @@ import tempfile
 import tomllib
 from pathlib import Path
 from typing import Any, cast
+from uuid import uuid4
 
 import yaml
 
@@ -30,8 +31,7 @@ TEMPLATE_RELATIVE_PATH = Path("switch") / "labquorum.template.yaml"
 SOURCE_CONFIG_RELATIVE_PATH = Path("codex") / "source-home-config.toml"
 _BEGIN_MANAGED_CONFIG = "# BEGIN LabQuorum managed config"
 _END_MANAGED_CONFIG = "# END LabQuorum managed config"
-_TEST_MARKER_TABLE = "labquorum_test_marker"
-_TEST_MARKER_VALUE = "p3-certify-only"
+_WINDOWS_AGENT_WRITE_DENY_RIGHTS = "WD,AD,WEA,WA,DE,DC,WDAC,WO"
 
 _SHARED_INSTRUCTIONS = """## Shared rules
 
@@ -848,6 +848,11 @@ def _current_windows_user_sid() -> str:
     return match.group(0)
 
 
+def _windows_agent_write_deny_entry(sid: str) -> str:
+    """Deny mutation rights without denying SYNCHRONIZE needed by file reads."""
+    return f"*{sid}:(OI)(CI)({_WINDOWS_AGENT_WRITE_DENY_RIGHTS})"
+
+
 def _change_agent_directory_write_policy(  # noqa: PLR0912
     runtime_root: Path, *, readonly: bool
 ) -> None:
@@ -866,7 +871,8 @@ def _change_agent_directory_write_policy(  # noqa: PLR0912
                 continue
             command = [icacls, str(directory)]
             if readonly:
-                command.extend(["/deny", f"*{sid}:(OI)(CI)(W)"])
+                # Generic W includes SYNCHRONIZE in icacls and can block read access.
+                command.extend(["/deny", _windows_agent_write_deny_entry(sid)])
             else:
                 command.extend(["/remove:d", f"*{sid}"])
             command.extend(["/T", "/C", "/Q"])
@@ -907,6 +913,23 @@ def _change_agent_directory_write_policy(  # noqa: PLR0912
             entry.chmod(next_mode)
         mode = directory.stat().st_mode
         directory.chmod(mode & ~0o222 if readonly else mode | 0o700)
+
+
+def _agent_directory_write_issue(directory: Path) -> str | None:
+    """Return an error when a directory accepts a file-creation probe."""
+    probe_path = directory / f".lq-write-probe-{uuid4().hex}"
+    try:
+        with probe_path.open("xb") as probe_file:
+            probe_file.write(b"probe")
+    except PermissionError:
+        return None
+    except OSError as exc:
+        return f"write protection could not be verified: {exc}"
+    try:
+        probe_path.unlink()
+    except OSError as exc:
+        return f"is writable, but the write-probe file could not be removed: {exc}"
+    return "is writable by the current user"
 
 
 def setup_runtime(
@@ -1174,11 +1197,12 @@ def runtime_doctor_findings(  # noqa: PLR0912, PLR0915
             add("RUNTIME_AGENT_MISSING", "error", f"{agent_name} folder or AGENTS.md is missing")
             continue
         if not _is_temporary_path(root):
-            if os.access(agent_dir, os.W_OK):
+            write_issue = _agent_directory_write_issue(agent_dir)
+            if write_issue is not None:
                 add(
                     "RUNTIME_AGENT_WRITABLE",
                     "error",
-                    f"{agent_name} agent directory is writable by the current user: {agent_dir}",
+                    f"{agent_name} agent directory {write_issue}: {agent_dir}",
                 )
             else:
                 add(

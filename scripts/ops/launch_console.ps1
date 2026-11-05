@@ -31,7 +31,7 @@ foreach ($agentName in @("labops", "pi-desk")) {
     if (-not (Test-Path -LiteralPath $agentDirectory -PathType Container)) {
         throw "Missing LabQuorum agent directory: $agentDirectory"
     }
-    $denyEntry = "*$($sidMatch.Value):(OI)(CI)(W)"
+    $denyEntry = "*$($sidMatch.Value):(OI)(CI)(WD,AD,WEA,WA,DE,DC,WDAC,WO)"
     $null = & $icacls.Source $agentDirectory /deny $denyEntry /T /C /Q
     if ($LASTEXITCODE -ne 0) {
         throw "Could not apply the read-only agent directory policy to $agentDirectory"
@@ -88,7 +88,7 @@ if (-not (Test-Path -LiteralPath $console -PathType Leaf)) {
 
 $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
 $startInfo.FileName = $console
-$startInfo.WorkingDirectory = Split-Path -LiteralPath $console -Parent
+$startInfo.WorkingDirectory = [System.IO.Path]::GetDirectoryName($console)
 $startInfo.UseShellExecute = $false
 $startInfo.ArgumentList.Add("--remote-debugging-port=9333")
 $started = [System.Diagnostics.Process]::Start($startInfo)
