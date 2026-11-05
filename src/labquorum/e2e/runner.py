@@ -716,9 +716,12 @@ class ScenarioRunner:
                 after_ms=sent.create_at,
                 timeout=self.timeout,
                 poll_interval=self.poll_interval,
-                root_id=sent.post_id,
             ),
         )
+        if re.search(r"@(?:[a-z0-9-]+-)?pi-desk\b", reply.message, re.IGNORECASE) is None:
+            raise ScenarioAssertionError(
+                "LabOps response did not hand off the request to @pi-desk."
+            )
         after = self._timed_step("ledger.snapshot_after_reply", self.ledger.snapshot)
         request_id = self._request_id(reply.message, after, before)
         if after.request(request_id) is None:
