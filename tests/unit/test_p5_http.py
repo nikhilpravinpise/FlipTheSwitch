@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import multiprocessing
+import time
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import httpx
 import pytest
@@ -16,6 +19,50 @@ from labquorum.scholarly.http import (
     RequestBudget,
     SharedHostLimiter,
 )
+
+
+class ProcessFakeClock:
+    def __init__(self, value, lock) -> None:
+        self.value = value
+        self.lock = lock
+
+    def __call__(self) -> float:
+        with self.lock:
+            return self.value.value
+
+    def sleep(self, seconds: float) -> None:
+        with self.lock:
+            self.value.value += seconds
+
+
+def _fake_scholar_worker(
+    database_path: Path,
+    clock: ProcessFakeClock,
+    active_count,
+    maximum_active,
+    state_lock,
+    events,
+) -> None:
+    limiter = SharedHostLimiter(
+        database_path,
+        host="fake.scholar.test",
+        rate_per_second=3.0,
+        max_in_flight=3,
+        monotonic=clock,
+        sleep=clock.sleep,
+    )
+    for _ in range(4):
+        lease = limiter.acquire()
+        with state_lock:
+            active_count.value += 1
+            maximum_active.value = max(maximum_active.value, active_count.value)
+            started_at = clock()
+            events.put(started_at)
+        clock.sleep(0.5)
+        time.sleep(0.01)
+        with state_lock:
+            active_count.value -= 1
+        lease.release()
 
 
 def test_I_06_429_retry_after_is_honored(tmp_path) -> None:
@@ -102,6 +149,40 @@ def test_I_05_shared_limiter_enforces_cross_process_policy(tmp_path) -> None:
     assert limiter.host == "fake.scholar.test"
     assert limiter.rate_per_second == 3.0
     assert limiter.max_in_flight == 3
+
+
+def test_I_05_two_processes_share_host_rate_and_concurrency_limits(tmp_path) -> None:
+    context = multiprocessing.get_context("spawn")
+    clock_value = context.Value("d", 100.0)
+    clock_lock = context.Lock()
+    fake_clock = ProcessFakeClock(clock_value, clock_lock)
+    active_count = context.Value("i", 0)
+    maximum_active = context.Value("i", 0)
+    state_lock = context.Lock()
+    events = context.Queue()
+    database_path = tmp_path / "shared-limiter.sqlite3"
+    workers = [
+        context.Process(
+            target=_fake_scholar_worker,
+            args=(
+                database_path,
+                fake_clock,
+                active_count,
+                maximum_active,
+                state_lock,
+                events,
+            ),
+        )
+        for _ in range(2)
+    ]
+    for worker in workers:
+        worker.start()
+    for worker in workers:
+        worker.join(timeout=15)
+    assert [worker.exitcode for worker in workers] == [0, 0]
+    starts = sorted(events.get(timeout=2) for _ in range(8))
+    assert maximum_active.value <= 3
+    assert all(right - left >= (1 / 3) - 0.000001 for left, right in zip(starts, starts[1:]))
 
 
 def test_http_call_budget_exceeding_fifty_is_refused() -> None:

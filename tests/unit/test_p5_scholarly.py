@@ -84,7 +84,7 @@ def test_U_C03_first_author_surname_is_accent_and_case_insensitive(
 
 @pytest.mark.parametrize(
     ("claimed_year", "expected"),
-    [(2021, Verdict.VERIFIED), (2023, Verdict.MISMATCH)],
+    [(2021, Verdict.VERIFIED), (2024, Verdict.MISMATCH)],
 )
 def test_U_C04_year_tolerance_is_one_year(
     claimed_year: int,
@@ -101,7 +101,7 @@ def test_U_C04_year_tolerance_is_one_year(
     )
     assert result.verdict is expected
     if expected is Verdict.MISMATCH:
-        assert result.fields["diff"]["year"] == {"claimed": 2023, "found": 2022}
+        assert result.fields["diff"]["year"] == {"claimed": 2024, "found": 2022}
 
 
 def test_U_C05_crossref_retraction_update_returns_notice_doi() -> None:
