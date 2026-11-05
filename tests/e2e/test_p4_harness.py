@@ -507,6 +507,48 @@ def test_E2E_11_repeat_limit_error_is_case_insensitive(tmp_path: Path) -> None:
     )
 
 
+def test_E2E_11_repeat_error_is_correlated_to_the_prompt_thread(tmp_path: Path) -> None:
+    posts = [
+        MattermostPost(
+            "unrelated-error",
+            "channel-1",
+            "labops-id",
+            "COMMIT_LIMIT_REACHED",
+            2000,
+            root_id="other-prompt",
+        ),
+        MattermostPost(
+            "related-reply",
+            "channel-1",
+            "labops-id",
+            "No approval card was presented.",
+            2001,
+            root_id="target-prompt",
+        ),
+    ]
+
+    class StubPersona:
+        def get_channel_posts(self, channel_id: str) -> list[MattermostPost]:
+            assert channel_id == "channel-1"
+            return posts
+
+        def username_for(self, user_id: str) -> str:
+            return {"labops-id": "labops"}[user_id]
+
+    persona = StubPersona()
+    runner = ScenarioRunner(
+        personas=cast(Any, {"maya": persona, "prof-rao": persona}),
+        ledger=LedgerInspector(tmp_path / "ledger.sqlite"),
+        channel_id="channel-1",
+        evidence_dir=tmp_path / "evidence",
+    )
+
+    response = runner._agent_text_after(1000, root_id="target-prompt")
+
+    assert "COMMIT_LIMIT_REACHED" not in response
+    assert "No approval card" in response
+
+
 def test_E2E_11_fresh_card_requires_a_pending_second_request(tmp_path: Path) -> None:
     ledger_path = _make_ledger(tmp_path / "ledger.sqlite")
     with sqlite3.connect(ledger_path) as connection:
