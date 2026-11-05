@@ -117,6 +117,36 @@ def test_C_04_setup_writes_labops_requester_and_reply_instructions(tmp_path: Pat
         assert required in normalized
 
 
+def test_C_04_setup_requires_threaded_user_facing_agent_replies(tmp_path: Path) -> None:
+    root = tmp_path / "runtime"
+    command = _command(root / "venv" / "Scripts" / "lq-mcp.exe")
+    setup_runtime(root, command_path=command, codex_home=tmp_path / "source-codex-home")
+    labops = (root / "agents" / "labops" / "AGENTS.md").read_text(encoding="utf-8")
+    pi_desk = (root / "agents" / "pi-desk" / "AGENTS.md").read_text(encoding="utf-8")
+
+    for instructions in (labops, pi_desk):
+        normalized = instructions.casefold()
+        assert "for every incoming room message" in normalized
+        assert "call post_message" in normalized
+        assert "original thread" in normalized
+        assert "final assistant text is not shown" in normalized
+
+    labops_instructions = labops.casefold()
+    for required in (
+        "conflicting booking owner and interval",
+        "proposed interval",
+        "weekday, date, local time, and zone",
+        "request id",
+        "status",
+    ):
+        assert required in labops_instructions
+
+    pi_instructions = pi_desk.casefold()
+    assert "initiate one commit_booking call" in pi_instructions
+    assert "wait for the native codex approval prompt" in pi_instructions
+    assert "do not wait for the approval prompt before calling commit_booking" in pi_instructions
+
+
 def test_C_04_runtime_codex_toml_approves_only_noncommit_labquorum_tools(
     tmp_path: Path,
 ) -> None:
