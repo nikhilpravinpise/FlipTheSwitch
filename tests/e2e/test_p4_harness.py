@@ -309,6 +309,35 @@ def test_approval_card_discovery_excludes_switch_action_tokens() -> None:
     assert card.options == ((1, "Allow once"), (2, "Decline"))
 
 
+def test_mattermost_post_sanitizes_switch_action_credentials() -> None:
+    post = MattermostClient._parse_post(
+        {
+            "id": "card-1",
+            "channel_id": "channel-1",
+            "user_id": "switch-bot",
+            "message": "Reply with A7 and your choice.",
+            "create_at": 1000,
+            "props": {
+                "attachments": [
+                    {
+                        "actions": [
+                            {
+                                "name": "1. Allow once",
+                                "integration": {
+                                    "context": {"token": "never-print-this-switch-token"}
+                                },
+                            }
+                        ]
+                    }
+                ]
+            },
+        }
+    )
+
+    assert post.props == {"attachments": [{"actions": [{"name": "1. Allow once"}]}]}
+    assert "never-print-this-switch-token" not in repr(post)
+
+
 def test_card_discovery_does_not_treat_private_props_as_session_id() -> None:
     card_post = {
         "id": "card-1",

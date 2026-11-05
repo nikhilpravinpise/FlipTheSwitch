@@ -11,3 +11,4 @@
 - I-41 now has a runner test with a real revision-one hash in the audit history and a bogus stale hash. The current runner reaches the Mattermost post instead of rejecting the unaudited hash before sending it.
 - The approval flow test now requires card polling to stay on the thread started by the proposal. The current runner searches the entire channel and can select an unrelated card before the canonical field check.
 - The read/propose smoke test now requires the reply to describe Lena's 14:00-15:30 slot as a conflict or overlap, not merely repeat the times.
+- The REST parser test now requires Mattermost action props to retain only visible button names. The previous `MattermostPost` object retained the Switch signed action token in its public `props` field.
