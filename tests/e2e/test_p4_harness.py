@@ -268,9 +268,8 @@ def test_approval_card_discovery_excludes_switch_action_tokens() -> None:
         "id": "card-1",
         "channel_id": "channel-1",
         "user_id": "switch-bot",
-        "message": "Reply with `A7` and your choice, e.g. `A7 1`.",
+        "message": "1. Allow once\n2. Decline\nReply with `A7` and your choice, e.g. `A7 1`.",
         "props": {
-            "attachments": [{"text": "1. Allow once\n2. Decline"}],
             "actions": [{"id": "approve", "token": "never-copy-this-switch-token"}],
         },
     }
