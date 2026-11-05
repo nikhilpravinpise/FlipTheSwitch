@@ -34,6 +34,22 @@ PROBE_START = "2026-11-09T10:00:00+05:30"
 PROBE_END = "2026-11-09T11:00:00+05:30"
 
 
+def _test_database(directory: Path, name: str) -> Path:
+    runtime_root = directory / f"labquorum-p3-contract-{name}"
+    runtime_root.mkdir()
+    database = runtime_root / "p3-test-ledger.sqlite"
+    manifest = {
+        "schema_version": 1,
+        "runtime_root": str(runtime_root.resolve()),
+        "ledger_path": str((runtime_root / "ledger.sqlite").resolve()),
+        "binding_mode": "off",
+    }
+    (runtime_root / "runtime.json").write_text(
+        json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+    )
+    return database
+
+
 def _seed_database(path: Path) -> None:
     connection = init_database(path)
     try:
@@ -102,7 +118,7 @@ def test_C_01_tool_names_descriptions_and_schemas_match_profile_snapshots(
     tmp_path: Path,
     snapshot: SnapshotAssertion,
 ) -> None:
-    database = tmp_path / "snapshot.sqlite"
+    database = _test_database(tmp_path, "snapshot")
     _seed_database(database)
     actual = {
         profile: asyncio.run(_list_tools(profile, database))
@@ -168,7 +184,7 @@ def test_C_10_error_enum_is_shared_with_p2_documentation() -> None:
 def test_C_13_commit_schema_and_transaction_require_the_full_decision(
     tmp_path: Path,
 ) -> None:
-    database = tmp_path / "decision.sqlite"
+    database = _test_database(tmp_path, "decision")
     _seed_database(database)
 
     async def exercise() -> None:
@@ -237,7 +253,7 @@ def test_C_13_commit_schema_and_transaction_require_the_full_decision(
 
 
 def test_C_14_tool_results_are_compact_and_below_the_size_cap(tmp_path: Path) -> None:
-    database = tmp_path / "compact.sqlite"
+    database = _test_database(tmp_path, "compact")
     _seed_database(database)
 
     async def exercise() -> None:
@@ -252,7 +268,7 @@ def test_C_14_tool_results_are_compact_and_below_the_size_cap(tmp_path: Path) ->
 def test_U_B11_tool_rejects_natural_language_time_with_needs_iso_datetime(
     tmp_path: Path,
 ) -> None:
-    database = tmp_path / "datetime.sqlite"
+    database = _test_database(tmp_path, "datetime")
     _seed_database(database)
 
     async def exercise() -> None:
@@ -275,7 +291,7 @@ def test_U_B11_tool_rejects_natural_language_time_with_needs_iso_datetime(
 def test_U_B02_conflict_tool_names_owner_and_nearest_same_length_slot(
     tmp_path: Path,
 ) -> None:
-    database = tmp_path / "conflict.sqlite"
+    database = _test_database(tmp_path, "conflict")
     _seed_database(database)
 
     async def exercise() -> None:
@@ -326,7 +342,7 @@ def test_U_B02_conflict_tool_names_owner_and_nearest_same_length_slot(
 
 
 def test_I_02_stdio_lists_profiles_and_calls_each_read_tool_on_seed(tmp_path: Path) -> None:
-    database = tmp_path / "stdio.sqlite"
+    database = _test_database(tmp_path, "stdio")
     _seed_database(database)
 
     async def exercise() -> None:
@@ -363,7 +379,7 @@ def test_I_02_stdio_lists_profiles_and_calls_each_read_tool_on_seed(tmp_path: Pa
 
 
 def test_I_03_commit_from_proposer_is_an_unknown_tool(tmp_path: Path) -> None:
-    database = tmp_path / "unknown-tool.sqlite"
+    database = _test_database(tmp_path, "unknown-tool")
     _seed_database(database)
 
     async def exercise() -> None:
@@ -427,12 +443,12 @@ def test_I_12_recorded_tool_sequence_replays_identically_on_fresh_seeds(
         return results
 
     expected = [step["expected"] for step in sequence]
-    assert replay(tmp_path / "first.sqlite") == expected
-    assert replay(tmp_path / "second.sqlite") == expected
+    assert replay(_test_database(tmp_path, "replay-first")) == expected
+    assert replay(_test_database(tmp_path, "replay-second")) == expected
 
 
 def test_U_G01_rate_guard_is_wired_to_mcp_profile_calls(tmp_path: Path) -> None:
-    database = tmp_path / "rate.sqlite"
+    database = _test_database(tmp_path, "rate")
     _seed_database(database)
 
     async def exercise() -> None:

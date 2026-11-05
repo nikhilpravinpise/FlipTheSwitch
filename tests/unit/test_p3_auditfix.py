@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import tomllib
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, cast
 
 import pytest
 
@@ -40,6 +40,16 @@ def test_C_04_setup_uses_runtime_codex_home_without_reading_user_config(
     (user_codex / "auth.json").write_text(auth_contents, encoding="utf-8")
     monkeypatch.delenv("CODEX_HOME", raising=False)
     monkeypatch.setattr(Path, "home", classmethod(lambda _cls: user_home))
+    original_open = Path.open
+    accessed_user_config: list[str] = []
+    track_config_access = True
+
+    def tracked_open(path: Path, mode: str = "r", *args: Any, **kwargs: Any) -> Any:
+        if track_config_access and path.resolve(strict=False) == user_config.resolve():
+            accessed_user_config.append(mode)
+        return original_open(path, mode, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", tracked_open)
 
     root = tmp_path / "runtime with spaces"
     command = _command(tmp_path / "stable bin" / "lq-mcp.exe")
@@ -49,7 +59,9 @@ def test_C_04_setup_uses_runtime_codex_home_without_reading_user_config(
         codex_home=user_codex,
         install_codex_config=True,
     )
+    track_config_access = False
 
+    assert accessed_user_config == []
     assert user_config.read_text(encoding="utf-8") == user_contents
     runtime_home = root / "codex-home"
     runtime_config = runtime_home / "config.toml"
@@ -84,13 +96,7 @@ def test_C_04_setup_assigns_approve_to_non_commit_tools_and_prompt_to_commit(
 
 def test_C_05_setup_rejects_mcp_executable_inside_a_worktree(tmp_path: Path) -> None:
     command = _command(
-        tmp_path
-        / ".claude"
-        / "worktrees"
-        / "builder"
-        / ".venv"
-        / "Scripts"
-        / "lq-mcp.exe"
+        tmp_path / ".claude" / "worktrees" / "builder" / ".venv" / "Scripts" / "lq-mcp.exe"
     )
     with pytest.raises(LabQuorumError):
         setup_runtime(tmp_path / "runtime", command_path=command)
@@ -108,8 +114,7 @@ def test_C_11_doctor_reports_runtime_codex_home_and_rejects_global_managed_block
     setup_runtime(root, command_path=command)
     findings = runtime_doctor_findings(root)
     assert any(
-        item["code"] == "RUNTIME_CODEX_HOME"
-        and str(root / "codex-home") in item["message"]
+        item["code"] == "RUNTIME_CODEX_HOME" and str(root / "codex-home") in item["message"]
         for item in findings
     )
 
@@ -121,8 +126,7 @@ def test_C_11_doctor_reports_runtime_codex_home_and_rejects_global_managed_block
     )
     findings = runtime_doctor_findings(root)
     assert any(
-        item["code"] == "RUNTIME_GLOBAL_CODEX_HOME_POLLUTED"
-        and item["severity"] == "error"
+        item["code"] == "RUNTIME_GLOBAL_CODEX_HOME_POLLUTED" and item["severity"] == "error"
         for item in findings
     )
 
@@ -132,18 +136,12 @@ def test_C_11_doctor_rejects_an_mcp_command_inside_a_worktree(tmp_path: Path) ->
     stable = _command(root / "venv" / "Scripts" / "lq-mcp.exe")
     setup_runtime(root, command_path=stable)
     worktree_command = _command(
-        tmp_path
-        / ".claude"
-        / "worktrees"
-        / "other"
-        / ".venv"
-        / "Scripts"
-        / "lq-mcp.exe"
+        tmp_path / ".claude" / "worktrees" / "other" / ".venv" / "Scripts" / "lq-mcp.exe"
     )
     config_path = root / "agents" / "labops" / ".codex" / "config.toml"
     contents = config_path.read_text(encoding="utf-8")
     config_path.write_text(
-        contents.replace(str(stable), str(worktree_command)),
+        contents.replace(json.dumps(str(stable)), json.dumps(str(worktree_command))),
         encoding="utf-8",
     )
 
@@ -198,16 +196,17 @@ def test_C_12_certify_mode_rejects_a_ledger_because_its_folder_is_named_certify(
     ledger.touch()
 
     with pytest.raises(LabQuorumError) as refused:
-        binding.validate_binding_request(
-            "certify", Profile.APPROVER, ledger, None, None, tmp_path
-        )
+        binding.validate_binding_request("certify", Profile.APPROVER, ledger, None, None, tmp_path)
     assert refused.value.code is ErrorCode.BINDING_CERTIFICATION_REQUIRED
 
 
 def test_C_12_commit_limiter_persists_one_distinct_commit_across_instances(
     tmp_path: Path,
 ) -> None:
-    factory = getattr(binding.BindingCommitLimiter, "for_session_home", None)
+    factory = cast(
+        Callable[[Path], binding.BindingCommitLimiter],
+        getattr(binding.BindingCommitLimiter, "for_session_home", None),
+    )
     assert callable(factory), "binding limiter needs a Codex-session-scoped persistent mode"
 
     state_home = tmp_path / "session home"
