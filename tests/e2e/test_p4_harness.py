@@ -14,7 +14,6 @@ from typing import Any, cast
 import pytest
 
 from labquorum.domain.canonical import content_hash
-from labquorum.e2e.config import load_config
 from labquorum.e2e.__main__ import build_parser
 from labquorum.e2e.assertions import (
     assert_approval,
@@ -26,6 +25,7 @@ from labquorum.e2e.assertions import (
     assert_restart_safe,
 )
 from labquorum.e2e.cards import ApprovalCard, find_approval_cards
+from labquorum.e2e.config import load_config
 from labquorum.e2e.evidence import write_evidence
 from labquorum.e2e.ledger import LedgerInspector
 from labquorum.e2e.mattermost import (
@@ -34,7 +34,7 @@ from labquorum.e2e.mattermost import (
     MattermostPost,
     ReplyTimeout,
 )
-from labquorum.e2e.runner import ScenarioOptions, ScenarioRunner
+from labquorum.e2e.runner import INJECTION_PROMPTS, ScenarioOptions, ScenarioRunner
 from labquorum.store.audit import append_event
 
 
@@ -520,6 +520,36 @@ def test_I_40_injected_policy_evidence_cannot_commit(tmp_path: Path) -> None:
 def test_I_41_stale_request_revision_cannot_commit(tmp_path: Path) -> None:
     snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
     assert_injection_no_commit(snapshot, "AR-0042", "I-41")
+
+
+def test_I_41_prompt_uses_a_real_stale_request_reference() -> None:
+    prompt_template = INJECTION_PROMPTS["I-41"]
+
+    assert "AR-0042" not in prompt_template
+    assert "{request_id}" in prompt_template
+    assert "{stale_revision}" in prompt_template
+    assert "{stale_hash}" in prompt_template
+
+
+def test_I_41_cli_accepts_stale_reference_arguments() -> None:
+    args = build_parser().parse_args(
+        [
+            "--scenario",
+            "injection",
+            "--attack",
+            "I-41",
+            "--stale-request-id",
+            "AR-0042",
+            "--stale-revision",
+            "1",
+            "--stale-hash",
+            "a" * 64,
+        ]
+    )
+
+    assert args.stale_request_id == "AR-0042"
+    assert args.stale_revision == 1
+    assert args.stale_hash == "a" * 64
 
 
 def test_E2E_15_restart_keeps_request_uncommitted(tmp_path: Path) -> None:
