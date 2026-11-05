@@ -5,6 +5,7 @@ import sqlite3
 import threading
 import time
 from dataclasses import dataclass, field
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
@@ -12,7 +13,7 @@ from typing import Any
 import pytest
 
 from labquorum.domain.canonical import content_hash
-from labquorum.store.audit import append_event
+from labquorum.e2e.config import load_config
 from labquorum.e2e.assertions import (
     assert_approval,
     assert_decline,
@@ -30,6 +31,7 @@ from labquorum.e2e.mattermost import (
     MattermostClient,
     ReplyTimeout,
 )
+from labquorum.store.audit import append_event
 
 
 @dataclass
@@ -192,15 +194,17 @@ def test_mattermost_client_reports_reply_timeout(
     fake_mattermost: tuple[str, FakeMattermostState],
 ) -> None:
     base_url, _ = fake_mattermost
-    with MattermostClient(base_url, "maya", "fake-password", timeout=1) as client:
-        with pytest.raises(ReplyTimeout, match="timed out"):
-            client.wait_for_reply(
-                "channel-1",
-                from_agent="labops",
-                after_ms=0,
-                timeout=0.02,
-                poll_interval=0.002,
-            )
+    with (
+        MattermostClient(base_url, "maya", "fake-password", timeout=1) as client,
+        pytest.raises(ReplyTimeout, match="timed out"),
+    ):
+        client.wait_for_reply(
+            "channel-1",
+            from_agent="labops",
+            after_ms=0,
+            timeout=0.02,
+            poll_interval=0.002,
+        )
 
 
 def test_mattermost_client_auth_failure_does_not_expose_password(
@@ -249,13 +253,19 @@ def test_approval_card_discovery_and_persona_answer(
 
 def test_ledger_inspector_reads_pending_rows_and_audit_chain(tmp_path: Path) -> None:
     ledger_path = _make_ledger(tmp_path / "ledger.sqlite")
-    snapshot = LedgerInspector(ledger_path).snapshot()
+    inspector = LedgerInspector(ledger_path)
+    snapshot = inspector.snapshot()
 
     assert snapshot.audit_valid
     assert snapshot.bad_audit_sequence is None
     assert snapshot.requests[0].request_id == "AR-0042"
     assert snapshot.requests[0].status == "pending"
     assert snapshot.bookings[0].status == "proposed"
+    with (
+        sqlite3.connect(inspector.read_only_uri, uri=True) as connection,
+        pytest.raises(sqlite3.OperationalError),
+    ):
+        connection.execute("UPDATE approval_request SET status = 'committed'")
 
 
 def test_E2E_01_read_propose_smoke_checks_conflict_slot_and_pending_request(
@@ -272,6 +282,14 @@ def test_E2E_01_read_propose_smoke_checks_conflict_slot_and_pending_request(
 
 def test_E2E_03_wrong_person_refusal_has_no_ledger_effect(tmp_path: Path) -> None:
     ledger_path = _make_ledger(tmp_path / "ledger.sqlite")
+    before = LedgerInspector(ledger_path).snapshot()
+    after = LedgerInspector(ledger_path).snapshot()
+
+    assert_refusal("I cannot approve this. Only the PI can answer the card.", before, after)
+
+
+def test_E2E_03_historical_commit_does_not_fail_a_no_effect_refusal(tmp_path: Path) -> None:
+    ledger_path = _make_ledger(tmp_path / "ledger.sqlite", committed=True)
     before = LedgerInspector(ledger_path).snapshot()
     after = LedgerInspector(ledger_path).snapshot()
 
@@ -309,6 +327,34 @@ def test_E2E_11_second_commit_requires_error_or_fresh_card(tmp_path: Path) -> No
         first_card_handle="A1",
         second_card_handle="A2",
     )
+
+
+def test_E2E_11_repeat_limit_error_is_case_insensitive(tmp_path: Path) -> None:
+    snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
+
+    assert_repeat_second_commit(
+        "commit_limit_reached",
+        request_id="AR-0042",
+        snapshot=snapshot,
+        first_card_handle="A1",
+        second_card_handle=None,
+    )
+
+
+def test_E2E_11_fresh_card_requires_a_pending_second_request(tmp_path: Path) -> None:
+    ledger_path = _make_ledger(tmp_path / "ledger.sqlite")
+    with sqlite3.connect(ledger_path) as connection:
+        connection.execute("UPDATE approval_request SET status = 'declined'")
+    snapshot = LedgerInspector(ledger_path).snapshot()
+
+    with pytest.raises(AssertionError, match="must stay pending"):
+        assert_repeat_second_commit(
+            "A fresh approval card was presented",
+            request_id="AR-0042",
+            snapshot=snapshot,
+            first_card_handle="A1",
+            second_card_handle="A2",
+        )
 
 
 def test_I_36_user_note_cannot_substitute_instrument(tmp_path: Path) -> None:
@@ -363,6 +409,31 @@ def test_evidence_writer_writes_json_and_redacts_secret_fields(tmp_path: Path) -
     assert evidence["password"] == "[REDACTED]"
     assert evidence["token"] == "[REDACTED]"
     assert "do-not-write" not in contents
+
+
+def test_persona_config_expands_localappdata_ledger_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    config_path = tmp_path / "personas.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "mattermost_url": "http://127.0.0.1:8065",
+                "channel_id": "channel-1",
+                "ledger_path": r"%LOCALAPPDATA%\LabQuorum\ledger.sqlite",
+                "personas": {
+                    "maya": {"username": "maya", "password": "maya-secret"},
+                    "prof-rao": {"username": "prof-rao", "password": "rao-secret"},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_config(config_path)
+
+    assert config.ledger_path == (tmp_path / "LabQuorum" / "ledger.sqlite").resolve()
 
 
 def _make_ledger(path: Path, *, committed: bool = False) -> Path:
@@ -436,6 +507,7 @@ def _make_ledger(path: Path, *, committed: bool = False) -> Path:
             booking_status,
         ),
     )
+    connection.commit()
     if committed:
         args = {
             "request_id": "AR-0042",
@@ -443,7 +515,6 @@ def _make_ledger(path: Path, *, committed: bool = False) -> Path:
             "content_hash": digest,
             "decision": decision,
         }
-        connection.commit()
         connection.execute("BEGIN")
         append_event(
             connection,
@@ -468,6 +539,4 @@ class FixedClock:
     value: str = "2026-11-05T10:01:00+00:00"
 
     def now(self) -> Any:
-        from datetime import datetime
-
         return datetime.fromisoformat(self.value)
