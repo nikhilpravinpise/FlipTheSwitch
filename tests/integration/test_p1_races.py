@@ -9,7 +9,6 @@ import tempfile
 from datetime import UTC, timedelta
 from pathlib import Path
 from typing import Any
-from zoneinfo import ZoneInfo
 
 import pytest
 from hypothesis import settings
@@ -23,7 +22,7 @@ from hypothesis.stateful import (
 
 from labquorum.domain.booking import Interval, intervals_conflict
 from labquorum.domain.errors import ErrorCode, LabQuorumError
-from labquorum.domain.timeutil import FixedClock, parse_iso_datetime
+from labquorum.domain.timeutil import FixedClock, parse_iso_datetime, utc_timestamp
 from labquorum.store.db import database_info, open_database
 from labquorum.store.repos import (
     cancel_booking,
@@ -134,7 +133,7 @@ def _race_pair(
                 str(database_path),
                 barrier,
                 output,
-                now.isoformat(),
+                utc_timestamp(now),
                 *_commit_args(proposal),
             ),
         )
@@ -163,8 +162,8 @@ def _unsafe_race(context: Any, database_path: Path, now: Any) -> list[str]:
     connection.close()
     barrier = context.Barrier(2)
     output = context.Queue()
-    start = at(ANCHOR_DATE, 10).astimezone(ZoneInfo("UTC")).isoformat()
-    end = at(ANCHOR_DATE, 11).astimezone(ZoneInfo("UTC")).isoformat()
+    start = utc_timestamp(at(ANCHOR_DATE, 10))
+    end = utc_timestamp(at(ANCHOR_DATE, 11))
     workers = [
         context.Process(
             target=_unsafe_read_before_lock_worker,
@@ -282,7 +281,7 @@ def test_I_25_five_writers_are_exactly_once_and_clock_rollback_expires_closed(
                 str(database_path),
                 barrier,
                 output,
-                clock.now().isoformat(),
+                utc_timestamp(clock.now()),
                 *_commit_args(proposal),
             ),
         )

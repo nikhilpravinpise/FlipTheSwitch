@@ -429,7 +429,7 @@ def test_U_A09_commit_rechecks_training_and_instrument_status(
     connection.execute(
         "INSERT INTO training(person_id, instrument_id, granted_at_utc, expires_at_utc) "
         "VALUES ('maya', 'INS-01', ?, ?)",
-        (BASE_NOW.isoformat(), (BASE_NOW + timedelta(days=120)).isoformat()),
+        (utc_timestamp(BASE_NOW), utc_timestamp(BASE_NOW + timedelta(days=120))),
     )
     down = _propose(connection, clock, start_hour=17)
     connection.execute("UPDATE instrument SET status = 'down' WHERE id = 'INS-01'")
