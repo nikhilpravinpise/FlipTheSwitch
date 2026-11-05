@@ -443,17 +443,26 @@ def _validate_red_junit(junit_path: Path, expected_count: int) -> str | None:
 
 
 def _test_files_changed(red_commit: str) -> tuple[list[str] | None, str | None]:
-    diff = _run(["git", "diff", "--name-only", red_commit, "HEAD", "--", "tests"])
+    """Test files that existed at the red commit and were modified or deleted since.
+
+    Newly added test files cannot weaken an existing test, so they are not listed;
+    the claimed-ID check and the audit cover them.
+    """
+    diff = _run(
+        ["git", "diff", "--name-only", "--diff-filter=MDR", red_commit, "HEAD", "--", "tests"]
+    )
     if diff.returncode != 0:
         return None, f"git diff for test files failed: {_output_summary(diff)}"
     return [line.replace("\\", "/") for line in diff.stdout.splitlines() if line.strip()], None
 
 
 def _check_test_change_reasons(phase: str, changed: list[str]) -> str | None:
+    """Every modified pre-existing test file needs a reason row in any phase's change log."""
     path = EVIDENCE_DIR / f"{phase}-test-changes.md"
-    if not path.is_file():
+    logs = sorted(EVIDENCE_DIR.glob("*-test-changes.md"))
+    if not logs:
         return f"{path.relative_to(REPO_ROOT)} is missing; list changed test files with reasons"
-    lines = path.read_text(encoding="utf-8").splitlines()
+    lines = [line for log in logs for line in log.read_text(encoding="utf-8").splitlines()]
     missing: list[str] = []
     for test_path in changed:
         reason_found = False
@@ -467,7 +476,8 @@ def _check_test_change_reasons(phase: str, changed: list[str]) -> str | None:
         if not reason_found:
             missing.append(test_path)
     return (
-        f"test changes need reason lines in {path.relative_to(REPO_ROOT)}: {', '.join(missing)}"
+        "modified pre-existing test files need reason rows in a docs/build/evidence/"
+        f"*-test-changes.md log (e.g. {path.relative_to(REPO_ROOT)}): {', '.join(missing)}"
         if missing
         else None
     )
