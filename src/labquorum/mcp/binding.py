@@ -10,7 +10,7 @@ import shutil
 import sqlite3
 import subprocess
 import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from functools import wraps
 from pathlib import Path
 from threading import RLock
@@ -31,6 +31,14 @@ def _within(path: Path, parent: Path) -> bool:
     except ValueError:
         return False
     return True
+
+
+def _is_gate_test_ledger(path: Path, temp_root: Path) -> bool:
+    return (path.name.casefold() == "p3-test-ledger.sqlite" and _within(path, temp_root)) or (
+        path.name.casefold() == "g.sqlite"
+        and path.parent.name.casefold().startswith("labquorum-p2-")
+        and path.parent.parent == temp_root
+    )
 
 
 def resolve_runtime_profile(
@@ -68,7 +76,7 @@ def _is_test_ledger(database_path: Path) -> bool:
     if "certify" in {part.casefold() for part in path.parts}:
         return True
     temp_root = Path(tempfile.gettempdir()).resolve(strict=False)
-    if path.name.casefold() == "p3-test-ledger.sqlite" and _within(path, temp_root):
+    if _is_gate_test_ledger(path, temp_root):
         return True
     if not path.is_file():
         return False
@@ -161,7 +169,7 @@ def validate_binding_request(  # noqa: PLR0912, PLR0913, PLR0917
         if not _is_test_ledger(database_path):
             raise LabQuorumError(
                 ErrorCode.BINDING_CERTIFICATION_REQUIRED,
-                "Certify mode requires a marker ledger or a ledger under a certify directory.",
+                "Certify mode requires a marker ledger or an approved isolated test-ledger path.",
             )
         return
     if runtime_root is None or certification_evidence is None:
@@ -218,11 +226,19 @@ def validate_binding_request(  # noqa: PLR0912, PLR0913, PLR0917
 
 
 class BindingCommitLimiter:
-    """Allow one successful distinct commit per process and identical retries."""
+    """Allow one distinct commit and pass same-request mismatches to ledger validation."""
 
     def __init__(self) -> None:
         self._lock = RLock()
         self._successful_arguments: str | None = None
+        self._successful_identity: dict[str, Any] | None = None
+
+    def _matches_successful_identity(self, arguments: Mapping[str, Any]) -> bool:
+        identity = self._successful_identity
+        fields = ("request_id", "revision", "content_hash")
+        return identity is not None and all(
+            field in arguments and arguments[field] == identity[field] for field in fields
+        )
 
     def wrap(
         self,
@@ -241,6 +257,7 @@ class BindingCommitLimiter:
                 if (
                     self._successful_arguments is not None
                     and fingerprint != self._successful_arguments
+                    and not self._matches_successful_identity(arguments)
                 ):
                     raise LabQuorumError(
                         ErrorCode.BINDING_COMMIT_LIMIT,
@@ -248,11 +265,24 @@ class BindingCommitLimiter:
                         "committed a different booking.",
                     )
                 result = commit(**arguments)
+                if (
+                    self._successful_arguments is not None
+                    and fingerprint != self._successful_arguments
+                    and result.get("status") in {"committed", "already_committed"}
+                ):
+                    raise LabQuorumError(
+                        ErrorCode.BINDING_COMMIT_LIMIT,
+                        f"{ErrorCode.BINDING_COMMIT_LIMIT.value}: This MCP process has already "
+                        "committed a different booking.",
+                    )
                 if self._successful_arguments is None and result.get("status") in {
                     "committed",
                     "already_committed",
                 }:
                     self._successful_arguments = fingerprint
+                    fields = ("request_id", "revision", "content_hash")
+                    if all(field in arguments for field in fields):
+                        self._successful_identity = {field: arguments[field] for field in fields}
                 return result
 
         return guarded
