@@ -576,6 +576,35 @@ def test_evidence_writer_writes_json_and_redacts_secret_fields(tmp_path: Path) -
     assert "do-not-write" not in contents
 
 
+def test_scenario_runner_writes_timed_step_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    runner = ScenarioRunner(
+        personas=cast(Any, {"maya": object(), "prof-rao": object()}),
+        ledger=LedgerInspector(tmp_path / "ledger.sqlite"),
+        channel_id="channel-1",
+        evidence_dir=tmp_path / "evidence",
+    )
+
+    def dispatch(scenario: str, *, attack_id: str | None) -> dict[str, str]:
+        assert scenario == "e2e01"
+        assert attack_id is None
+        runner._timed_step("fake.operation", lambda: "done")
+        return {"status": "pass"}
+
+    monkeypatch.setattr(runner, "_dispatch", dispatch)
+    result = runner.run("e2e01")
+    evidence = json.loads(result.evidence_path.read_text(encoding="utf-8"))
+
+    assert evidence["status"] == "pass"
+    assert evidence["started_at_utc"]
+    assert evidence["finished_at_utc"]
+    assert evidence["elapsed_seconds"] >= 0
+    assert evidence["steps"][0]["name"] == "fake.operation"
+    assert evidence["steps"][0]["status"] == "pass"
+    assert evidence["steps"][0]["elapsed_seconds"] >= 0
+
+
 def test_persona_config_expands_localappdata_ledger_path(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
