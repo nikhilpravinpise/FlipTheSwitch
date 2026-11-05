@@ -49,12 +49,12 @@ jobs:
         env:
           REQUIREMENTS_FILE: ${{ runner.temp }}/labquorum-requirements.txt
         shell: pwsh
-        run: uv export --locked --all-groups --format requirements.txt --output-file $env:REQUIREMENTS_FILE
+        run: uv export --locked --all-groups --no-emit-project --format requirements.txt --output-file "$env:REQUIREMENTS_FILE"
       - name: Audit dependencies
         env:
           REQUIREMENTS_FILE: ${{ runner.temp }}/labquorum-requirements.txt
         shell: pwsh
-        run: uvx --from pip-audit pip-audit -r $env:REQUIREMENTS_FILE
+        run: uvx --python 3.12 --from pip-audit pip-audit -r "$env:REQUIREMENTS_FILE"
 
   install-smoke:
     strategy:
