@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Callable, Generator
 from datetime import date, datetime, time
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -54,7 +55,9 @@ def make_seeded_ledger(
 
 
 @pytest.fixture
-def seeded_ledger(tmp_path: Path) -> tuple[sqlite3.Connection, FixedClock]:
+def seeded_ledger(
+    tmp_path: Path,
+) -> Generator[tuple[sqlite3.Connection, FixedClock], None, None]:
     clock = FixedClock(BASE_NOW)
     try:
         connection = init_database(tmp_path / "ledger.sqlite")
@@ -67,10 +70,16 @@ def seeded_ledger(tmp_path: Path) -> tuple[sqlite3.Connection, FixedClock]:
 
 
 @pytest.fixture
-def ledger_factory(tmp_path: Path):
+def ledger_factory(
+    tmp_path: Path,
+) -> Generator[Callable[..., tuple[sqlite3.Connection, FixedClock]], None, None]:
     created: list[sqlite3.Connection] = []
 
-    def make(name: str = "ledger.sqlite", *, now: datetime = BASE_NOW):
+    def make(
+        name: str = "ledger.sqlite",
+        *,
+        now: datetime = BASE_NOW,
+    ) -> tuple[sqlite3.Connection, FixedClock]:
         connection, clock = make_seeded_ledger(tmp_path / name, now=now)
         created.append(connection)
         return connection, clock
