@@ -152,3 +152,37 @@ To create a Mattermost team invite link later: select the team name at the top o
 3. Create `prof-rao` and `maya` Mattermost accounts, store credentials only in `%LOCALAPPDATA%\LabQuorum\personas.json`, and save their Playwright storage states only in the two LocalAppData state paths above. Confirm both can post in a private room.
 4. Keep `prof-rao` linked to Nikhil's existing Switch `admin` user. Create Maya's separate Switch `user` account, sign in as Maya, and claim the `maya` Mattermost identity. Record the required unclaimed and claimed S1 probes.
 5. Onboard Darshan later by creating his Mattermost student account and sending him a team invite link using the Mattermost procedure above; create and claim a separate Switch user if LabQuorum's S1 design requires Switch-level identity for student addressing.
+
+## Run 4 - 2026-11-05
+
+Scope: API-only P0 environment run using Switch Console v0.40.1 RPC over CDP and Mattermost REST API v4. No Console UI clicks, typing, or keyboard navigation were used.
+
+### API procedures and evidence
+
+| Area | RPC procedures or API calls | Result |
+| --- | --- | --- |
+| Console RPC wrapper | `switch_rpc.py list-procedures`; `switchServers.listServers`; `switchServers.getBundledChatSignIn`; `managedAgents.list`; `managedAgents.advancedConfigSchema`; `managedAgents.update`; `managedAgents.setDesiredState`; `workspaces.list`; `workspaces.listBridges`; `workspaces.listRooms`; `workspaces.createRoom`; `workspaces.searchBridgeDirectory`; `workspaces.claimBridgeIdentity`; `workspaces.listMyIdentities`; `switchServers.getAuthConfig`; `switchServers.openGatewayPage` | Wrapper uses `window.electronAPI.invoke` over CDP. Source: pinned `console/apps/switch-console-desktop/src/renderer/lib/ipc.ts:5`, `src/preload/index.ts:5-6`, `src/shared/lib/ipc/rpc.ts:44-63,109-129`, and `src/main/rpc.ts:34-66`. The wrapper is `scripts/ops/switch_rpc.py`. |
+| Switch agents | `managedAgents.update` attempted `switch-buddy-admin` provider `codex`, model `gpt-6-luna`, effort `high`; the Console rejected it because the registered agent is Claude Code. `managedAgents.setDesiredState` stopped that built-in agent. `managedAgents.list` verified it stopped and the smoke agent running with provider `codex`, model `gpt-6-luna`, effort `high`, `autoMode=false`, `autoApprove=false`. | PASS for smoke agent settings. Built-in agent remains Claude and stopped. Exact update error: `This agent is registered as 'claude-code', which does not run provider 'codex'.` |
+| S0 room and Mattermost post | `workspaces.createRoom` created public bridged room `lq-p0-run4-smoke` with the Codex smoke agent. Mattermost calls: `POST /api/v4/users/login`, `GET /api/v4/teams/name/switch/channels/name/lq-p0-run4-smoke`, `POST /api/v4/posts`, `GET /api/v4/channels/{channel_id}/posts`, and `GET /api/v4/users/{user_id}`. Credentials came from `switchServers.getBundledChatSignIn`; passwords and bearer tokens stayed in process memory. | FAIL for final S0 reply within 180 seconds. `@user` post returned 201. The agent posted a session-start acknowledgment, then requested approval to read `run3-local-sentinel.txt`. `@user` approved request A1 through Mattermost, but a new A2 approval prompt appeared and the exact sentinel reply was not captured. |
+| Personas in private room | Mattermost calls: `POST /api/v4/users/login`, `GET /api/v4/channels/{channel_id}/members`, and `POST /api/v4/posts` as `prof-rao` and `maya` in `lq-p0-run3-private`. | PASS; both post requests returned 201. Credentials remain only in `%LOCALAPPDATA%/LabQuorum/personas.json`. |
+| Identity linking and S1 | `workspaces.searchBridgeDirectory` found `prof-rao` and `maya`; `workspaces.claimBridgeIdentity` claimed `prof-rao` to the signed-in Switch admin. Mattermost `POST /api/v4/channels/{channel_id}/members` added Maya to the public smoke room, followed by `POST /api/v4/posts` as `maya` mentioning the owner-scoped agent. | PASS for `prof-rao` claim and unclaimed Maya refusal. The Codex agent replied that Maya's account was not linked and it only accepts instructions from its owner. `maya` remained unclaimed. |
+| Maya Switch user | `switchServers.getAuthConfig` returned `signupEnabled=false` and `passwordLoginEnabled=true`. Pinned Gateway source exposes admin-only `POST /gateway/users` (`core/switch_core/gateway/auth_routes.py:482-517`), but no Console RPC for creating a Gateway user or issuing an authenticated arbitrary Gateway request was found. Public signup was disabled, so a separate Maya Switch user and claim could not be created through a supported path in this run. | BLOCKED. No credential store was read or decrypted. |
+| Codex rollout | Read `CODEX_HOME` from the Codex process environment and searched that per-session home under `sessions/` as required by `docs/build/codex-boundary.md`. The active rollout path disappeared during enumeration and no `turn_context` record with model and effort was recovered. | UNVERIFIED from rollout records. Managed agent settings show the requested model and effort, but do not substitute for the required rollout evidence. |
+
+Mattermost API endpoint shapes follow the official [login](https://docs.mattermost.com/api/reference/mattermost-api), [create post](https://docs.mattermost.com/api/reference/create-post), [channel membership](https://docs.mattermost.com/api/reference/channels), and [users](https://docs.mattermost.com/api/reference/users) references. The Console RPC implementation details above are from pinned Switch source tag `switch-console-v0.40.1`.
+
+### Run 4 command outcomes
+
+| Command or action | Result |
+| --- | --- |
+| `uv run --no-project --with playwright python scripts/ops/switch_rpc.py list-procedures` | PASS |
+| `uv run --no-project --with playwright python scripts/ops/switch_rpc.py call managedAgents.list '["ccf022f8-5ecb-4004-8c1e-d60e65bcce1e"]'` | PASS; output verified Codex settings and stopped built-in agent |
+| Mattermost API `POST /api/v4/posts` from `@user` to `lq-p0-run4-smoke` | PASS for API post; FAIL for final S0 reply within 180 seconds |
+| Mattermost API persona logins and posts to `lq-p0-run3-private` | PASS for `prof-rao` and `maya` |
+| `workspaces.claimBridgeIdentity` for `prof-rao` | PASS |
+| Mattermost API unclaimed Maya mention to the smoke agent | PASS; explicit owner-only refusal received |
+| Codex per-session rollout parse | UNVERIFIED; active file disappeared during enumeration |
+| `uv run ruff check .` | PASS, all checks passed |
+| `uv run ruff format --check .` | PASS, 117 files already formatted |
+| `uv run pyright` | PASS, 0 errors, 0 warnings, 0 informations after making the optional Playwright import dynamic in the RPC helper |
+| `uv run pytest` | FAIL, 82 passed and 2 failed: `test_audit_proposal_can_be_echoed_to_commit` rejects the 81-character project value on `BookingDecisionInput.project`; `test_audit_doctor_rejects_duplicate_profile` does not reject repeated `--profile` options. These existing source behaviors are outside the explicit run 4 staging paths. |
