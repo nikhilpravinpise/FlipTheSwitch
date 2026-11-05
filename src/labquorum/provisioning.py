@@ -1111,29 +1111,6 @@ def runtime_doctor_findings(  # noqa: PLR0912, PLR0915
         return findings
     add("RUNTIME_ROOT_SAFE", "info", f"Runtime root is safe: {root}")
     runtime_codex_home = (root / "codex-home").resolve(strict=False)
-    add(
-        "RUNTIME_CODEX_HOME",
-        "info",
-        f"LabQuorum agents use Codex home {runtime_codex_home}; launch Switch Console with this CODEX_HOME.",
-    )
-    global_codex_config = Path.home() / ".codex" / "config.toml"
-    try:
-        global_config_text = global_codex_config.read_text(encoding="utf-8")
-    except FileNotFoundError:
-        pass
-    except OSError as exc:
-        add(
-            "RUNTIME_GLOBAL_CODEX_HOME_UNREADABLE",
-            "error",
-            f"Could not check the user Codex config at {global_codex_config}: {exc}",
-        )
-    else:
-        if _BEGIN_MANAGED_CONFIG in global_config_text or _END_MANAGED_CONFIG in global_config_text:
-            add(
-                "RUNTIME_GLOBAL_CODEX_HOME_POLLUTED",
-                "error",
-                f"Remove the LabQuorum managed block from the user Codex config at {global_codex_config}.",
-            )
     manifest_path = root / RUNTIME_MANIFEST_NAME
     try:
         manifest_value: Any = json.loads(manifest_path.read_text(encoding="utf-8"))
