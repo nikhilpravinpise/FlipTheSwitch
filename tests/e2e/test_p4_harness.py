@@ -44,7 +44,12 @@ from labquorum.store.audit import append_event
 @dataclass
 class FakeMattermostState:
     users: dict[str, str] = field(
-        default_factory=lambda: {"maya": "maya-id", "prof-rao": "rao-id", "labops": "labops-id"}
+        default_factory=lambda: {
+            "maya": "maya-id",
+            "prof-rao": "rao-id",
+            "labops": "labops-id",
+            "rao-labops": "rao-labops-id",
+        }
     )
     tokens: dict[str, str] = field(default_factory=dict)
     posts: dict[str, dict[str, Any]] = field(default_factory=dict)
@@ -206,6 +211,58 @@ def test_mattermost_client_posts_and_finds_agent_authored_reply(
     assert reply.message.startswith("Lena conflicts")
     assert reply.root_id == sent.post_id
     assert any(post["message"].startswith("@labops") for post in state.posts.values())
+
+
+@pytest.mark.block_network(allowed_hosts=[r"^127\.0\.0\.1$"])
+def test_E2E_01_mattermost_reply_matches_rao_labops_username(
+    fake_mattermost: tuple[str, FakeMattermostState],
+) -> None:
+    base_url, state = fake_mattermost
+    state.auto_reply = ("rao-labops", "Request AR-0042 remains pending.")
+    with MattermostClient(base_url, "maya", "fake-password", timeout=1) as client:
+        sent = client.post("channel-1", "@labops, check the booking")
+        reply = client.wait_for_reply(
+            "channel-1",
+            from_agent="labops",
+            after_ms=sent.create_at,
+            root_id=sent.post_id,
+            timeout=0.25,
+            poll_interval=0.005,
+        )
+
+    assert reply.message == "Request AR-0042 remains pending."
+
+
+def test_E2E_11_second_commit_error_matches_rao_pi_desk_username(tmp_path: Path) -> None:
+    class StubPersona:
+        def get_channel_posts(self, channel_id: str) -> list[MattermostPost]:
+            assert channel_id == "channel-1"
+            return [
+                MattermostPost(
+                    "pi-reply",
+                    "channel-1",
+                    "pi-desk-id",
+                    "COMMIT_LIMIT_REACHED for this session.",
+                    2000,
+                    root_id="prompt-1",
+                )
+            ]
+
+        def username_for(self, user_id: str) -> str:
+            assert user_id == "pi-desk-id"
+            return "rao-pi-desk"
+
+    persona = StubPersona()
+    runner = ScenarioRunner(
+        personas=cast(Any, {"maya": persona, "prof-rao": persona}),
+        ledger=LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")),
+        channel_id="channel-1",
+        evidence_dir=tmp_path / "evidence",
+    )
+
+    response = runner._agent_text_after(1000, root_id="prompt-1")
+
+    assert "COMMIT_LIMIT_REACHED" in response
 
 
 @pytest.mark.block_network(allowed_hosts=[r"^127\.0\.0\.1$"])
