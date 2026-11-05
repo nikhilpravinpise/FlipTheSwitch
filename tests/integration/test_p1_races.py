@@ -6,7 +6,7 @@ import contextlib
 import multiprocessing
 import sqlite3
 import tempfile
-from datetime import timedelta
+from datetime import UTC, timedelta
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -415,15 +415,14 @@ class LedgerBookingMachine(RuleBasedStateMachine):
         for index, first in enumerate(rows):
             for second in rows[index + 1 :]:
                 if first["instrument_id"] == second["instrument_id"]:
-                    first_interval = Interval(
-                        parse_iso_datetime(first["start_utc"]),
-                        parse_iso_datetime(first["end_utc"]),
+                    first_start = parse_iso_datetime(first["start_utc"]).astimezone(UTC)
+                    first_end = parse_iso_datetime(first["end_utc"]).astimezone(UTC)
+                    second_start = parse_iso_datetime(second["start_utc"]).astimezone(UTC)
+                    second_end = parse_iso_datetime(second["end_utc"]).astimezone(UTC)
+                    gap = timedelta(minutes=15)
+                    assert not (
+                        first_start < second_end + gap and first_end + gap > second_start
                     )
-                    second_interval = Interval(
-                        parse_iso_datetime(second["start_utc"]),
-                        parse_iso_datetime(second["end_utc"]),
-                    )
-                    assert not intervals_conflict(first_interval, second_interval, gap_minutes=15)
 
     def teardown(self) -> None:
         self.connection.close()

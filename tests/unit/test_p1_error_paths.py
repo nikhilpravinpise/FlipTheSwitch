@@ -29,6 +29,7 @@ from labquorum.domain.errors import ErrorCode, LabQuorumError
 from labquorum.domain.guards import RateGuard
 from labquorum.domain.timeutil import FixedClock, format_interval, parse_iso_datetime, utc_timestamp
 from labquorum.store.audit import append_event, tail
+from labquorum.store import db as db_module
 from labquorum.store.db import immediate_transaction, init_database, open_database
 from labquorum.store.repos import (
     cancel_booking,
@@ -222,6 +223,66 @@ def test_p1_database_refuses_incompatible_and_onedrive_ledgers(tmp_path: Path) -
         ErrorCode.INVALID_ARGUMENT,
         lambda: init_database(Path("C:/Users/test/OneDrive/LabQuorum/ledger.sqlite")),
     )
+
+
+def test_connect_closes_connection_when_initial_setup_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class BrokenConnection:
+        row_factory: Any = None
+        closed = False
+
+        def execute(self, *_args: Any, **_kwargs: Any) -> Any:
+            raise sqlite3.OperationalError("setup failed")
+
+        def close(self) -> None:
+            self.closed = True
+
+    connection = BrokenConnection()
+
+    class SQLiteStub:
+        Row = sqlite3.Row
+
+        @staticmethod
+        def connect(*_args: Any, **_kwargs: Any) -> BrokenConnection:
+            return connection
+
+    monkeypatch.setattr(db_module, "sqlite3", SQLiteStub())
+    with pytest.raises(sqlite3.OperationalError, match="setup failed"):
+        db_module._connect(tmp_path / "setup-failure.sqlite")
+    assert connection.closed
+
+
+def test_init_database_closes_connection_when_schema_setup_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    opened: list[sqlite3.Connection] = []
+    original_connect = db_module._connect
+
+    def tracked_connect(path: Path) -> sqlite3.Connection:
+        connection = original_connect(path)
+        opened.append(connection)
+        return connection
+
+    class InvalidSchemaFile:
+        def joinpath(self, _name: str) -> InvalidSchemaFile:
+            return self
+
+        def read_text(self, *, encoding: str) -> str:
+            assert encoding == "utf-8"
+            return "CREATE TABLE invalid_schema ("
+
+    class ResourceStub:
+        def files(self, _package: str) -> InvalidSchemaFile:
+            return InvalidSchemaFile()
+
+    monkeypatch.setattr(db_module, "_connect", tracked_connect)
+    monkeypatch.setattr(db_module, "resources", ResourceStub())
+    with pytest.raises(sqlite3.DatabaseError):
+        init_database(tmp_path / "schema-failure.sqlite")
+    assert len(opened) == 1
+    with pytest.raises(sqlite3.ProgrammingError, match="closed database"):
+        opened[0].execute("SELECT 1")
 
 
 def test_p1_repository_not_found_invalid_and_anchor_mismatch_paths(
