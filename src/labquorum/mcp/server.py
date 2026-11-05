@@ -148,7 +148,7 @@ def create_runtime(
     return LabTools(resolved_profile, database_path, clock=clock)
 
 
-def create_server(  # noqa: PLR0913
+def create_server(  # noqa: PLR0912, PLR0913
     profile: str | Profile | None,
     database_path: Path | None = None,
     *,
