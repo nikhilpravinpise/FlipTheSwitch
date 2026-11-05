@@ -450,7 +450,12 @@ def test_E2E_11_fresh_card_remains_pending_in_same_session(
         ledger=LedgerInspector(tmp_path / "ledger.sqlite"),
         channel_id="channel-1",
         evidence_dir=tmp_path / "evidence",
-        options=ScenarioOptions(binding=True, observation_seconds=0),
+        options=ScenarioOptions(
+            binding=True,
+            observation_seconds=0,
+            session_id="provider-session",
+            session_id_confirmed=True,
+        ),
     )
     post = MattermostPost("prompt-2", "channel-1", "maya-id", "repeat", 2000)
     reply = MattermostPost("reply-2", "channel-1", "labops-id", "AR-0042", 3000)
