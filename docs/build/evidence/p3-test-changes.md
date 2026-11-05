@@ -8,3 +8,4 @@
 | tests/unit/test_p3_auditfix.py | Encode replacement executable paths as TOML strings so the doctor regression exercises a real `.claude/worktrees` command path on Windows. |
 | tests/unit/test_p3_auditfix.py | Track `Path.open` calls against a temporary user Codex config during setup so the test fails on any read or write of the global config, then stop tracking before assertions. |
 | tests/unit/test_p3_auditfix.py | Verify a certify server creates its persistent commit limiter under the active Codex home, covering restarts and concurrent server instances. |
+| tests/unit/test_p3_auditfix.py | Check the Windows ACL deny mask uses specific write and delete rights without denying Synchronize, so agents retain read access to their instructions. |

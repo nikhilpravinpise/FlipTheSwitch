@@ -14,6 +14,7 @@ from labquorum.domain.errors import ErrorCode, LabQuorumError
 from labquorum.mcp import binding
 from labquorum.mcp import server as mcp_server
 from labquorum.mcp.profiles import Profile
+from labquorum import provisioning as provisioning_module
 from labquorum.provisioning import (
     _template,
     lint_template_data,
@@ -154,6 +155,14 @@ def test_C_11_doctor_rejects_an_mcp_command_inside_a_worktree(tmp_path: Path) ->
     )
 
 
+def test_C_11_windows_agent_write_deny_preserves_read_access() -> None:
+    build_deny_entry = getattr(provisioning_module, "_windows_agent_write_deny_entry", None)
+    assert callable(build_deny_entry), "Windows write policy needs a read-preserving deny entry"
+    assert build_deny_entry("S-1-5-21-1-2-3-1000") == (
+        "*S-1-5-21-1-2-3-1000:(OI)(CI)(WD,AD,WEA,WA,DE,DC,WDAC,WO)"
+    )
+
+
 def test_C_07_template_lint_rejects_agent_management_and_extra_connections(
     tmp_path: Path,
 ) -> None:
@@ -290,5 +299,6 @@ def test_C_06_launch_console_script_sets_runtime_home_and_waits_for_cdp() -> Non
         "CODEX_HOME",
         "remote-debugging-port=9333",
         "/json/version",
+        "(WD,AD,WEA,WA,DE,DC,WDAC,WO)",
     ):
         assert expected in contents
