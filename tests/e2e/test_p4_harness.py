@@ -714,7 +714,9 @@ def test_E2E_03_flat_live_card_matches_the_complete_decision(tmp_path: Path) -> 
         end_utc=decision["end_utc"],
     )
     card_text = "\n".join(f"{key}: {value}" for key, value in decision.items() if key != "revision")
-    card_text = f"{card_text}\nrevision: {decision['revision']}\ncontent_hash: {flat_request.content_hash}"
+    card_text = (
+        f"{card_text}\nrevision: {decision['revision']}\ncontent_hash: {flat_request.content_hash}"
+    )
 
     assert_card_matches_request(card_text, flat_request)
     flat_booking = replace(
