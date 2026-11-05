@@ -11,4 +11,5 @@
 | tests/unit/test_p3_auditfix.py | Check the Windows ACL deny mask uses specific write and delete rights without denying Synchronize, so agents retain read access to their instructions. |
 | tests/unit/test_p3_auditfix.py | Require doctor to prove agent directory protection with a `Path.open` file-create attempt because `os.access(W_OK)` reports a false positive for the specific Windows deny mask. |
 | tests/unit/test_p3_auditfix.py | Assert the launcher uses a PowerShell-compatible path API for its process working directory after the live run exposed an unsupported `Split-Path` parameter set. |
-| tests/unit/test_p3_auditfix.py | Preserve the orchestrator's P2 certify probe using only its disposable `labquorum-p2-*\\g.sqlite` ledger, while rejecting other temporary ledger paths. |
+| tests/unit/test_p3_auditfix.py | Preserve the orchestrator's P2 certify probe using only its disposable `labquorum-p2-*\g.sqlite` ledger, while rejecting other temporary ledger paths. |
+| tests/unit/test_p3_auditfix.py | Keep the P3 one-commit limiter out of the P2-only disposable ledger so its tampered-decision check reaches booking validation. |

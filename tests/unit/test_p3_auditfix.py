@@ -252,6 +252,37 @@ def test_C_12_certify_mode_accepts_only_the_p2_temporary_gate_ledger(
     assert refused.value.code is ErrorCode.BINDING_CERTIFICATION_REQUIRED
 
 
+def test_C_12_p2_gate_ledger_does_not_use_the_p3_one_commit_guard(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    p2_root = tmp_path / "labquorum-p2-contract"
+    p2_root.mkdir()
+    database = p2_root / "g.sqlite"
+    database.touch()
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex home"))
+    homes: list[Path] = []
+
+    class RecordingLimiter:
+        @classmethod
+        def for_session_home(cls, session_home: Path) -> RecordingLimiter:
+            homes.append(session_home)
+            return cls()
+
+        def wrap(self, commit: Any) -> Any:
+            return commit
+
+    monkeypatch.setattr(mcp_server, "BindingCommitLimiter", RecordingLimiter)
+    mcp_server.create_server(
+        Profile.APPROVER,
+        database,
+        binding="certify",
+        cwd=tmp_path,
+    )
+
+    assert homes == []
+
+
 def test_C_12_commit_limiter_persists_one_distinct_commit_across_instances(
     tmp_path: Path,
 ) -> None:
