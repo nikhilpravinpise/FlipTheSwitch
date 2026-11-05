@@ -186,3 +186,42 @@ Mattermost API endpoint shapes follow the official [login](https://docs.mattermo
 | `uv run ruff format --check .` | PASS, 117 files already formatted |
 | `uv run pyright` | PASS, 0 errors, 0 warnings, 0 informations after making the optional Playwright import dynamic in the RPC helper |
 | `uv run pytest` | FAIL, 82 passed and 2 failed: `test_audit_proposal_can_be_echoed_to_commit` rejects the 81-character project value on `BookingDecisionInput.project`; `test_audit_doctor_rejects_duplicate_profile` does not reject repeated `--profile` options. These existing source behaviors are outside the explicit run 4 staging paths. |
+
+## Run 5 - 2026-11-05
+
+Scope: close the S0 final reply, verify the Codex model from its rollout, create Maya's Switch user and claim, then repeat the two addressing probes. API only; no Console UI clicks, typing, or keyboard navigation.
+
+### Results
+
+| Gap | Result | Evidence |
+| --- | --- | --- |
+| S0 final reply | PASS | In Mattermost channel `lq-p0-run4-smoke` (`m43uifmkdbns7gww81par4sndy`), `@user` declined the old A2 shell-read approval with post `c4estouihibgunw5dbzufwy5gr`, then posted `@codex.p0-smoke.run3 reply with exactly: PONG 2026-11-05. No shell or file access is needed.` as post `rrxhxx3w13demyariwh9yjiw1r`. The actual agent user `codex.p0-smoke.run3` replied exactly `PONG 2026-11-05`, post `pmh8y9hi63ng9dp8rucy7p9rqw`, at 2026-11-05 11:22:28.901 UTC / 16:52:28.901 IST. |
+| Codex rollout model proof | FAIL | The live process had cwd `C:\Users\Nikhil\AppData\Local\LabQuorum\smoke-agent` and per-session `CODEX_HOME` under `C:\Users\Nikhil\.local\state\switch\sdk-sessions\8bdfe369e3cb637b0a2ec15f5e1fae3ee27d6ea164d27adfcc8f7fc7aa8a6256\provider-home\8bdfe369e3cb637b0a2ec15f5e1fae3ee27d6ea164d27adfcc8f7fc7aa8a6256`. A rollout path appeared during enumeration but disappeared before it could be read; no matched `turn_context` lines were recovered, so model and effort for every turn remain UNVERIFIED. Console's managed-agent definition still reports Codex `gpt-6-luna`, effort `high`, but that is not rollout proof. |
+| Maya user and S1 probes | FAIL overall | `POST /gateway/users` created Switch user `6b2ee708-1159-4490-afc6-551e4cc4f686`, name `Maya Iyer (synthetic student)`, email `maya@labquorum.invalid`, role `user` (HTTP 200). The first script expected 201 and exited after the successful 200 response; a follow-up GET verified the account. The admin then claimed Mattermost user `tys9b94u7fgrpxtdsdioz8ynmh` (`maya`) to the Switch user through the supported identity route (HTTP 200). With the agent temporarily open, Maya's post `3y4pdu8qwidt5d7knz4mzyin1y` at 17:09:18.766 IST got no agent-authored reply within 75 seconds. After restoring the original owner-scoped policy (HTTP 200), Maya's post `q9pqixe4j7rruyqxewftc93bza` at 17:10:40.038 IST got no agent-authored refusal within 75 seconds. Both probes FAIL. The original policy was restored. |
+
+### API and RPC procedure
+
+The Console RPC helper `scripts/ops/switch_rpc.py` was reused through CDP. RPC calls: `switchServers.getBundledChatSignIn`, `switchServers.openGatewayPage`, and `workspaces.listAgents`. The authenticated Gateway cookie came from the Console-managed session; the pinned client sends it as `Cookie: switch_auth=...` (`console/apps/switch-console-desktop/src/main/core/switch-servers/gateway-client.ts:333-363`). No credential value was written to evidence.
+
+Mattermost REST calls used `POST /api/v4/users/login`, `POST /api/v4/posts`, and `GET /api/v4/channels/{channel_id}/posts?per_page=100`. S0 declined A2 by posting `A2 3` before the tool-free mention. The two Maya probes used the existing Mattermost account and channel.
+
+Gateway calls used `GET /gateway/users`, `POST /gateway/users` with Maya's name, synthetic email, generated password, and role `user`, `POST /gateway/collaborations/6e3161e2-11b7-4b03-9cbe-6788f475bb28/identities` with `external_user_id`, `username`, and `user_id`, and `PUT /gateway/agents/1435e7f9-2947-453a-9272-820bd874ac04/addressing-policy` with `{"policy":null}` for the open probe and the original policy for restoration. Source: `core/switch_core/gateway/auth_routes.py:501-531`, `core/switch_core/gateway/collaborations.py:815-862`, and `core/switch_core/gateway/agents.py:685-724` in pinned Switch v0.40.1.
+
+The session-home derivation is `sha256(sessionId)` under `root/provider-home`, and managed host config supplies that home to Codex (`console/packages/agent-providers/src/codex/home.ts:23-53`, `console/packages/agent-providers/src/host/shared-config.ts:150-165`). The live process environment exposed the home path, but its `sessions` directory yielded no readable rollout. No `turn_context` line can be cited for the required ground-truth model check.
+
+### Run 5 command outcomes
+
+| Command or action | Result |
+| --- | --- |
+| `uv run --no-project --with playwright python scripts/ops/switch_rpc.py list-procedures` | PASS in Run 4; reused RPC procedures are listed above |
+| `uv run --no-project --with playwright python -I <temp>\run5_smoke.py` | PASS; real agent reply captured in under 180 seconds |
+| `uv run --no-project --with playwright python -I <temp>\run5_maya_switch_user.py` | API creation succeeded with HTTP 200, but command exited 1 because the script incorrectly expected HTTP 201 |
+| `uv run --no-project --with playwright python -I <temp>\run5_claim_maya.py` | PASS; Mattermost login, Gateway user lookup, and identity claim returned HTTP 200 |
+| `uv run --no-project --with playwright python -I <temp>\run5_maya_probes.py` | FAIL; neither probe produced an agent-authored response within 75 seconds; owner policy restoration returned HTTP 200 |
+| Search in the live per-session `CODEX_HOME\sessions` for a recent rollout with the smoke-agent cwd | FAIL; no stable readable rollout or matched `turn_context` lines |
+| `uv run ruff check .` | PASS, all checks passed |
+| `uv run ruff format --check .` | PASS, 122 files already formatted |
+| `uv run pyright` | PASS, 0 errors, 0 warnings, 0 informations |
+| `uv run pytest` | PASS, 101 passed in 53.92 seconds |
+| `git diff --check` | PASS, exit code 0; Git warned that the ADR working copy uses CRLF and will be normalized to LF |
+| U+2014 scan of Run 5 files | PASS, zero occurrences in `000-spikes.md` and `run5-api.json` |
