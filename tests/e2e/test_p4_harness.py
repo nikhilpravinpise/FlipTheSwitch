@@ -647,6 +647,53 @@ def test_E2E_04_approval_proposal_finds_top_level_pi_handoff(
     assert "@pi-desk" in attempt.reply.message
 
 
+def test_E2E_04_approval_proposal_requires_pi_handoff(
+    tmp_path: Path,
+) -> None:
+    ledger = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite"))
+    prompt = MattermostPost("prompt-1", "channel-1", "maya-id", "proposal", 1000)
+    response = MattermostPost(
+        "response-1",
+        "channel-1",
+        "labops-id",
+        "Request AR-0042 is pending for INS-01.",
+        2000,
+    )
+
+    class StubPersona:
+        def post(self, channel_id: str, message: str) -> MattermostPost:
+            assert channel_id == "channel-1"
+            assert message == "proposal"
+            return prompt
+
+        def wait_for_reply(  # noqa: PLR0913
+            self,
+            channel_id: str,
+            *,
+            from_agent: str,
+            after_ms: int,
+            timeout: float,
+            poll_interval: float,
+            root_id: str | None = None,
+        ) -> MattermostPost:
+            assert channel_id == "channel-1"
+            assert from_agent == "labops"
+            assert after_ms == prompt.create_at
+            assert timeout > 0
+            assert poll_interval > 0
+            return response
+
+    runner = ScenarioRunner(
+        personas=cast(Any, {"maya": StubPersona(), "prof-rao": object()}),
+        ledger=ledger,
+        channel_id="channel-1",
+        evidence_dir=tmp_path / "evidence",
+    )
+
+    with pytest.raises(AssertionError, match="hand off"):
+        runner._begin_proposal("proposal")
+
+
 def test_E2E_04_card_rejects_duplicate_canonical_field(tmp_path: Path) -> None:
     snapshot = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite")).snapshot()
     request = snapshot.requests[0]
