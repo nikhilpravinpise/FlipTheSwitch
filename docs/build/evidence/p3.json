@@ -10,5 +10,72 @@
     "tests/unit/test_p3_setup.py::test_C_11_doctor_rejects_invalid_runtime_configuration",
     "tests/unit/test_p3_setup.py::test_C_12_binding_fails_closed_and_limits_distinct_commits",
     "tests/unit/test_p3_setup.py::test_I_13_doctor_reports_and_validates_effective_binding_state"
-  ]
+  ],
+  "live": {
+    "status": "smoke_passed",
+    "runtime_root": "C:\\Users\\Nikhil\\AppData\\Local\\LabQuorum",
+    "room": {
+      "name": "rao-labquorum",
+      "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+      "private": true,
+      "aliases": ["labops", "pi-desk"]
+    },
+    "agents": {
+      "labops": {
+        "name": "rao-labops",
+        "switch_agent_id": "4bd8fe29-7f25-4cfa-aa66-0ff37298399f",
+        "provider": "codex",
+        "model": "gpt-6-luna",
+        "effort": "high",
+        "runtime_profile": "proposer"
+      },
+      "pi_desk": {
+        "name": "rao-pi-desk",
+        "switch_agent_id": "75a268ed-675f-45f6-b104-04509024ab52",
+        "provider": "codex",
+        "model": "gpt-6-luna",
+        "effort": "high",
+        "runtime_profile": "approver",
+        "binding": "off"
+      }
+    },
+    "smoke": {
+      "request_post_id": "57gdroajjiyq98nm3c51fsdj3y",
+      "request_time_ist": "2026-11-05T19:54:57.166+05:30",
+      "reply_post_id": "8ccnr67ttpdrtbzc1pzb4n4k8c",
+      "reply_time_ist": "2026-11-05T20:04:03.606+05:30",
+      "reply_root_post_id": "57gdroajjiyq98nm3c51fsdj3y",
+      "request_id": "AR-0042",
+      "booking_id": "BK-0042",
+      "request_status": "pending",
+      "booking_status": "proposed",
+      "requested_slot_ist": "2026-11-06 14:00-15:00",
+      "conflict": "Dr. Lena Okafor, 2026-11-06 14:00-15:30 IST",
+      "proposed_slot_ist": "2026-11-06 15:45-16:45",
+      "commit_event": false
+    },
+    "labops_codex_thread": {
+      "thread_id": "01a1ac19-479b-7792-b44b-1d13eeaa07a3",
+      "cli_version": "0.166.0",
+      "model": "gpt-6-luna",
+      "effort": "high",
+      "rollout_file_present": false,
+      "rollout_turn_context_verified": false,
+      "effective_sandbox_mode": "workspace-write",
+      "web_search": "disabled",
+      "shell_tool": false
+    },
+    "checks": {
+      "p3_live_check": "passed",
+      "full_p3_live_gate": {
+        "status": "failed_baseline_only",
+        "exit_code": 1,
+        "failed_check": "check 6 gate baseline",
+        "baseline_sha": "ad39706e9ac173b1f3e701056f5be9e66b766338",
+        "failure": "scripts/gates changed since baseline",
+        "all_other_gate_checks": "passed",
+        "baseline_owner": "orchestrator"
+      }
+    }
+  }
 }
