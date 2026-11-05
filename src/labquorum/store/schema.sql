@@ -1,0 +1,1 @@
+-- P1 schema will be installed by the store implementation.
