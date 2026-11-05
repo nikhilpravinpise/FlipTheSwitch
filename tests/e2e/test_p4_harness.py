@@ -419,7 +419,11 @@ def test_E2E_01_smoke_accepts_top_level_handoff_outside_prompt_thread(
     ledger = LedgerInspector(_make_ledger(tmp_path / "ledger.sqlite"))
     prompt = MattermostPost("prompt-1", "channel-1", "maya-id", "book INS-01", 1000)
     thread_summary = MattermostPost(
-        "summary-1", "channel-1", "labops-id", "Worked for 1m 19s. AR-0042", 2000,
+        "summary-1",
+        "channel-1",
+        "labops-id",
+        "Worked for 1m 19s. AR-0042",
+        2000,
         root_id=prompt.post_id,
     )
     handoff = MattermostPost(
@@ -439,7 +443,7 @@ def test_E2E_01_smoke_accepts_top_level_handoff_outside_prompt_thread(
             assert message
             return prompt
 
-        def wait_for_reply(
+        def wait_for_reply(  # noqa: PLR0913
             self,
             channel_id: str,
             *,
