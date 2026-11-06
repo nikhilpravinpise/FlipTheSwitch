@@ -225,6 +225,42 @@ def test_U_D06_analysis_timeout_kills_the_process_tree(tmp_path: Path) -> None:
     assert _wait_until_stopped(child_pid)
 
 
+@pytest.mark.timeout(15)
+def test_U_D06b_timeout_returns_promptly_when_grandchild_holds_pipes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    marker = tmp_path / "grandchild.pid"
+    grandchild_code = "import time; time.sleep(30)"
+    parent_code = (
+        "import subprocess,sys,time; "
+        "p=subprocess.Popen([sys.executable,'-c',sys.argv[2]]); "
+        "open(sys.argv[1],'w',encoding='utf-8').write(str(p.pid)); time.sleep(30)"
+    )
+    if os.name == "nt":
+        original_run = subprocess.run
+
+        def taskkill_races_child_spawn(
+            *args: Any, **kwargs: Any
+        ) -> subprocess.CompletedProcess[str]:
+            command = args[0] if args else kwargs.get("args", [])
+            if command and command[0].lower() == "taskkill":
+                return subprocess.CompletedProcess(command, 0, "", "")
+            return original_run(*args, **kwargs)
+
+        monkeypatch.setattr(subprocess, "run", taskkill_races_child_spawn)
+    started = time.monotonic()
+    with pytest.raises(TimeoutError):
+        run_process_with_timeout(
+            [sys.executable, "-c", parent_code, str(marker), grandchild_code],
+            timeout_seconds=0.25,
+        )
+    assert time.monotonic() - started < 10
+    assert marker.is_file()
+    grandchild_pid = int(marker.read_text(encoding="utf-8"))
+    assert _wait_until_stopped(grandchild_pid)
+
+
 def test_U_D07_qc_blanks_are_flagged_without_removing_treatment_wells(tmp_path: Path) -> None:
     runtime, _ = _runtime(tmp_path)
     registered = _register(runtime, "DS-QC", _plate_csv())
