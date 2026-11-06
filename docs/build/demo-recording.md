@@ -23,7 +23,9 @@ The default student is `maya`. To use Darshan's Mattermost account, add his cred
 uv run python scripts/demo/record_demo.py --proposal-only --student darved2305
 ```
 
-The P4 smoke assertion still expects the canonical ledger requester `maya`. Verify that the selected Mattermost account is intended to drive that fixture before recording; the Darshan account-to-fixture mapping has not been live-verified.
+LabOps records the Switch sender's handle as the requester, so the recorder expects the ledger request to belong to the selected student's Mattermost username (for example `darved2305`), not `maya`. That username must exist as a ledger person with valid INS-01 training; the demo seed includes `darved2305` with an INS-01 training record. The student types a first-person request: `@labops, can I book INS-01 (plate reader) for 60 minutes on <date> between 14:00 and 17:00 Asia/Kolkata?`. The Darshan take is covered by offline tests only; a live take with `--student darved2305` is still UNVERIFIED.
+
+Before recording, confirm the ledger has a future committed Lena INS-01 booking from 14:00 to 15:30 local time. The demo seed anchors that booking to the seed's anchor date, so a ledger seeded for Friday 6 November has no conflict on later days. Pass `--request-date` only for a date that actually has that conflict.
 
 The current persona file may use `server` and `private_room.id`; the P4 fields `mattermost_url` and `channel_id` are also accepted. Extra persona entries are loaded in memory for the selected student. Password values are never printed or written to timing evidence. An optional `--student-state` and `--pi-state` can load Playwright storage-state JSON files instead of adding an API login cookie to each browser context. The REST clients still log in with the persona file so the recorder can observe actual events.
 

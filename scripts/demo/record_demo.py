@@ -303,6 +303,7 @@ class DemoRecorder:
                 proposal_reply.message,
                 request_id,
                 proposal_snapshot,
+                expected_requester=self.student.username,
             ),
         )
         request = _require_request(proposal_snapshot, request_id)
@@ -969,8 +970,8 @@ def _record_pages(  # noqa: PLR0913, PLR0917
 
 def _build_request_prompt(request_date: date) -> str:
     return (
-        "@labops, propose a 60-minute INS-01 plate reader booking for Maya on "
-        f"{request_date.isoformat()} between 14:00 and 17:00 Asia/Kolkata."
+        "@labops, can I book INS-01 (plate reader) for 60 minutes on "
+        f"{request_date.isoformat()} between 14:00 and 17:00 Asia/Kolkata?"
     )
 
 
