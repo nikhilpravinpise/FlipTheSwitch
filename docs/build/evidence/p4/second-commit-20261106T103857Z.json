@@ -1,0 +1,22 @@
+{
+  "scenario": "e2e11_second_commit_blocked",
+  "status": "not-proven",
+  "captured_at_utc": "2026-11-06T10:38:57Z",
+  "request_ids": [],
+  "attempt": {
+    "console_launch_command": "./scripts/ops/launch_console.ps1",
+    "console_launch_result": "Switch Console CDP became ready at http://127.0.0.1:9333 with the LabQuorum runtime CODEX_HOME.",
+    "console_auth_observation": "The launch output reported that Switch session renewal was rejected with HTTP 401 and would fall back to sign-in once expired.",
+    "session_list_command": "python scripts/ops/switch_rpc.py call sessions.getSessions \"[]\"",
+    "session_list_result": [],
+    "harness_command": null,
+    "harness_result": "Not run: no current Switch Console session was available to verify for the target channel, which E2E-11 requires before it starts."
+  },
+  "reason": "A verified live session ID could not be obtained. Without it, the one-commit process correlation cannot be established, so no second commit attempt was made.",
+  "binding_tuple_from_committed_approval_evidence": {
+    "codex_cli_version": "0.166.0",
+    "switch_console_version": "0.40.1",
+    "labquorum_version": "1.0.0rc1",
+    "template_sha256": "9277a983eff5dadc13085e668afdef665c0510ad8fa79c171b4335dfff7c878e"
+  }
+}
