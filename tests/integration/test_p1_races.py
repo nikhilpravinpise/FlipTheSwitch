@@ -184,6 +184,9 @@ def _unsafe_race(context: Any, database_path: Path, now: Any) -> list[str]:
     return results
 
 
+# Fifty rounds of spawn-started process pairs took 63 s on a loaded Windows host, over the
+# suite-wide 60 s limit. The race, round count and per-worker joins are unchanged.
+@pytest.mark.timeout(300)
 def test_I_01_two_processes_race_fifty_times_and_unsafe_variant_is_detected(
     tmp_path: Path,
 ) -> None:

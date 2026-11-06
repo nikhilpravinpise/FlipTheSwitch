@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis import strategies as st
 from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
@@ -400,7 +400,11 @@ def test_U_S06_unrelated_dataset_runs_remain_current(tmp_path: Path) -> None:
 
 # Each example creates a fresh file-backed SQLite ledger; Windows CI runners need more than the
 # suite-wide 60 s for 100 examples. The property, strategy and example count are unchanged.
+# The same file I/O also exceeds Hypothesis's default 200 ms per-example deadline on Windows
+# hosts with on-access scanning, so the per-example timing guard is disabled; the overall
+# timeout above still bounds the run.
 @pytest.mark.timeout(300)
+@settings(deadline=None)
 @given(edge_codes=st.sets(st.integers(0, 41), max_size=42))
 def test_P_07_stale_propagation_is_monotonic_and_complete_against_independent_oracle(
     edge_codes: set[int],
