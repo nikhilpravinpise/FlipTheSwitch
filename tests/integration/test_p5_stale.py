@@ -371,7 +371,9 @@ def test_P_07_stale_propagation_is_monotonic_and_complete_against_independent_or
         database = Path(temp_dir) / "property.sqlite"
         connection = init_database(database)
         try:
+            connection.execute("BEGIN IMMEDIATE")
             _insert_property_graph(connection, edge_codes)
+            connection.execute("COMMIT")
             children: dict[tuple[str, str], list[tuple[str, str]]] = {}
             for edge_code in edge_codes:
                 if edge_code < 6:
