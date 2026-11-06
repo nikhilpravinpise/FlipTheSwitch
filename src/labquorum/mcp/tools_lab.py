@@ -123,11 +123,13 @@ class _BookingContext:
         training: Training | None,
         bookings: list[Booking],
         owners: dict[str, dict[str, str]],
+        instrument_name: str,
     ) -> None:
         self.policy = policy
         self.training = training
         self.bookings = bookings
         self.owners = owners
+        self.instrument_name = instrument_name
 
 
 def _load_booking_context(
@@ -202,7 +204,7 @@ def _load_booking_context(
             "person_id": str(row["person_id"]),
             "display_name": str(row["display_name"]),
         }
-    return _BookingContext(policy, training, bookings, owners)
+    return _BookingContext(policy, training, bookings, owners, str(instrument["name"]))
 
 
 def _resolve_requester_id(connection: sqlite3.Connection, requester_handle: str) -> str:
@@ -236,6 +238,7 @@ def _conflict_details(
     now: datetime,
 ) -> dict[str, Any]:
     booking_id = str(error.details.get("booking_id", ""))
+    zone = context.policy.timezone
     nearest = nearest_free_slot(
         context.policy,
         interval.start,
@@ -254,13 +257,40 @@ def _conflict_details(
                 context.policy.timezone,
             ),
         }
+    owner_name = context.owners.get(booking_id, {}).get("display_name", "Unknown owner")
+    conflicting: dict[str, Any] = {
+        "booking_id": booking_id,
+        "owner": context.owners.get(booking_id, {}).get("person_id", "unknown"),
+        "owner_name": owner_name,
+    }
+    conflict_summary = "at an overlapping time"
+    existing = next(
+        (booking for booking in context.bookings if booking.booking_id == booking_id), None
+    )
+    if existing is not None:
+        conflict_summary = format_interval(existing.interval.start, existing.interval.end, zone)
+        conflicting.update(
+            {
+                "start_utc": utc_timestamp(existing.interval.start),
+                "end_utc": utc_timestamp(existing.interval.end),
+                "summary": conflict_summary,
+            }
+        )
+    nearest_text = (
+        f"Nearest free {interval.duration_minutes}-minute slot: {nearest_result['summary']}."
+        if nearest_result is not None
+        else f"No free {interval.duration_minutes}-minute slot was found in the booking window."
+    )
+    reply_summary = (
+        f"{context.policy.instrument_id} ({context.instrument_name}) is not available for "
+        f"{format_interval(interval.start, interval.end, zone)}: it conflicts with "
+        f"{owner_name}'s committed booking {booking_id}, {conflict_summary}. "
+        f"{nearest_text} Nothing has been booked."
+    )
     return {
-        "conflicting_booking": {
-            "booking_id": booking_id,
-            "owner": context.owners.get(booking_id, {}).get("person_id", "unknown"),
-            "owner_name": context.owners.get(booking_id, {}).get("display_name", "Unknown owner"),
-        },
+        "conflicting_booking": conflicting,
         "nearest_free_slot": nearest_result,
+        "reply_summary": reply_summary,
     }
 
 

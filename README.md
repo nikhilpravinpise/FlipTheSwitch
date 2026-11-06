@@ -58,6 +58,21 @@ and proposed slot screenshot], [PLACEHOLDER: review card screenshot, only if cer
    the ledger commits. Otherwise the request remains proposal-only; check the ledger
    before claiming a booking exists.
 
+The LabOps reply is meant to give a student every fact needed to act on it. The
+conflict sentence comes verbatim from the tool's `reply_summary`, so its date, local
+time and zone are computed by the ledger, not composed by the model. The intended
+shape, using the synthetic seed (this is the target format, not a captured live
+reply):
+
+> Darshan Ved (student) (@darved2305): INS-01 (Plate reader (Tecan Spark)) is not
+> available for Sat 7 Nov 2026, 14:00-15:00 IST: it conflicts with Dr. Lena Okafor's
+> committed booking BK-0041, Sat 7 Nov 2026, 14:00-15:30 IST. Nearest free 60-minute
+> slot: Sat 7 Nov 2026, 15:45-16:45 IST. Nothing has been booked. Proposed: Sat 7 Nov
+> 2026 15:45 IST to Sat 7 Nov 2026 16:45 IST. Request AR-0042 is pending, not booked
+> yet; @pi-desk will review. A proposal is not a reservation.
+
+Whether the live agent follows this format is checked only by a real room run.
+
 ## Architecture and safety
 
 ```mermaid
