@@ -1,0 +1,48 @@
+{
+  "audit_valid": true,
+  "binding": false,
+  "booking_statuses": [
+    "proposed"
+  ],
+  "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+  "elapsed_seconds": 49.11,
+  "finished_at_utc": "2026-11-06T05:57:53.035+00:00",
+  "generated_at_utc": "2026-11-06T05:57:53.035+00:00",
+  "input": "@labops, propose a 60-minute INS-01 booking on the next open day between 14:00 and 17:00.",
+  "ledger_identity": "C:\\Users\\Nikhil\\AppData\\Local\\Temp\\labquorum-p3-p4-run2-r4m2l3au\\p3-test-ledger.sqlite",
+  "ledger_schema_version": 3,
+  "prompt_post_id": "ru517czjyjn8dnczoya1mazxmw",
+  "request_id": "AR-0042",
+  "request_status": "pending",
+  "response": "@rao-pi-desk Request AR-0042 is pending. The requested Fri 6 Nov 2026, 14:00-15:00 IST conflicts with Dr. Lena Okafor’s committed booking, Fri 6 Nov 2026, 14:00-15:30 IST. Proposed same-duration alternative: Fri 6 Nov 2026, 15:45-16:45 IST. not booked yet; @pi-desk will review",
+  "response_post_id": "h6979uc6gibamnab47i5rmwc3a",
+  "scenario": "e2e01",
+  "started_at_utc": "2026-11-06T05:57:03.915+00:00",
+  "status": "pass",
+  "steps": [
+    {
+      "elapsed_seconds": 0.0,
+      "name": "ledger.snapshot_before",
+      "started_at_utc": "2026-11-06T05:57:03.915+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 0.047,
+      "name": "mattermost.post_prompt",
+      "started_at_utc": "2026-11-06T05:57:03.918+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 49.063,
+      "name": "mattermost.wait_agent_reply",
+      "started_at_utc": "2026-11-06T05:57:03.958+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "name": "ledger.snapshot_after_reply",
+      "started_at_utc": "2026-11-06T05:57:53.021+00:00",
+      "status": "pass"
+    }
+  ]
+}

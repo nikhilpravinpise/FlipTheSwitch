@@ -1,0 +1,32 @@
+{
+  "binding": false,
+  "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+  "elapsed_seconds": 120.078,
+  "failure": "ReplyTimeout: Reply from labops timed out after 120 seconds.",
+  "finished_at_utc": "2026-11-06T05:52:53.456+00:00",
+  "generated_at_utc": "2026-11-06T05:52:53.456+00:00",
+  "ledger_identity": "C:\\Users\\Nikhil\\AppData\\Local\\Temp\\labquorum-p3-p4-run2-r4m2l3au\\p3-test-ledger.sqlite",
+  "scenario": "e2e01",
+  "started_at_utc": "2026-11-06T05:50:53.367+00:00",
+  "status": "fail",
+  "steps": [
+    {
+      "elapsed_seconds": 0.0,
+      "name": "ledger.snapshot_before",
+      "started_at_utc": "2026-11-06T05:50:53.367+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 0.015,
+      "name": "mattermost.post_prompt",
+      "started_at_utc": "2026-11-06T05:50:53.369+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 120.063,
+      "name": "mattermost.wait_agent_reply",
+      "started_at_utc": "2026-11-06T05:50:53.389+00:00",
+      "status": "fail"
+    }
+  ]
+}

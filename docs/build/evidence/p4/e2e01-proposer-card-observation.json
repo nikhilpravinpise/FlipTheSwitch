@@ -1,0 +1,10 @@
+{
+  "scenario": "e2e01",
+  "observation": "approval_card_baseline",
+  "captured_at_utc": "2026-11-06T01:37:29.858+00:00",
+  "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+  "api": "Mattermost GET /api/v4/channels/{channel_id}/posts",
+  "open_approval_card_count": 0,
+  "open_labops_authored_card_count": 0,
+  "cards": []
+}

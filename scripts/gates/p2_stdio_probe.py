@@ -26,11 +26,13 @@ REQUIRED_ERROR_CODES = {"STALE_REQUEST", "DECISION_MISMATCH"}
 
 @asynccontextmanager
 async def _connect(profile: str, database: Path) -> AsyncIterator[ClientSession]:
-    parameters = StdioServerParameters(
-        command="uv",
-        args=["run", "lq-mcp", "--profile", profile, "--db", str(database)],
-        cwd=ROOT,
-    )
+    # Since P3, binding tools are fail-closed: the approver exposes commit_booking only in an
+    # explicit binding mode. The P2 contract exercises commits against a temporary test ledger,
+    # so the approver runs in `certify` mode exactly as scripts/gates/p3.py does.
+    args = ["run", "lq-mcp", "--profile", profile, "--db", str(database)]
+    if profile == "approver":
+        args.extend(["--binding", "certify"])
+    parameters = StdioServerParameters(command="uv", args=args, cwd=ROOT)
     async with (
         stdio_client(parameters) as (read_stream, write_stream),
         ClientSession(read_stream, write_stream) as session,

@@ -1,0 +1,58 @@
+{
+  "scenario": "student_cannot_answer",
+  "status": "pass",
+  "captured_at_utc": "2026-11-06T06:27:43.258+00:00",
+  "card": {
+    "id": "ak71ga96njdcdjuxmgmht6meze",
+    "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+    "root_id": "njhzm4i4ub8uipec3s1wf7f3ea",
+    "author": "rao-pi-desk",
+    "create_at_ms": 1793946314540,
+    "message": "@user\n**Permission needed** · request `A18`\nlabquorum_pidesk wants to run commit_booking\naction: commit_booking\ncontent_hash: b40259849c29229ab26d4da30df75f144030ad2ff89b2ecf6cd9451285fa772f\nend_local: Tue 10 Nov 2026 11:00 IST\nend_utc: 2026-11-10T05:30:00.000000Z\ninstrument_id: INS-01\ninstrument_name: Plate reader (Tecan Spark)\nproject_untrusted_text: booking request\nrequest_id: AR-0045\nrequester_display_name: Maya Iyer\nrequester_handle: maya\nrevision: 1\nstart_local: Tue 10 Nov 2026 10:00 IST\nstart_utc: 2026-11-10T04:30:00.000000Z\nReply with `A18` and your choice, e.g. `A18 1`.",
+    "visible_options": [
+      {
+        "number": 1,
+        "label": "Approve"
+      },
+      {
+        "number": 2,
+        "label": "Decline"
+      },
+      {
+        "number": 3,
+        "label": "Cancel"
+      }
+    ]
+  },
+  "student_answer_post_id": "5dbh6f4ei7d5mxndgwew7d8fhy",
+  "student_answer": "A18 1",
+  "card_still_open_after_attempt": true,
+  "settled_by_after_student_attempt": null,
+  "system_or_agent_responses_after_student_attempt": [
+    {
+      "post_id": "fj39yg33rtgomjgowcytpo1dqe",
+      "author": "rao-pi-desk",
+      "message": "@user ⚠️ The agent host is offline. This request cannot continue until it reconnects."
+    }
+  ],
+  "ledger_unchanged_after_student_attempt": true,
+  "request_status_after_student_attempt": "pending",
+  "booking_statuses_after_student_attempt": [
+    "proposed"
+  ],
+  "commit_audit_count_after_student_attempt": 0,
+  "audit_valid_after_student_attempt": true,
+  "rejection_evidence": "The owner-only card remained open after Maya posted its Approve option; the ledger and audit snapshot were unchanged.",
+  "owner_cleanup": {
+    "answer_post_id": "9j9u86qijifcm8jh5xjw6ckfac",
+    "choice": "Decline",
+    "settled_by": "prof-rao",
+    "settled_card_message": "**Decline** · request `A18`\nlabquorum_pidesk wants to run commit_booking\naction: commit_booking\ncontent_hash: b40259849c29229ab26d4da30df75f144030ad2ff89b2ecf6cd9451285fa772f\nend_local: Tue 10 Nov 2026 11:00 IST\nend_utc: 2026-11-10T05:30:00.000000Z\ninstrument_id: INS-01\ninstrument_name: Plate reader (Tecan Spark)\nproject_untrusted_text: booking request\nrequest_id: AR-0045\nrequester_display_name: Maya Iyer\nrequester_handle: maya\nrevision: 1\nstart_local: Tue 10 Nov 2026 10:00 IST\nstart_utc: 2026-11-10T04:30:00.000000Z\nChosen by @prof-rao from Mattermost.",
+    "request_status": "pending",
+    "booking_statuses": [
+      "proposed"
+    ],
+    "commit_audit_count": 0,
+    "audit_valid": true
+  }
+}

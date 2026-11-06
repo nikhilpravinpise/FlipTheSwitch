@@ -1,0 +1,56 @@
+{
+  "binding": true,
+  "binding_tuple": {
+    "codex_cli_version": "0.166.0",
+    "labquorum_version": "1.0.0rc1",
+    "switch_console_version": "0.40.1",
+    "template_sha256": "9277a983eff5dadc13085e668afdef665c0510ad8fa79c171b4335dfff7c878e"
+  },
+  "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+  "elapsed_seconds": 159.422,
+  "failure": "ReplyTimeout: No approval card arrived within 120 seconds.",
+  "finished_at_utc": "2026-11-06T06:07:46.615+00:00",
+  "generated_at_utc": "2026-11-06T06:07:46.615+00:00",
+  "ledger_identity": "C:\\Users\\Nikhil\\AppData\\Local\\Temp\\labquorum-p3-p4-run2-r4m2l3au\\p3-test-ledger.sqlite",
+  "scenario": "approval",
+  "started_at_utc": "2026-11-06T06:05:07.207+00:00",
+  "status": "fail",
+  "steps": [
+    {
+      "elapsed_seconds": 0.015,
+      "name": "ledger.snapshot_before",
+      "started_at_utc": "2026-11-06T06:05:07.207+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 0.047,
+      "name": "mattermost.approval_baseline",
+      "started_at_utc": "2026-11-06T06:05:07.215+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 0.016,
+      "name": "mattermost.post_prompt",
+      "started_at_utc": "2026-11-06T06:05:07.262+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 39.281,
+      "name": "mattermost.wait_agent_reply",
+      "started_at_utc": "2026-11-06T06:05:07.280+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "name": "ledger.snapshot_after_reply",
+      "started_at_utc": "2026-11-06T06:05:46.558+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 120.063,
+      "name": "mattermost.wait_approval_card",
+      "started_at_utc": "2026-11-06T06:05:46.560+00:00",
+      "status": "fail"
+    }
+  ]
+}

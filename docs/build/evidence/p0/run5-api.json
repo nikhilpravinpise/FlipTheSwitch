@@ -1,0 +1,89 @@
+{
+  "run": 5,
+  "date": "2026-11-05",
+  "timezone": "Asia/Kolkata",
+  "environment": {
+    "switch_console": "0.40.1",
+    "switch_server_api": "http://localhost:52563",
+    "mattermost_api": "v4",
+    "mattermost_api_base": "http://localhost:52564/api/v4",
+    "smoke_room": "lq-p0-run4-smoke",
+    "smoke_channel_id": "m43uifmkdbns7gww81par4sndy"
+  },
+  "gaps": {
+    "s0_final_reply": {
+      "status": "PASS",
+      "declined_previous_request": "A2",
+      "decline_post_id": "c4estouihibgunw5dbzufwy5gr",
+      "prompt_post_id": "rrxhxx3w13demyariwh9yjiw1r",
+      "prompt": "@codex.p0-smoke.run3 reply with exactly: PONG 2026-11-05. No shell or file access is needed.",
+      "reply": {
+        "author": "codex.p0-smoke.run3",
+        "text": "PONG 2026-11-05",
+        "post_id": "pmh8y9hi63ng9dp8rucy7p9rqw",
+        "created_at_utc": "2026-11-05T11:22:28.901Z",
+        "created_at_ist": "2026-11-05T16:52:28.901+05:30"
+      },
+      "poll_limit_seconds": 180
+    },
+    "codex_rollout_model_proof": {
+      "status": "FAIL",
+      "managed_agent_settings": {
+        "provider": "codex",
+        "model": "gpt-6-luna",
+        "effort": "high"
+      },
+      "live_process_cwd": "C:\\Users\\Nikhil\\AppData\\Local\\LabQuorum\\smoke-agent",
+      "live_process_codex_home": "C:\\Users\\Nikhil\\.local\\state\\switch\\sdk-sessions\\8bdfe369e3cb637b0a2ec15f5e1fae3ee27d6ea164d27adfcc8f7fc7aa8a6256\\provider-home\\8bdfe369e3cb637b0a2ec15f5e1fae3ee27d6ea164d27adfcc8f7fc7aa8a6256",
+      "rollout_search": "A rollout path appeared during enumeration and disappeared before it could be read; no matched turn_context line recovered.",
+      "matched_turn_context_lines": []
+    },
+    "maya_identity_and_probes": {
+      "status": "FAIL",
+      "switch_user": {
+        "id": "6b2ee708-1159-4490-afc6-551e4cc4f686",
+        "name": "Maya Iyer (synthetic student)",
+        "email": "maya@labquorum.invalid",
+        "role": "user",
+        "create_http_status": 200
+      },
+      "mattermost_identity": {
+        "username": "maya",
+        "external_user_id": "tys9b94u7fgrpxtdsdioz8ynmh",
+        "switch_claim_http_status": 200,
+        "claimed_switch_user_id": "6b2ee708-1159-4490-afc6-551e4cc4f686"
+      },
+      "credential_store": "%LOCALAPPDATA%/LabQuorum/personas.json",
+      "anyone_probe": {
+        "policy_update_http_status": 200,
+        "post_id": "3y4pdu8qwidt5d7knz4mzyin1y",
+        "created_at_ist": "2026-11-05T17:09:18.766+05:30",
+        "result": "FAIL: no agent-authored reply within 75 seconds"
+      },
+      "owner_scoped_probe": {
+        "policy_restore_http_status": 200,
+        "post_id": "q9pqixe4j7rruyqxewftc93bza",
+        "created_at_ist": "2026-11-05T17:10:40.038+05:30",
+        "result": "FAIL: no agent-authored refusal within 75 seconds"
+      },
+      "original_owner_policy_restored": true
+    }
+  },
+  "rpc_procedures": [
+    "switchServers.getBundledChatSignIn",
+    "switchServers.openGatewayPage",
+    "workspaces.listAgents"
+  ],
+  "mattermost_api_paths": [
+    "POST /api/v4/users/login",
+    "POST /api/v4/posts",
+    "GET /api/v4/channels/{channel_id}/posts?per_page=100"
+  ],
+  "gateway_api_paths": [
+    "GET /gateway/users",
+    "POST /gateway/users",
+    "POST /gateway/collaborations/{bridge_id}/identities",
+    "PUT /gateway/agents/{agent_id}/addressing-policy"
+  ],
+  "secrets_in_evidence": false
+}

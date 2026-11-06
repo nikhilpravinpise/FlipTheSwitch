@@ -1,0 +1,9 @@
+{
+  "captured_at_utc": "2026-11-06T06:26:32.363+00:00",
+  "status": "fail",
+  "reason": "No readable turn_context with model and effort appeared in the per-session CODEX_HOME during the live watch.",
+  "agent_id": "75a268ed-675f-45f6-b104-04509024ab52",
+  "session_id": "4868e2c5-1333-51ac-9a3b-b808da9659c9",
+  "session_status_at_end": "running",
+  "codex_home": "C:\\Users\\Nikhil\\.local\\state\\switch\\sdk-sessions\\25f5cec48d9303db4d59e9f372718c6a4bb5eae1a7eeac8dc1a11322412aa981\\provider-home\\25f5cec48d9303db4d59e9f372718c6a4bb5eae1a7eeac8dc1a11322412aa981"
+}
