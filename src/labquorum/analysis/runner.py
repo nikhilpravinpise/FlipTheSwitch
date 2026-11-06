@@ -166,7 +166,7 @@ def _create_windows_job() -> int | None:
             ("PeakJobMemoryUsed", ctypes.c_size_t),
         ]
 
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32 = _windows_kernel32()
     kernel32.CreateJobObjectW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p]
     kernel32.CreateJobObjectW.restype = ctypes.c_void_p
     kernel32.SetInformationJobObject.argtypes = [
@@ -194,7 +194,7 @@ def _create_windows_job() -> int | None:
 
 def _assign_process_to_job(job_handle: int, process: subprocess.Popen[str]) -> bool:
     # AssignProcessToJobObject: https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-assignprocesstojobobject
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32 = _windows_kernel32()
     kernel32.AssignProcessToJobObject.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
     kernel32.AssignProcessToJobObject.restype = ctypes.c_int
     process_handle = cast(Any, process)._handle
@@ -203,7 +203,7 @@ def _assign_process_to_job(job_handle: int, process: subprocess.Popen[str]) -> b
 
 def _terminate_windows_job(job_handle: int) -> bool:
     # TerminateJobObject: https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-terminatejobobject
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32 = _windows_kernel32()
     kernel32.TerminateJobObject.argtypes = [ctypes.c_void_p, ctypes.c_uint]
     kernel32.TerminateJobObject.restype = ctypes.c_int
     return bool(kernel32.TerminateJobObject(job_handle, 1))
@@ -211,10 +211,15 @@ def _terminate_windows_job(job_handle: int) -> bool:
 
 def _close_windows_job(job_handle: int) -> None:
     # CloseHandle: https://learn.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-closehandle
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32 = _windows_kernel32()
     kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
     kernel32.CloseHandle.restype = ctypes.c_int
     kernel32.CloseHandle(job_handle)
+
+
+def _windows_kernel32() -> Any:
+    """Load kernel32 through ctypes, whose Windows-only loader lacks Linux stubs."""
+    return cast(Any, ctypes).WinDLL("kernel32", use_last_error=True)
 
 
 def _close_process_pipes(process: subprocess.Popen[str]) -> None:
