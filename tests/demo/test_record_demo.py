@@ -41,10 +41,10 @@ class FakePage:
 
 
 class FakeLedger:
-    def __init__(self) -> None:
+    def __init__(self, *, requester: str = "maya") -> None:
         self.state = "empty"
-        self.proposal = _proposal_snapshot()
-        self.committed = _committed_snapshot()
+        self.proposal = _proposal_snapshot(requester)
+        self.committed = _committed_snapshot(requester)
 
     def snapshot(self) -> LedgerSnapshot:
         if self.state == "committed":
@@ -203,6 +203,36 @@ def test_E2E_02_recorder_types_a_real_dated_request_and_logs_proposal_timing(
     ]
     assert ledger.state == "proposal"
     assert not any(item.get("mode") == "approval" for item in pi_page.overlays)
+
+
+def test_E2E_02_selected_student_is_the_expected_ledger_requester(
+    tmp_path: Path,
+) -> None:
+    recorder, student, _, ledger, _, _ = _make_recorder(
+        tmp_path, proposal_only=True, student_username="darved2305"
+    )
+
+    result = recorder.run()
+
+    assert result["status"] == "pass"
+    assert result["request_id"] == "AR-0042"
+    assert result["request_status"] == "pending"
+    assert ledger.proposal.requests[0].requester == student.username
+
+
+def test_E2E_02_student_prompt_asks_for_their_own_booking(tmp_path: Path) -> None:
+    recorder, _, _, _, student_page, _ = _make_recorder(
+        tmp_path, proposal_only=True, student_username="darved2305"
+    )
+
+    recorder.run()
+    prompt = student_page.visible_text[0]
+
+    assert prompt.startswith("@labops, can I book INS-01")
+    assert "60 minutes" in prompt
+    assert "2026-11-06" in prompt
+    assert "between 14:00 and 17:00 Asia/Kolkata" in prompt
+    assert "maya" not in prompt.casefold()
 
 
 def test_E2E_03_student_refusal_is_verified_before_its_caption_is_shown(
@@ -456,9 +486,10 @@ def _make_recorder(
     tmp_path: Path,
     *,
     proposal_only: bool,
+    student_username: str = "maya",
 ) -> tuple[DemoRecorder, FakeClient, FakeClient, FakeLedger, FakePage, FakePage]:
-    ledger = FakeLedger()
-    student = FakeClient("maya", ledger)
+    ledger = FakeLedger(requester=student_username)
+    student = FakeClient(student_username, ledger)
     pi = FakeClient("prof-rao", ledger)
     student_page = FakePage("student", [], [])
     pi_page = FakePage("pi", [], [])
@@ -496,10 +527,10 @@ def _make_recorder(
     return recorder, student, pi, ledger, student_page, pi_page
 
 
-def _proposal_snapshot() -> LedgerSnapshot:
+def _proposal_snapshot(requester: str = "maya") -> LedgerSnapshot:
     decision = {
         "action": "commit_booking",
-        "requester": "maya",
+        "requester": requester,
         "resource": "INS-01",
         "interval": {
             "start_utc": "2026-11-06T10:15:00Z",
@@ -516,7 +547,7 @@ def _proposal_snapshot() -> LedgerSnapshot:
         revision=1,
         content_hash=digest,
         decision=decision,
-        requester="maya",
+        requester=requester,
         resource="INS-01",
         resource_timezone="Asia/Kolkata",
         start_utc="2026-11-06T10:15:00Z",
@@ -527,7 +558,7 @@ def _proposal_snapshot() -> LedgerSnapshot:
         booking_id="BK-0042",
         request_id="AR-0042",
         status="proposed",
-        person_id="maya",
+        person_id=requester,
         instrument_id="INS-01",
         start_utc=request.start_utc,
         end_utc=request.end_utc,
@@ -535,8 +566,8 @@ def _proposal_snapshot() -> LedgerSnapshot:
     return LedgerSnapshot((request,), (booking,), (), True)
 
 
-def _committed_snapshot() -> LedgerSnapshot:
-    snapshot = _proposal_snapshot()
+def _committed_snapshot(requester: str = "maya") -> LedgerSnapshot:
+    snapshot = _proposal_snapshot(requester)
     request = snapshot.requests[0]
     committed_request = RequestRecord(
         request_id=request.request_id,
