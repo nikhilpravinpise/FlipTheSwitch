@@ -85,7 +85,7 @@
       "root_id": "gbx8wazgbjfspkaqut3qz6kozh",
       "created_at_ms": 1793902468366,
       "author": "rao-pi-desk",
-      "message": "AR-0044 lookup now returns `NOT_FOUND` — “Approval request AR-0044 was not found.” The commit call was interrupted before I received a result, so I cannot report an outcome. Please confirm the request ID and isolated ledger before any further action.",
+      "message": "AR-0044 lookup now returns `NOT_FOUND` \u2014 “Approval request AR-0044 was not found.” The commit call was interrupted before I received a result, so I cannot report an outcome. Please confirm the request ID and isolated ledger before any further action.",
       "visible_actions": [],
       "deleted_included_query": false
     },
