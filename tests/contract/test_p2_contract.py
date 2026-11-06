@@ -278,6 +278,7 @@ def test_U_B11_tool_rejects_natural_language_time_with_needs_iso_datetime(
                 await session.call_tool(
                     "check_availability",
                     {
+                        "requester_handle": "maya",
                         "instrument_id": "INS-01",
                         "start": "Thursday 2 to 5 pm",
                         "end": PROBE_END,
@@ -356,7 +357,12 @@ def test_I_02_stdio_lists_profiles_and_calls_each_read_tool_on_seed(tmp_path: Pa
             availability = _payload(
                 await proposer.call_tool(
                     "check_availability",
-                    {"instrument_id": "INS-01", "start": PROBE_START, "end": PROBE_END},
+                    {
+                        "requester_handle": "maya",
+                        "instrument_id": "INS-01",
+                        "start": PROBE_START,
+                        "end": PROBE_END,
+                    },
                 )
             )
             assert availability["available"] is True
