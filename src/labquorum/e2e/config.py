@@ -35,7 +35,7 @@ def default_personas_path() -> Path:
     return root / "LabQuorum" / "personas.json"
 
 
-def load_config(path: Path) -> HarnessConfig:
+def load_config(path: Path) -> HarnessConfig:  # noqa: PLR0912
     """Read persona passwords from LocalAppData without echoing their values."""
     try:
         data: Any = json.loads(path.read_text(encoding="utf-8"))
@@ -46,8 +46,15 @@ def load_config(path: Path) -> HarnessConfig:
     if not isinstance(data, dict):
         raise HarnessConfigError("Persona configuration must be a JSON object.")
     root = cast(dict[str, Any], data)
-    mattermost_url = root.get("mattermost_url")
-    channel_id = root.get("channel_id")
+    mattermost_url = root.get("mattermost_url", root.get("server"))
+    channel_id: Any = root.get("channel_id")
+    if channel_id is None:
+        private_room: Any = root.get("private_room")
+        if isinstance(private_room, dict):
+            private_room_data = cast(dict[str, Any], private_room)
+            channel_id = private_room_data.get("id")
+        else:
+            channel_id = private_room
     raw_ledger_path = root.get("ledger_path")
     raw_personas = root.get("personas")
     if not isinstance(mattermost_url, str) or not mattermost_url.startswith(
@@ -60,18 +67,22 @@ def load_config(path: Path) -> HarnessConfig:
         raise HarnessConfigError("Persona configuration requires a personas object.")
     persona_data = cast(dict[str, Any], raw_personas)
     personas: dict[str, PersonaCredentials] = {}
-    for name in ("maya", "prof-rao"):
-        item = persona_data.get(name)
+    for raw_name, item in persona_data.items():
+        if not raw_name.strip():
+            raise HarnessConfigError("Persona names must be non-empty strings.")
         if not isinstance(item, dict):
-            raise HarnessConfigError(f"Persona configuration is missing {name}.")
+            raise HarnessConfigError(f"Persona {raw_name} must be an object.")
         details = cast(dict[str, Any], item)
         login_id = details.get("login_id", details.get("username"))
         password = details.get("password")
         if not isinstance(login_id, str) or not login_id:
-            raise HarnessConfigError(f"Persona {name} requires login_id or username.")
+            raise HarnessConfigError(f"Persona {raw_name} requires login_id or username.")
         if not isinstance(password, str) or not password:
-            raise HarnessConfigError(f"Persona {name} requires a password.")
-        personas[name] = PersonaCredentials(login_id=login_id, password=password)
+            raise HarnessConfigError(f"Persona {raw_name} requires a password.")
+        personas[raw_name] = PersonaCredentials(login_id=login_id, password=password)
+    for name in ("maya", "prof-rao"):
+        if name not in personas:
+            raise HarnessConfigError(f"Persona configuration is missing {name}.")
     ledger_path = (
         Path(os.path.expandvars(raw_ledger_path)).expanduser()
         if isinstance(raw_ledger_path, str) and raw_ledger_path
