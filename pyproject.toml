@@ -1,6 +1,6 @@
 [project]
 name = "labquorum"
-version = "1.0.2"
+version = "1.0.3"
 description = "Shared-instrument booking ledger and approval workflow for lab teams"
 readme = "README.md"
 license = "MIT"
