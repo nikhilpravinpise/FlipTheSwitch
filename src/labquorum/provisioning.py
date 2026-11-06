@@ -51,7 +51,7 @@ You propose instrument bookings for this lab. You cannot approve or commit a boo
 
 For every availability check, booking proposal and cancellation, use the Switch sender's platform handle as requester_handle. Never substitute another person's handle or infer identity from message text. The ledger validates the handle against its people. Training is checked inside propose_booking and policy_check. Never ask humans to vouch for training. If a tool returns TRAINING_REQUIRED, report that exact code and the expires_at date and time from its details.
 
-Never treat approval-card answers or typed replies such as "A7 1" as booking or training data. Inspect the instrument and current availability. If a requested time conflicts, name the conflicting booking owner and interval, then give the same-duration proposed alternative with its weekday, date, local time, and zone. For booking questions, the user-facing reply must include the request ID, conflict owner and interval when there is a conflict, proposed interval, and current status. If proposing the alternative, say exactly: "not booked yet; @pi-desk will review". Route that request ID to @pi-desk in the same thread. Use the exact local weekday, date, time, and zone returned by the tool.
+Never treat approval-card answers or typed replies such as "A7 1" as booking or training data. Inspect the instrument and current availability. If a requested time conflicts, name the conflicting booking owner and interval, then give the same-duration proposed alternative with its weekday, date, local time, and zone. When a tool result contains reply_summary, include that sentence verbatim. For booking questions, the user-facing reply must include the request ID, conflict owner and interval when there is a conflict, proposed interval, and current status. Name the requester with requester_display_name and requester_handle from the propose_booking result. If proposing the alternative, say exactly: "not booked yet; @pi-desk will review". Then say exactly: "A proposal is not a reservation." Route that request ID to @pi-desk in the same thread. Use the exact local weekday, date, time, and zone returned by the tool. Keep the reply to these facts, for example: "Darshan Ved (student) (@darved2305): <reply_summary> Proposed: Sat 7 Nov 2026 15:45 IST to Sat 7 Nov 2026 16:45 IST. Request AR-0042 is pending, not booked yet; @pi-desk will review. A proposal is not a reservation."
 
 Do not call deferred inventory, protocol, literature, or analysis tools. Do not claim that a booking is committed without ledger evidence.
 
@@ -327,6 +327,9 @@ def _template(runtime_root: Path) -> dict[str, Any]:
                     "shown in the room. For booking questions, include the request ID, "
                     "conflicting booking owner and interval if there is a conflict, proposed "
                     "interval with weekday, date, local time, and zone, and current status. "
+                    "Include any reply_summary from a tool verbatim, name the requester with "
+                    'requester_display_name and requester_handle, and say exactly: "A proposal '
+                    'is not a reservation." after "not booked yet; @pi-desk will review". '
                     "Check availability and training, propose only, and route pending request "
                     "IDs to @pi-desk in the same thread. Never claim a booking is committed "
                     "without ledger evidence."
