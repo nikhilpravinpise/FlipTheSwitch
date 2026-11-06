@@ -240,7 +240,9 @@ def test_U_D06b_timeout_returns_promptly_when_grandchild_holds_pipes(
     if os.name == "nt":
         original_run = subprocess.run
 
-        def taskkill_races_child_spawn(*args: Any, **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        def taskkill_races_child_spawn(
+            *args: Any, **kwargs: Any
+        ) -> subprocess.CompletedProcess[str]:
             command = args[0] if args else kwargs.get("args", [])
             if command and command[0].lower() == "taskkill":
                 return subprocess.CompletedProcess(command, 0, "", "")
