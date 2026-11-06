@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import ntpath
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -33,6 +34,13 @@ def default_personas_path() -> Path:
     local_app_data = os.environ.get("LOCALAPPDATA")
     root = Path(local_app_data) if local_app_data else Path.home() / "AppData" / "Local"
     return root / "LabQuorum" / "personas.json"
+
+
+def _ledger_path(raw_path: str) -> Path:
+    expanded = ntpath.expandvars(raw_path)
+    if os.name != "nt" and expanded != os.path.expandvars(raw_path):
+        expanded = expanded.replace("\\", "/")
+    return Path(expanded).expanduser()
 
 
 def load_config(path: Path) -> HarnessConfig:  # noqa: PLR0912
@@ -84,7 +92,7 @@ def load_config(path: Path) -> HarnessConfig:  # noqa: PLR0912
         if name not in personas:
             raise HarnessConfigError(f"Persona configuration is missing {name}.")
     ledger_path = (
-        Path(os.path.expandvars(raw_ledger_path)).expanduser()
+        _ledger_path(raw_ledger_path)
         if isinstance(raw_ledger_path, str) and raw_ledger_path
         else default_database_path()
     )
