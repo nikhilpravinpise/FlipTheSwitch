@@ -17,8 +17,18 @@ class ScenarioAssertionError(AssertionError):
     """Raised when durable scenario evidence violates its acceptance rule."""
 
 
-def assert_read_propose_smoke(reply: str, request_id: str, snapshot: LedgerSnapshot) -> None:
-    """Require the planned conflict and alternative with a pending ledger request."""
+def assert_read_propose_smoke(
+    reply: str,
+    request_id: str,
+    snapshot: LedgerSnapshot,
+    *,
+    expected_requester: str = "maya",
+) -> None:
+    """Require the planned conflict and alternative with a pending ledger request.
+
+    ``expected_requester`` is the ledger person ID of the Mattermost sender, because
+    LabOps records the Switch sender's handle as the requester.
+    """
     normalized = reply.casefold().translate({0x2013: "-", 0x2212: "-"})
     if (
         re.search(
@@ -41,8 +51,14 @@ def assert_read_propose_smoke(reply: str, request_id: str, snapshot: LedgerSnaps
     if request.status != "pending":
         raise ScenarioAssertionError(f"Expected {request_id} pending, found {request.status}.")
     _assert_request_canonical(request)
-    if request.requester != "maya" or request.resource != "INS-01":
-        raise ScenarioAssertionError("The persisted booking must be Maya's request for INS-01.")
+    if (
+        request.requester.casefold() != expected_requester.casefold()
+        or request.resource != "INS-01"
+    ):
+        raise ScenarioAssertionError(
+            f"The persisted booking must be {expected_requester}'s request for INS-01; "
+            f"found requester {request.requester}."
+        )
     if request.resource_timezone is None:
         raise ScenarioAssertionError("The persisted booking instrument has no timezone.")
     try:
