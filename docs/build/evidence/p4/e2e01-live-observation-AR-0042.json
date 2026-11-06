@@ -1,0 +1,403 @@
+{
+  "scenario": "e2e01",
+  "request_id": "AR-0042",
+  "overall_status": "fail",
+  "reason": "The harness returned on a Switch progress post before the user-facing reply arrived. The later live reply and ledger satisfy the read/propose behavior, but the run was not rerun through the corrected harness because an approval card remained open.",
+  "harness_run": {
+    "evidence_file": "e2e01-20261105T204104259972Z.json",
+    "status": "fail",
+    "failure": "Could not identify one request ID from the reply or ledger.",
+    "corrected_progress_filter_tested": true
+  },
+  "observed_assertions": {
+    "user_facing_reply_within_120_seconds": true,
+    "reply_elapsed_seconds": 52.081,
+    "conflict_owner_named": true,
+    "conflict_interval_named": true,
+    "proposal_15_45_to_16_45_named": true,
+    "request_id_named": true,
+    "pending_request": true,
+    "no_committed_booking": true,
+    "audit_verify_passed": true,
+    "proposer_tool_approval_card": false,
+    "approver_commit_card_observed": true,
+    "approver_card_answered": false
+  },
+  "ledger": {
+    "identity": "C:\\Users\\Nikhil\\AppData\\Local\\Temp\\labquorum-p3-p4-live-20261106-0207\\p3-test-ledger.sqlite",
+    "schema_version": 3,
+    "audit_valid": true,
+    "request": {
+      "request_id": "AR-0042",
+      "status": "pending",
+      "revision": 1,
+      "content_hash": "4f7dcfa69fadbe66f8dad33a835ed4f79795083bb21bfafb1fb45b5734380f27",
+      "decision": {
+        "action": "commit_booking",
+        "end_local": "Fri 6 Nov 2026 16:45 IST",
+        "end_utc": "2026-11-06T11:15:00.000000Z",
+        "instrument_id": "INS-01",
+        "instrument_name": "Plate reader (Tecan Spark)",
+        "project_untrusted_text": "booking request",
+        "request_id": "AR-0042",
+        "requester_display_name": "Maya Iyer",
+        "requester_handle": "maya",
+        "revision": 1,
+        "start_local": "Fri 6 Nov 2026 15:45 IST",
+        "start_utc": "2026-11-06T10:15:00.000000Z"
+      },
+      "requester": "maya",
+      "resource": "INS-01",
+      "resource_timezone": "Asia/Kolkata",
+      "start_utc": "2026-11-06T10:15:00.000000Z",
+      "end_utc": "2026-11-06T11:15:00.000000Z",
+      "project": "booking request"
+    },
+    "bookings_for_request": [
+      {
+        "booking_id": "BK-0042",
+        "request_id": "AR-0042",
+        "status": "proposed",
+        "person_id": "maya",
+        "instrument_id": "INS-01",
+        "start_utc": "2026-11-06T10:15:00.000000Z",
+        "end_utc": "2026-11-06T11:15:00.000000Z"
+      }
+    ],
+    "commit_events_for_request": []
+  },
+  "mattermost_posts": {
+    "prompt": {
+      "id": "x8fs9fjde3y4jcz1pxuiiy66dy",
+      "create_at": 1793911255140,
+      "update_at": 1793912363508,
+      "edit_at": 0,
+      "delete_at": 0,
+      "is_pinned": false,
+      "user_id": "tys9b94u7fgrpxtdsdioz8ynmh",
+      "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+      "root_id": "",
+      "original_id": "",
+      "message": "@labops, propose a 60-minute INS-01 booking on the next open day between 14:00 and 17:00.",
+      "type": "",
+      "props": {},
+      "hashtags": "",
+      "file_ids": [],
+      "pending_post_id": "",
+      "remote_id": "",
+      "reply_count": 8,
+      "last_reply_at": 0,
+      "participants": null,
+      "metadata": {},
+      "resolved_username": "maya"
+    },
+    "progress": {
+      "id": "9uzqf8sdcjfy9yam5gcu4qxsgc",
+      "create_at": 1793911264063,
+      "update_at": 1793911319612,
+      "edit_at": 1793911319612,
+      "delete_at": 0,
+      "is_pinned": false,
+      "user_id": "b4q1x4pf8tr78xz3z96hwj9jcr",
+      "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+      "root_id": "x8fs9fjde3y4jcz1pxuiiy66dy",
+      "original_id": "",
+      "message": "**Worked for 53s. 7 tool calls.**",
+      "type": "",
+      "props": {
+        "attachments": [
+          {
+            "id": 0,
+            "fallback": "",
+            "color": "",
+            "pretext": "",
+            "author_name": "",
+            "author_link": "",
+            "author_icon": "",
+            "title": "",
+            "title_link": "",
+            "text": "",
+            "fields": null,
+            "image_url": "",
+            "thumb_url": "",
+            "footer": "",
+            "footer_icon": "",
+            "ts": null,
+            "actions": [
+              {
+                "id": "switchactivity",
+                "name": "Show activity"
+              }
+            ]
+          }
+        ],
+        "from_bot": "true"
+      },
+      "hashtags": "",
+      "file_ids": [],
+      "pending_post_id": "",
+      "remote_id": "",
+      "reply_count": 8,
+      "last_reply_at": 0,
+      "participants": null,
+      "metadata": {
+        "embeds": [
+          {
+            "type": "message_attachment"
+          }
+        ]
+      },
+      "resolved_username": "rao-labops"
+    },
+    "labops_reply": {
+      "id": "3zbazqgyhjnx8fxoym3bgx3xwc",
+      "create_at": 1793911307221,
+      "update_at": 1793911315520,
+      "edit_at": 0,
+      "delete_at": 0,
+      "is_pinned": false,
+      "user_id": "b4q1x4pf8tr78xz3z96hwj9jcr",
+      "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+      "root_id": "x8fs9fjde3y4jcz1pxuiiy66dy",
+      "original_id": "",
+      "message": "@rao-pi-desk Request AR-0042 is pending. The requested Fri 6 Nov 2026, 14:00-15:00 IST conflicts with Dr. Lena Okafor’s committed booking, Fri 6 Nov 2026, 14:00-15:30 IST. The same-duration proposed alternative is Fri 6 Nov 2026, 15:45-16:45 IST. not booked yet; @pi-desk will review",
+      "type": "",
+      "props": {
+        "from_bot": "true"
+      },
+      "hashtags": "",
+      "file_ids": [],
+      "pending_post_id": "",
+      "has_reactions": true,
+      "remote_id": "",
+      "reply_count": 8,
+      "last_reply_at": 0,
+      "participants": null,
+      "metadata": {
+        "reactions": [
+          {
+            "user_id": "jeetgxabybge985hxwgnz5rpcc",
+            "post_id": "3zbazqgyhjnx8fxoym3bgx3xwc",
+            "emoji_name": "eyes",
+            "create_at": 1793911315518,
+            "update_at": 1793911315518,
+            "delete_at": 0,
+            "remote_id": "",
+            "channel_id": "c83c9h1rtifgzp38wpw35iazqh"
+          }
+        ]
+      },
+      "resolved_username": "rao-labops"
+    },
+    "labops_followup": {
+      "id": "piaqpofpftd3xmk5147kaxqyxy",
+      "create_at": 1793911311586,
+      "update_at": 1793911327947,
+      "edit_at": 0,
+      "delete_at": 0,
+      "is_pinned": false,
+      "user_id": "b4q1x4pf8tr78xz3z96hwj9jcr",
+      "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+      "root_id": "x8fs9fjde3y4jcz1pxuiiy66dy",
+      "original_id": "",
+      "message": "Request AR-0042 is pending for INS-01. The requested Fri 6 Nov 2026, 14:00-15:00 IST conflicts with Dr. Lena Okafor’s committed booking, Fri 6 Nov 2026, 14:00-15:30 IST. The same-duration proposed alternative is Fri 6 Nov 2026, 15:45-16:45 IST. not booked yet; @pi-desk will review",
+      "type": "",
+      "props": {
+        "from_bot": "true"
+      },
+      "hashtags": "",
+      "file_ids": [],
+      "pending_post_id": "",
+      "has_reactions": true,
+      "remote_id": "",
+      "reply_count": 8,
+      "last_reply_at": 0,
+      "participants": null,
+      "metadata": {
+        "reactions": [
+          {
+            "user_id": "jeetgxabybge985hxwgnz5rpcc",
+            "post_id": "piaqpofpftd3xmk5147kaxqyxy",
+            "emoji_name": "hourglass_flowing_sand",
+            "create_at": 1793911327945,
+            "update_at": 1793911327945,
+            "delete_at": 0,
+            "remote_id": "",
+            "channel_id": "c83c9h1rtifgzp38wpw35iazqh"
+          }
+        ]
+      },
+      "resolved_username": "rao-labops"
+    },
+    "approval_card": {
+      "id": "98wfcydijtn79yskq87m1dk49r",
+      "create_at": 1793911332133,
+      "update_at": 1793912363506,
+      "edit_at": 1793912363506,
+      "delete_at": 0,
+      "is_pinned": false,
+      "user_id": "jeetgxabybge985hxwgnz5rpcc",
+      "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+      "root_id": "x8fs9fjde3y4jcz1pxuiiy66dy",
+      "original_id": "",
+      "message": "**Permission needed** · request `A12`\nlabquorum_pidesk wants to run commit_booking\naction: commit_booking\ncontent_hash: 4f7dcfa69fadbe66f8dad33a835ed4f79795083bb21bfafb1fb45b5734380f27\nend_local: Fri 6 Nov 2026 16:45 IST\nend_utc: 2026-11-06T11:15:00.000000Z\ninstrument_id: INS-01\ninstrument_name: Plate reader (Tecan Spark)\nproject_untrusted_text: booking request\nrequest_id: AR-0042\nrequester_display_name: Maya Iyer\nrequester_handle: maya\nrevision: 1\nstart_local: Fri 6 Nov 2026 15:45 IST\nstart_utc: 2026-11-06T10:15:00.000000Z\nReply with `A12` and your choice, e.g. `A12 1`.",
+      "type": "",
+      "props": {
+        "attachments": [
+          {
+            "id": 0,
+            "fallback": "",
+            "color": "",
+            "pretext": "",
+            "author_name": "",
+            "author_link": "",
+            "author_icon": "",
+            "title": "",
+            "title_link": "",
+            "text": "",
+            "fields": null,
+            "image_url": "",
+            "thumb_url": "",
+            "footer": "",
+            "footer_icon": "",
+            "ts": null,
+            "actions": [
+              {
+                "id": "switch1",
+                "name": "1. Approve"
+              },
+              {
+                "id": "switch2",
+                "name": "2. Decline"
+              },
+              {
+                "id": "switch3",
+                "name": "3. Cancel"
+              }
+            ]
+          }
+        ],
+        "from_bot": "true",
+        "switch_publication": "isjQA-MpgFut1878WrNRsg"
+      },
+      "hashtags": "",
+      "file_ids": [],
+      "pending_post_id": "",
+      "remote_id": "",
+      "reply_count": 8,
+      "last_reply_at": 0,
+      "participants": null,
+      "metadata": {
+        "embeds": [
+          {
+            "type": "message_attachment"
+          }
+        ]
+      },
+      "resolved_username": "rao-pi-desk"
+    },
+    "host_notice": {
+      "id": "td1jzjmbnfnhum359nx8ow8w1y",
+      "create_at": 1793911671324,
+      "update_at": 1793912357269,
+      "edit_at": 1793912357269,
+      "delete_at": 0,
+      "is_pinned": false,
+      "user_id": "jeetgxabybge985hxwgnz5rpcc",
+      "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+      "root_id": "x8fs9fjde3y4jcz1pxuiiy66dy",
+      "original_id": "",
+      "message": "**Working…**",
+      "type": "",
+      "props": {
+        "attachments": [
+          {
+            "id": 0,
+            "fallback": "",
+            "color": "",
+            "pretext": "",
+            "author_name": "",
+            "author_link": "",
+            "author_icon": "",
+            "title": "",
+            "title_link": "",
+            "text": "",
+            "fields": null,
+            "image_url": "",
+            "thumb_url": "",
+            "footer": "",
+            "footer_icon": "",
+            "ts": null,
+            "actions": [
+              {
+                "id": "switchactivity",
+                "name": "Show activity"
+              }
+            ]
+          }
+        ],
+        "from_bot": "true"
+      },
+      "hashtags": "",
+      "file_ids": [],
+      "pending_post_id": "",
+      "remote_id": "",
+      "reply_count": 8,
+      "last_reply_at": 0,
+      "participants": null,
+      "metadata": {
+        "embeds": [
+          {
+            "type": "message_attachment"
+          }
+        ]
+      },
+      "resolved_username": "rao-pi-desk"
+    }
+  },
+  "pi_approval_journal": {
+    "session_path": "C:\\Users\\Nikhil\\.local\\state\\switch\\sdk-sessions\\25f5cec48d9303db4d59e9f372718c6a4bb5eae1a7eeac8dc1a11322412aa981",
+    "opened_event_sequence": 291,
+    "request_id": "codex-req-1-57558e69",
+    "request_state_at_open": "open",
+    "kind": "approval",
+    "title": "labquorum_pidesk wants to run commit_booking",
+    "detail": "action: commit_booking\ncontent_hash: 4f7dcfa69fadbe66f8dad33a835ed4f79795083bb21bfafb1fb45b5734380f27\nend_local: Fri 6 Nov 2026 16:45 IST\nend_utc: 2026-11-06T11:15:00.000000Z\ninstrument_id: INS-01\ninstrument_name: Plate reader (Tecan Spark)\nproject_untrusted_text: booking request\nrequest_id: AR-0042\nrequester_display_name: Maya Iyer\nrequester_handle: maya\nrevision: 1\nstart_local: Fri 6 Nov 2026 15:45 IST\nstart_utc: 2026-11-06T10:15:00.000000Z",
+    "options": [
+      {
+        "label": "Approve"
+      },
+      {
+        "label": "Decline"
+      },
+      {
+        "label": "Cancel"
+      }
+    ],
+    "settled_event_sequence": 292,
+    "settled_outcome": "interrupted",
+    "settled_revision": 2
+  },
+  "model_proof": {
+    "rao-labops": {
+      "session": "c9891de6aff2e642579821d06c70faf4230e32c378128eb0afd2d74d6822cb93",
+      "timestamp": "2026-11-05T20:41:01Z",
+      "model": "gpt-6-luna",
+      "effort": "high",
+      "cwd": "C:\\Users\\Nikhil\\AppData\\Local\\LabQuorum\\agents\\labops"
+    },
+    "rao-pi-desk": {
+      "session": "25f5cec48d9303db4d59e9f372718c6a4bb5eae1a7eeac8dc1a11322412aa981",
+      "timestamp": "2026-11-05T20:41:48Z",
+      "model": "gpt-6-luna",
+      "effort": "high",
+      "cwd": "C:\\Users\\Nikhil\\AppData\\Local\\LabQuorum\\agents\\pi-desk"
+    }
+  },
+  "console_state": {
+    "cdp_url": "http://127.0.0.1:9333",
+    "restored_via_launch_script": true,
+    "managed_agents_attached": true,
+    "pi_room_account_membership": "prof-rao is not a member of the target private channel; API GET/POST returned HTTP 403."
+  }
+}

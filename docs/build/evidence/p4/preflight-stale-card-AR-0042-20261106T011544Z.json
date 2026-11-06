@@ -1,0 +1,79 @@
+{
+  "scenario": "preflight-stale-card-cleanup",
+  "status": "PASS",
+  "request_id": "AR-0042",
+  "ledger_path": "C:\\Users\\Nikhil\\AppData\\Local\\Temp\\labquorum-p3-p4-live-20261106-0207\\p3-test-ledger.sqlite",
+  "request_status_before": "expired",
+  "card_post_json": {
+    "post_id": "d6tq76xuu3r69kpd9kdr498goa",
+    "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+    "user": "rao-pi-desk",
+    "root_id": "ix6p58p5upytp84km8qhjrjo3o",
+    "message": "**Permission needed** · request `A14`\nlabquorum_pidesk wants to run commit_booking\naction: commit_booking\ncontent_hash: 4f7dcfa69fadbe66f8dad33a835ed4f79795083bb21bfafb1fb45b5734380f27\nend_local: Fri 6 Nov 2026 16:45 IST\nend_utc: 2026-11-06T11:15:00.000000Z\ninstrument_id: INS-01\ninstrument_name: Plate reader (Tecan Spark)\nproject_untrusted_text: booking request\nrequest_id: AR-0042\nrequester_display_name: Maya Iyer\nrequester_handle: maya\nrevision: 1\nstart_local: Fri 6 Nov 2026 15:45 IST\nstart_utc: 2026-11-06T10:15:00.000000Z\nReply with `A14` and your choice, e.g. `A14 1`.",
+    "visible_actions": [
+      "1. Approve",
+      "2. Decline",
+      "3. Cancel"
+    ]
+  },
+  "answer": {
+    "persona": "prof-rao",
+    "post_id": "biipnykbdido7xgixdrzf1syke",
+    "text": "A14 3"
+  },
+  "settled_card": {
+    "post_id": "d6tq76xuu3r69kpd9kdr498goa",
+    "message": "**Cancel** · request `A14`\nlabquorum_pidesk wants to run commit_booking\naction: commit_booking\ncontent_hash: 4f7dcfa69fadbe66f8dad33a835ed4f79795083bb21bfafb1fb45b5734380f27\nend_local: Fri 6 Nov 2026 16:45 IST\nend_utc: 2026-11-06T11:15:00.000000Z\ninstrument_id: INS-01\ninstrument_name: Plate reader (Tecan Spark)\nproject_untrusted_text: booking request\nrequest_id: AR-0042\nrequester_display_name: Maya Iyer\nrequester_handle: maya\nrevision: 1\nstart_local: Fri 6 Nov 2026 15:45 IST\nstart_utc: 2026-11-06T10:15:00.000000Z\nChosen by @prof-rao from Mattermost.",
+    "settled_by": "prof-rao",
+    "visible_actions": []
+  },
+  "ledger_before": {
+    "request": {
+      "id": "AR-0042",
+      "status": "expired",
+      "revision": 1,
+      "requester": "maya",
+      "resource": "INS-01",
+      "start_utc": "2026-11-06T10:15:00.000000Z",
+      "end_utc": "2026-11-06T11:15:00.000000Z",
+      "content_hash": "4f7dcfa69fadbe66f8dad33a835ed4f79795083bb21bfafb1fb45b5734380f27"
+    },
+    "booking": {
+      "id": "BK-0042",
+      "status": "expired",
+      "instrument_id": "INS-01",
+      "start_utc": "2026-11-06T10:15:00.000000Z",
+      "end_utc": "2026-11-06T11:15:00.000000Z"
+    },
+    "commit_event_sequences": [],
+    "audit_verify": {
+      "valid": true,
+      "first_bad_seq": null
+    }
+  },
+  "ledger_after": {
+    "request": {
+      "id": "AR-0042",
+      "status": "expired",
+      "revision": 1,
+      "requester": "maya",
+      "resource": "INS-01",
+      "start_utc": "2026-11-06T10:15:00.000000Z",
+      "end_utc": "2026-11-06T11:15:00.000000Z",
+      "content_hash": "4f7dcfa69fadbe66f8dad33a835ed4f79795083bb21bfafb1fb45b5734380f27"
+    },
+    "booking": {
+      "id": "BK-0042",
+      "status": "expired",
+      "instrument_id": "INS-01",
+      "start_utc": "2026-11-06T10:15:00.000000Z",
+      "end_utc": "2026-11-06T11:15:00.000000Z"
+    },
+    "commit_event_sequences": [],
+    "audit_verify": {
+      "valid": true,
+      "first_bad_seq": null
+    }
+  },
+  "ledger_unchanged": true
+}

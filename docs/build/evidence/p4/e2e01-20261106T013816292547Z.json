@@ -1,0 +1,38 @@
+{
+  "binding": false,
+  "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+  "elapsed_seconds": 34.937,
+  "failure": "ScenarioAssertionError: Read/propose response did not identify required conflict/slot values: ['lena', '15:30', '15:45', '16:45'].",
+  "finished_at_utc": "2026-11-06T01:38:16.292+00:00",
+  "generated_at_utc": "2026-11-06T01:38:16.292+00:00",
+  "ledger_identity": "C:\\Users\\Nikhil\\AppData\\Local\\Temp\\labquorum-p3-p4-live-20261106-084500\\p3-test-ledger.sqlite",
+  "scenario": "e2e01",
+  "started_at_utc": "2026-11-06T01:37:41.360+00:00",
+  "status": "fail",
+  "steps": [
+    {
+      "elapsed_seconds": 0.0,
+      "name": "ledger.snapshot_before",
+      "started_at_utc": "2026-11-06T01:37:41.360+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 0.047,
+      "name": "mattermost.post_prompt",
+      "started_at_utc": "2026-11-06T01:37:41.364+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 34.89,
+      "name": "mattermost.wait_agent_reply",
+      "started_at_utc": "2026-11-06T01:37:41.401+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "name": "ledger.snapshot_after_reply",
+      "started_at_utc": "2026-11-06T01:38:16.290+00:00",
+      "status": "pass"
+    }
+  ]
+}

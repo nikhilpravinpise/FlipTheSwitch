@@ -1,0 +1,38 @@
+{
+  "binding": false,
+  "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+  "elapsed_seconds": 9.14,
+  "failure": "ScenarioAssertionError: Could not identify one request ID from the reply or ledger.",
+  "finished_at_utc": "2026-11-05T20:41:04.259+00:00",
+  "generated_at_utc": "2026-11-05T20:41:04.259+00:00",
+  "ledger_identity": "C:\\Users\\Nikhil\\AppData\\Local\\Temp\\labquorum-p3-p4-live-20261106-0207\\p3-test-ledger.sqlite",
+  "scenario": "e2e01",
+  "started_at_utc": "2026-11-05T20:40:55.124+00:00",
+  "status": "fail",
+  "steps": [
+    {
+      "elapsed_seconds": 0.0,
+      "name": "ledger.snapshot_before",
+      "started_at_utc": "2026-11-05T20:40:55.124+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 0.046,
+      "name": "mattermost.post_prompt",
+      "started_at_utc": "2026-11-05T20:40:55.126+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 9.094,
+      "name": "mattermost.wait_agent_reply",
+      "started_at_utc": "2026-11-05T20:40:55.172+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "name": "ledger.snapshot_after_reply",
+      "started_at_utc": "2026-11-05T20:41:04.257+00:00",
+      "status": "pass"
+    }
+  ]
+}

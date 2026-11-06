@@ -1,0 +1,44 @@
+{
+  "binding": false,
+  "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+  "elapsed_seconds": 180.609,
+  "failure": "ReplyTimeout: Expected durable ledger state did not appear before timeout.",
+  "finished_at_utc": "2026-11-06T01:45:00.179+00:00",
+  "generated_at_utc": "2026-11-06T01:45:00.179+00:00",
+  "ledger_identity": "C:\\Users\\Nikhil\\AppData\\Local\\Temp\\labquorum-p3-p4-live-20261106-090000\\p3-test-ledger.sqlite",
+  "scenario": "e2e01",
+  "started_at_utc": "2026-11-06T01:41:59.576+00:00",
+  "status": "fail",
+  "steps": [
+    {
+      "elapsed_seconds": 0.015,
+      "name": "ledger.snapshot_before",
+      "started_at_utc": "2026-11-06T01:41:59.576+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 0.016,
+      "name": "mattermost.post_prompt",
+      "started_at_utc": "2026-11-06T01:41:59.586+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 60.562,
+      "name": "mattermost.wait_agent_reply",
+      "started_at_utc": "2026-11-06T01:41:59.604+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 0.016,
+      "name": "ledger.snapshot_after_reply",
+      "started_at_utc": "2026-11-06T01:43:00.171+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 120.0,
+      "name": "ledger.wait_for_state",
+      "started_at_utc": "2026-11-06T01:43:00.178+00:00",
+      "status": "fail"
+    }
+  ]
+}

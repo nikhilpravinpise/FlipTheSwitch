@@ -1,0 +1,31 @@
+{
+  "scenario": "e2e01_smoke_card_observation",
+  "status": "pass",
+  "captured_at_utc": "2026-11-06T06:00:22.972+00:00",
+  "prompt_post_id": "ru517czjyjn8dnczoya1mazxmw",
+  "prompt_created_at_utc": "2026-11-06T05:57:03.921+00:00",
+  "response_post_id": "h6979uc6gibamnab47i5rmwc3a",
+  "response_author": "rao-labops",
+  "response_latency_seconds": 49.11,
+  "request_id": "AR-0042",
+  "request_status": "pending",
+  "booking_statuses": [
+    "proposed"
+  ],
+  "commit_audit_count": 0,
+  "audit_valid": true,
+  "approval_card_count_after_prompt": 0,
+  "proposer_approval_card_count": 0,
+  "approval_cards": [],
+  "root_post_ids": [
+    "ru517czjyjn8dnczoya1mazxmw",
+    "7em9id449jnbzdbm3f7ogukfno",
+    "h6979uc6gibamnab47i5rmwc3a",
+    "m56i94d3n7gmjn3yikcfargm1o",
+    "yspu6fp7ojdszkuuik8m5p1ehe",
+    "adrs1rs3itnapx59g4u4kbaeja",
+    "1g3idfzy4fgs5b9xqjyrb1dopa",
+    "nihkqduqwtgffjeggx4dwxc3tc"
+  ],
+  "note": "No approval card appeared for the proposal thread; the request remained pending with no commit."
+}

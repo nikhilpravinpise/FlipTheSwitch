@@ -1,0 +1,28 @@
+{
+  "captured_at_utc": "2026-11-06T06:11:34.256+00:00",
+  "source": "Mattermost GET /api/v4/posts/{post_id}, authenticated as prof-rao",
+  "scenario": "approval",
+  "status": "pass",
+  "post": {
+    "id": "r5zufj7t7fg5b84q6u1zjqcc1a",
+    "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+    "root_id": "x4fzpew9cby3ic3imce3pgxh8a",
+    "author": "rao-pi-desk",
+    "create_at_ms": 1793945424679,
+    "message": "**Approve** · request `A16`\nlabquorum_pidesk wants to run commit_booking\naction: commit_booking\ncontent_hash: ac3f47115f5604f66836fd9e486f30194ed16fa5093ca686bbd3df151bcec9c7\nend_local: Fri 6 Nov 2026 17:45 IST\nend_utc: 2026-11-06T12:15:00.000000Z\ninstrument_id: INS-01\ninstrument_name: Plate reader (Tecan Spark)\nproject_untrusted_text: booking request\nrequest_id: AR-0043\nrequester_display_name: Maya Iyer\nrequester_handle: maya\nrevision: 1\nstart_local: Fri 6 Nov 2026 16:45 IST\nstart_utc: 2026-11-06T11:15:00.000000Z\nChosen by @prof-rao from Mattermost.",
+    "visible_action_names": []
+  },
+  "ledger": {
+    "request_id": "AR-0043",
+    "request_status": "committed",
+    "request_content_hash": "ac3f47115f5604f66836fd9e486f30194ed16fa5093ca686bbd3df151bcec9c7",
+    "booking_statuses": [
+      "committed"
+    ],
+    "commit_audit_count": 1,
+    "audit_valid": true
+  },
+  "omitted_fields": [
+    "props attachment integration URLs and signed action context"
+  ]
+}

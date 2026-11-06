@@ -1,0 +1,38 @@
+{
+  "binding": false,
+  "channel_id": "c83c9h1rtifgzp38wpw35iazqh",
+  "elapsed_seconds": 4.516,
+  "failure": "ScenarioAssertionError: The @pi-desk response did not state an explicit refusal.",
+  "finished_at_utc": "2026-11-06T06:00:43.475+00:00",
+  "generated_at_utc": "2026-11-06T06:00:43.475+00:00",
+  "ledger_identity": "C:\\Users\\Nikhil\\AppData\\Local\\Temp\\labquorum-p3-p4-run2-r4m2l3au\\p3-test-ledger.sqlite",
+  "scenario": "refusal",
+  "started_at_utc": "2026-11-06T06:00:38.962+00:00",
+  "status": "fail",
+  "steps": [
+    {
+      "elapsed_seconds": 0.0,
+      "name": "ledger.snapshot_before",
+      "started_at_utc": "2026-11-06T06:00:38.962+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 0.016,
+      "name": "mattermost.post_prompt",
+      "started_at_utc": "2026-11-06T06:00:38.964+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 4.5,
+      "name": "mattermost.wait_agent_reply",
+      "started_at_utc": "2026-11-06T06:00:38.984+00:00",
+      "status": "pass"
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "name": "ledger.snapshot_after_reply",
+      "started_at_utc": "2026-11-06T06:00:43.474+00:00",
+      "status": "pass"
+    }
+  ]
+}
