@@ -12,7 +12,7 @@ uv run lq-mcp --profile proposer
 
 `lq-mcp` accepts `--profile proposer|approver|unavailable` and an optional `--db PATH`. Repeating any recognized option is an argument error, including `--profile` and `--db`. The default ledger path is the same path used by `lq`. The MCP server name is `labquorum`. MCP JSON-RPC uses stdout; structured JSON logs use stderr.
 
-The `proposer` profile is for `labops`; the `approver` profile is for `pi-desk`. The `unavailable` profile is for agents whose capability is deferred. It only exposes `capability_status`. `propose_booking` requires the Switch sender's platform handle and resolves it case-insensitively against ledger people. An unknown handle returns `UNKNOWN_REQUESTER`; it never falls back to Maya or another person.
+The `proposer` profile is for `labops`; the `approver` profile is for `pi-desk`. The `unavailable` profile is for agents whose capability is deferred. It only exposes `capability_status`. `check_availability`, `propose_booking` and `cancel_my_proposal` require the Switch sender's platform handle and resolve it case-insensitively against ledger people. An unknown handle returns `UNKNOWN_REQUESTER`; it never falls back to Maya or another person.
 
 ## Tool catalogue
 
@@ -25,9 +25,9 @@ Datetime arguments are ISO 8601 strings with an explicit UTC offset, such as `20
 | Tool | Inputs | Purpose and result |
 | --- | --- | --- |
 | `list_instruments` | None | Lists instrument ID, name, location, time zone, status, training requirement, maximum block, cleaning gap, and booking window. |
-| `check_availability` | `instrument_id`, `start`, `end` | Checks current policy for Maya. Returns an availability result and a readable local-time summary. A conflict returns the conflicting booking ID and owner, plus the nearest free interval with the same length when one exists. |
+| `check_availability` | `requester_handle`, `instrument_id`, `start`, `end` | Checks current policy, including training, for the requester. Returns an availability result and a readable local-time summary. A conflict returns the conflicting booking ID and owner, plus the nearest free interval with the same length when one exists. |
 | `propose_booking` | `requester_handle`, `instrument_id`, `project_id`, `start`, `end` | Validates the requester handle against ledger people, checks that person's training and creates a pending booking request. Returns exactly the flat arguments that can be echoed to `commit_booking`, including instrument and requester names, `project_untrusted_text`, local weekday/date/time/zone endpoints, UTC endpoints, revision, and hash. Project text is limited to 120 characters. A conflict returns the owner and nearest same-length slot. |
-| `cancel_my_proposal` | `booking_id` | Cancels a committed booking after checking that its recorded requester is Maya. |
+| `cancel_my_proposal` | `requester_handle`, `booking_id` | Cancels the requester's own committed booking. A booking owned by anyone else returns `NOT_FOUND` and is unchanged. The tool does not withdraw a pending proposal. |
 | `lab_state` | None | Reads a compact snapshot of instruments and bookings. |
 
 ### Approver

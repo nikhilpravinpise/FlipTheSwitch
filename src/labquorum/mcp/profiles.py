@@ -45,7 +45,8 @@ _TOOL_DESCRIPTIONS: dict[str, str] = {
         "training requirement, booking limit, and cleaning gap."
     ),
     "check_availability": (
-        "Check whether a proposed interval can be booked for the seeded requester Maya. "
+        "Check whether a proposed interval can be booked for the requester identified by "
+        "requester_handle, the Switch sender's handle, including that person's training. "
         "Supply both datetimes as ISO 8601 strings with an explicit UTC offset. A conflict "
         "names the committed booking owner and gives the nearest free interval of the same length."
     ),
@@ -58,8 +59,9 @@ _TOOL_DESCRIPTIONS: dict[str, str] = {
         "Project text is returned in project_untrusted_text. Conflicts include the owner and nearest slot."
     ),
     "cancel_my_proposal": (
-        "Cancel one of Maya's committed bookings by booking ID. The ledger checks ownership "
-        "before applying the cancellation."
+        "Cancel one of the requester's own committed bookings by booking ID. requester_handle "
+        "must be the Switch sender's handle; a booking owned by anyone else is reported as "
+        "not found and is left unchanged."
     ),
     "lab_state": (
         "Read a compact snapshot of instrument status and booking state from the LabQuorum ledger."

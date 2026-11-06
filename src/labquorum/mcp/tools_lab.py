@@ -40,7 +40,6 @@ from labquorum.store import repos
 from labquorum.store.db import default_database_path, open_database
 
 MAX_RESULT_BYTES = 8_192
-DEMO_REQUESTER_ID = "maya"
 logger = structlog.get_logger("labquorum.mcp")
 
 
@@ -388,20 +387,29 @@ class LabTools:
     @_safe_tool
     def check_availability(
         self,
+        requester_handle: Annotated[
+            str,
+            Field(
+                min_length=1,
+                max_length=32,
+                description="Switch sender platform handle of the person asking for the slot.",
+            ),
+        ],
         instrument_id: Annotated[str, Field(description="Instrument ID from list_instruments.")],
         start: Annotated[str, Field(description="ISO 8601 start datetime including a UTC offset.")],
         end: Annotated[str, Field(description="ISO 8601 end datetime including a UTC offset.")],
     ) -> dict[str, Any]:
-        """Check booking policy for Maya and return a same-length alternative on conflict."""
+        """Check booking policy for the requester and return a same-length alternative."""
         start_value = parse_iso_datetime(start)
         end_value = parse_iso_datetime(end)
         interval = Interval(start_value, end_value)
         now = self.clock.now()
         with closing(open_database(self.database_path)) as connection:
+            person_id = _resolve_requester_id(connection, requester_handle)
             context = _load_booking_context(
                 connection,
                 instrument_id=instrument_id,
-                person_id=DEMO_REQUESTER_ID,
+                person_id=person_id,
             )
             try:
                 check_booking(
@@ -509,15 +517,28 @@ class LabTools:
     @_safe_tool
     def cancel_my_proposal(
         self,
+        requester_handle: Annotated[
+            str,
+            Field(
+                min_length=1,
+                max_length=32,
+                description="Switch sender platform handle of the booking owner asking to cancel.",
+            ),
+        ],
         booking_id: Annotated[str, Field(description="Booking ID returned by propose_booking.")],
     ) -> dict[str, Any]:
-        """Cancel a committed booking owned by Maya after checking its ledger owner."""
+        """Cancel the requester's own committed booking after checking its ledger owner."""
         with closing(open_database(self.database_path)) as connection:
+            person_id = _resolve_requester_id(connection, requester_handle)
             booking = connection.execute(
                 "SELECT person_id FROM booking WHERE id = ?", (booking_id,)
             ).fetchone()
-            if booking is None or str(booking["person_id"]) != DEMO_REQUESTER_ID:
-                raise LabQuorumError(ErrorCode.NOT_FOUND, "Maya's booking was not found.")
+            if booking is None or str(booking["person_id"]) != person_id:
+                raise LabQuorumError(
+                    ErrorCode.NOT_FOUND,
+                    f"Booking {booking_id} was not found for requester {person_id}.",
+                    {"booking_id": booking_id, "requester_handle": person_id},
+                )
             return repos.cancel_booking(
                 connection,
                 booking_id,
