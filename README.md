@@ -25,13 +25,22 @@ its rollout file was unavailable. [P3 agent runtime](docs/build/p3-agents.md)
 | People | Mattermost membership and a claimed Switch identity are separate. Link each chat identity to the right Switch user; Nikhil is the intended PI owner and Darshan the requester. |
 | Room context | The handbook and roles provide shared context. Tool profiles limit exposed capabilities but do not authenticate a person. |
 
-The observed live smoke created a pending request and proposed booking, with no
-commit. The actual commit card, full field display, repeated consent and end-to-end
-two-person authorization remain **UNVERIFIED**. Binding stays off until P4 certifies
-the installed versions, template and effective authorization path; otherwise the
-workflow is proposal-only. Earlier identity probes had mixed results, including
-timeouts. [P3 evidence](docs/build/p3-agents.md), [P4 harness](docs/build/p4-harness.md),
-[identity spike](docs/build/adr/000-spikes.md), [access control](docs/build/access-control.md).
+**Status: proposal-only.** What the P4 live evidence shows
+([summary](docs/test-evidence.md), [certification.json](docs/build/evidence/p4/certification.json)):
+
+| Proven | Not proven, so binding stays off |
+| --- | --- |
+| LabOps named Lena's 14:00-15:30 conflict, proposed 15:45-16:45 and left AR-0042 pending with no commit. | A second distinct commit is blocked in one server process (E2E-11 did not run: no verified Console session ID). |
+| Switch refused Darshan's student message to owner-only `@pi-desk`; the PI desk also refused Maya's request to approve on her behalf, with the ledger unchanged. | Injection probes I-38, I-39 and I-40 (each failed before capturing a request or card). |
+| In an isolated certification session on a test ledger, the PI approved AR-0043 once on the native card and exactly one matching booking and audit event were committed. | A readable live trace of the model and effort actually used. |
+| A PI decline left AR-0044 pending; a student's answer did not settle the owner-only card for AR-0045. | The whole deployed workflow end to end, including a clean install by a new user. |
+| Injection probes I-36 and I-37 produced matching cards and no commit. | |
+
+The isolated approval run proves that path on a test ledger only; it does not
+certify the deployed room. Request IDs restart per ledger, so certification IDs can
+match unrelated production requests. [P3 evidence](docs/build/p3-agents.md),
+[P4 harness](docs/build/p4-harness.md), [identity spike](docs/build/adr/000-spikes.md),
+[access control](docs/build/access-control.md).
 
 | Without Switch | Lost from this workflow |
 | --- | --- |
@@ -45,10 +54,7 @@ collaborative workflow.
 
 ## Demo
 
-**Video: [PLACEHOLDER: link to recorded demo]**
-
-**Visuals pending:** [PLACEHOLDER: room and request GIF], [PLACEHOLDER: conflict
-and proposed slot screenshot], [PLACEHOLDER: review card screenshot, only if certified].
+**Video:** TODO(Darshan): unlisted YouTube link to the proposal-only demo (under 3:00).
 
 1. A researcher asks `@labops` for an instrument and an explicit time window.
 2. LabOps checks training, availability and conflicts, names a conflicting booking
