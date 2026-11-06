@@ -1,5 +1,7 @@
 # Submission text
 
+Evidence basis: `docs/build/evidence/p4/certification.json` and `docs/test-evidence.md` at v1.0.2 (`b1a5b14`), plus Darshan's Saturday retest once it is recorded. Paste each section below into the matching form field. The checklist at the end is not part of the submission.
+
 ## Project title
 
 LabQuorum
@@ -10,7 +12,9 @@ Best Business Workflow; Code with Wispr
 
 ## Project description
 
-Shared instruments are scarce, and lab members need to know whether a time is free before making plans around it. LabQuorum is a booking workflow for lab members and principal investigators working together in a team chat. A student asks the LabOps agent for an instrument and time; it checks availability, identifies a conflict and proposes an alternative for review. The PI desk is designed to present the exact booking decision through a native approval card, with access restricted to its owner. The workflow keeps proposed requests distinct from committed bookings and records actions in an audit trail. Switch connects the people and agents in a Mattermost room, so the request and its context stay in the conversation. In a live smoke test, LabOps named an existing booking and proposed a later slot; the request remained pending. The end-to-end approval and binding booking are pending certification, and later live retests did not produce the expected chat reply. Demo lab records are synthetic.
+Shared lab instruments are scarce, and a student who asks for time on one usually waits for someone to check a spreadsheet, spot a clash and reply. LabQuorum puts that workflow in the lab's Switch team chat. A student asks `@labops` for an instrument and a time window. LabOps checks the requester's training, the instrument's rules and existing bookings against a local ledger, names any conflicting booking and proposes the nearest free slot of the same length. The result is a pending request with an ID, not a reservation. Committing a booking is reserved for the PI: `@pi-desk` accepts messages only from its owner, and the commit tool runs only after the PI answers a native Switch approval card that shows the exact decision. Every proposal, decline and commit is recorded in a hash-chained audit log.
+
+It is for lab members who need a clear answer about instrument time, and for PIs who want to approve bookings without losing the context. The current deployment is proposal-only: binding commits stay off until the remaining certification checks pass. Demo people and lab records are synthetic.
 
 ## GitHub repository URL
 
@@ -18,17 +22,15 @@ https://github.com/nikhilpravinpise/FlipTheSwitch
 
 ## Demo video
 
-<YouTube unlisted link>
-
-The video must be strictly under 3:00 and show the real chat workflow.
+TODO(Darshan): checked unlisted YouTube link, under 3:00, verified while logged out.
 
 ## Live demo
 
-Leave blank: the Switch Console deployment is local, not a public instance.
+Leave blank: the Switch Console deployment runs on a team laptop and is not a public instance.
 
 ## Blog post
 
-<Darshan's blog URL>
+TODO(Darshan): published article URL.
 
 Pull requests: leave blank; we are not entering Best Core Contribution.
 
@@ -38,16 +40,36 @@ Upload both cards exported at the end from Wispr Flow: Insights > Your usage > S
 
 ## #HowISwitch post
 
-<#HowISwitch post URL>
+TODO(Darshan): public post URL.
 
 ## How did you use Switch in your project?
 
-We connected Codex gpt-6-luna agents `@labops` and `@pi-desk` in Switch Console to a Mattermost room bridged by Switch. Our team reaches the local Mattermost deployment over Tailscale. A student asks `@labops` to book a shared instrument; LabOps checks conflicts and proposes a slot. The intended next step is for the PI to review and approve the exact decision using a native card through the owner-only PI desk. Switch refused Darshan when he tried to address that desk as a non-owner.
+Switch is where the people and agents meet. We run Switch Console with two Codex agents, configured for `gpt-6-luna` with high reasoning effort and created from a LabQuorum room template: `rao-labops`, addressable by anyone as `@labops`, and `rao-pi-desk`, addressable only by its owner as `@pi-desk`. The template creates a private Mattermost room, `rao-labquorum`, bridged by Switch, with a lab handbook and bench-manager and approver roles. Both agents reach the booking ledger through a LabQuorum MCP server whose tool profile depends on the agent: LabOps can only read and propose, and only the PI desk profile can request a commit. The team joins the room over Tailscale with separate student and PI accounts.
 
-In the live AR-0042 smoke, LabOps named Lena's 14:00-15:30 booking and proposed 15:45-16:45; the request stayed pending and the booking proposed. Darshan's real chat run exposed unnecessary read-tool approval prompts, a requester fixed to Maya, and card answers misread as training claims. Fixes were merged, but Darshan's own retest is pending. Later synthetic-user retests created pending proposals but did not deliver the expected reply in the allotted time. In an isolated certify session, Switch's journal recorded native `commit_booking` approval requests with decision fields and Approve, Decline and Cancel options; they were interrupted. Rendered card visibility, a PI decision and a binding end-to-end booking remain pending certification, so binding remains off. Evidence: `docs/build/p3-agents.md`, [issue #8](https://github.com/nikhilpravinpise/FlipTheSwitch/issues/8), and the commit approval diagnostic.
+What we verified on the live deployment:
+
+- Proposal: LabOps named Dr. Lena Okafor's committed 14:00-15:30 booking and proposed 15:45-16:45 the same day. The request (AR-0042) stayed pending with no commit event and no approval card on the proposer side.
+- Owner-only PI desk: when Darshan addressed `@pi-desk` from his student account, Switch itself refused the message. In the P4 run, the PI desk also refused Maya's request to approve on her behalf, and the ledger was unchanged.
+- Approval path, in an isolated certification session on a test ledger: the native card showed the complete decision, the PI chose Approve once, and exactly one matching booking and one commit audit event were written (AR-0043). A PI decline left the request pending (AR-0044). A student's Approve answer did not settle the owner-only card (AR-0045). Two prompt-injection probes recorded matching cards and no commit (I-36, I-37).
+
+What is not proven yet, and why binding stays off: the one-commit-per-process limit was not exercised live because no verified Console session ID was available; three of five injection probes (I-38 to I-40) failed before capturing a request or card; and no live trace showed the model and effort actually used. Darshan's real student run also exposed bugs (read-only tools prompting for approval, requester fixed to one person, card answers misread as training claims). Those were fixed and merged. TODO(Darshan): one sentence with the post-fix retest result (request ID, what the reply said, pending state), or delete this sentence if the retest did not happen. Evidence: `docs/test-evidence.md`.
 
 ## What did you like about Switch, and what would you improve?
 
-Rooms, agent addressing and identity claims gave our team a practical way to bring people and agents together. The owner-only refusal worked in Darshan's live run, and the session journal showed native approval requests with the booking decision and choices. We still need to verify the rendered card and a fresh human decision before enabling binding.
+Rooms, agent aliases, owner-only addressing and identity claims gave us a real human-plus-agent workflow without writing a chat integration. The owner-only refusal is enforced by Switch itself, and native approval cards let a person review the exact tool call before it runs.
 
-We would improve the Console template-run timeout relative to agent startup; the reported 30-second limit remains UNVERIFIED in the available evidence. We would also make it clearer that hosted agents need to use `post_message` for a chat reply: final assistant text is not shown to participants. A later test produced an activity summary and a pending proposal without the requested answer; the exact cause is unverified. Approval choices can persist for a session, so we need clearer per-decision consent controls. In our Codex 0.166.0 spike, server-initiated MCP elicitation was not forwarded to the app-server client and returned cancel. We also had to understand global versus per-session agent Codex homes and repair the inherited Windows PATH on first launch so Docker's credential helper could be found. Clearer setup diagnostics and configuration visibility would help.
+What we would improve, from what we hit:
+
+- Hosted agents must call `post_message` to be visible; their final assistant text is not shown in the room. Some live turns produced an activity summary and a pending proposal but no answer within three to five minutes, and the cause is still unverified. A clear default or a warning would help.
+- Approval choices can persist for a session. Per-decision consent controls would make one-use approvals easier to guarantee.
+- In our Codex 0.166.0 spike, server-initiated MCP elicitation was not forwarded to the app-server client and returned cancel, so we used Codex's native tool-call approval instead.
+- After a Console relaunch, agents sometimes did not re-attach to the controller stream until reloaded, and running hosts could keep an old MCP configuration.
+- Understanding global versus per-session Codex homes took time, and on first launch we had to repair the inherited Windows PATH so Docker's credential helper could be found. Clearer setup diagnostics and configuration visibility would help.
+
+## Before submitting (not for the form)
+
+- [ ] Replace the three link TODO lines with links that open while logged out.
+- [ ] Resolve the retest TODO in the Switch section from issue #8 evidence. No TODO may remain in pasted text.
+- [ ] Re-read `docs/build/evidence/p4/certification.json`; if any scenario changed, update both Switch sections to match.
+- [ ] Confirm the repository is public and the README renders.
+- [ ] Both Wispr cards exported after the last genuine dictation and attached.

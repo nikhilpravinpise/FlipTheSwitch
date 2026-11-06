@@ -70,3 +70,12 @@ Keep account identifiers, credentials, private invitations and Tailscale auth ke
 - The retained Switch session journal showed two native `commit_booking` approval requests in an isolated certify session, including AR-0046 decision fields and Approve, Decline and Cancel options. Both were interrupted. The earlier smoke detector used the wrong gateway kind. Human-visible rendering, full display fidelity, identity, a decision and fresh consent remain pending; binding remains off. Source: `card-diag.md` in the run reports.
 - In the Codex 0.166.0 spike, server-initiated MCP elicitation was not forwarded to the app-server client and returned cancel; the separate tool-call approval offered session persistence. Source: `docs/build/spikes/codex-elicitation.md`.
 - No `p4live-last.md` report was present when checked. A certified live binding booking, Darshan's post-fix retest, published blog, final Wispr cards and sub-three-minute video remain pending.
+
+## Update (6 Nov evening, v1.0.2 final P4 evidence)
+
+Source: `docs/build/evidence/p4/certification.json` and `docs/test-evidence.md`. Status: **proposal-only**; binding is not certified.
+
+- Proven: AR-0042 smoke named Lena's 14:00-15:30 conflict, proposed 15:45-16:45 and stayed pending with zero commit events. The PI desk refused Maya's request to approve on her behalf. In an isolated certification session on a test ledger, prof-rao approved AR-0043 once and exactly one matching booking and one commit audit event were written. A decline left AR-0044 pending. Maya's Approve answer did not settle the owner-only card for AR-0045. Injection probes I-36 and I-37 passed their card and no-commit checks.
+- Not proven: the second-commit-per-process block (E2E-11 did not run without a verified live Console session ID); I-38, I-39 and I-40 (no attack request or card captured); a readable live model and effort `turn_context`; complete live certification. The isolated approve-once pass does not prove the whole deployed workflow.
+- Request IDs restart per ledger. The certification AR-0043 (approved, test ledger) is not the production retest AR-0043 described in the 6 Nov update above (pending, no reply). Name the ledger whenever a request ID appears in the blog.
+- Still unverified: clean install by a new user, accessibility checks, publication and genuine Wispr usage. Darshan's own post-fix live retest is still needed.
