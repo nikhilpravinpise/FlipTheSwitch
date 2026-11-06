@@ -362,6 +362,9 @@ def test_U_S06_unrelated_dataset_runs_remain_current(tmp_path: Path) -> None:
     assert _call(runtime, "run_status", run_id=unrelated_run["run_id"])["status"] == "CURRENT"
 
 
+# Each example creates a fresh file-backed SQLite ledger; Windows CI runners need more than the
+# suite-wide 60 s for 100 examples. The property, strategy and example count are unchanged.
+@pytest.mark.timeout(300)
 @given(edge_codes=st.sets(st.integers(0, 41), max_size=42))
 def test_P_07_stale_propagation_is_monotonic_and_complete_against_independent_oracle(
     edge_codes: set[int],
