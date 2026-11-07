@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import shutil
 import sys
 from collections.abc import AsyncIterator
@@ -74,13 +75,22 @@ async def _connect(profile: str, database: Path) -> AsyncIterator[ClientSession]
     parameters = StdioServerParameters(
         command=sys.executable,
         args=[
-            "-m",
-            "labquorum.mcp.server",
-            "--profile",
+            "-c",
+            (
+                "import asyncio, sys; "
+                "from datetime import datetime; "
+                "from pathlib import Path; "
+                "from labquorum.domain.timeutil import FixedClock; "
+                "from labquorum.mcp.server import create_server; "
+                "server = create_server(sys.argv[1], Path(sys.argv[2]), "
+                "clock=FixedClock(datetime.fromisoformat(sys.argv[3])), "
+                "binding=sys.argv[4]); "
+                "asyncio.run(server.run_stdio_async())"
+            ),
             profile,
-            "--db",
             str(database),
-            *(["--binding", "certify"] if profile == "approver" else []),
+            os.environ.get("LQ_TEST_CLOCK", REPLAY_NOW.isoformat()),
+            "certify" if profile == "approver" else "off",
         ],
         cwd=ROOT,
     )
