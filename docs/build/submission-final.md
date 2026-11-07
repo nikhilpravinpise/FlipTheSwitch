@@ -22,7 +22,7 @@ https://github.com/nikhilpravinpise/FlipTheSwitch
 
 ## Demo video
 
-TODO(Darshan): checked unlisted YouTube link, under 3:00, verified while logged out.
+https://youtu.be/GbRepWsmOqk
 
 ## Live demo
 
@@ -49,7 +49,7 @@ Switch is where the people and agents meet. We run Switch Console with two Codex
 What we verified on the live deployment:
 
 - Proposal: LabOps named Dr. Lena Okafor's committed 14:00-15:30 booking and proposed 15:45-16:45 the same day. The request (AR-0042) stayed pending with no commit event and no approval card on the proposer side.
-- Saturday student retest: Darshan reported a reply in about 80 seconds, zero approval cards, and Switch refusing his request to `@pi-desk` to approve; the room ledger records his INS-01 proposal as AR-0044 for Mon 9 Nov 2026, 15:45-16:45 IST, initially pending and later expired, with no commit event for that request.
+- Saturday student retest: Darshan reported a reply in about 80 seconds, zero approval cards, and Switch refusing his request to `@pi-desk` to approve; the room ledger records his INS-01 proposal as AR-0044 for Mon 9 Nov 2026, 15:45-16:45 IST, initially pending and later expired, with no commit event for that request; the room ledger also records AR-0046 pending with no commit, and Darshan reports that Switch refused his student approval request to `@pi-desk` in the video.
 - Owner-only PI desk: when Darshan addressed `@pi-desk` from his student account, Switch itself refused the message. In the P4 run, the PI desk also refused Maya's request to approve on her behalf, and the ledger was unchanged.
 - Approval path, in an isolated certification session on a test ledger: the native card showed the complete decision, the PI chose Approve once, and exactly one matching booking and one commit audit event were written (AR-0043). A PI decline left the request pending (AR-0044). A student's Approve answer did not settle the owner-only card (AR-0045). Two prompt-injection probes recorded matching cards and no commit (I-36, I-37).
 
@@ -69,7 +69,9 @@ What we would improve, from what we hit:
 
 ## Before submitting (not for the form)
 
-- [ ] Replace the demo video marker with a link that opens while logged out, and update the README video marker.
+- [x] Add the demo video link to the submission text and README.
+- [ ] Check video playback while logged out.
+- [ ] Paste the submission text into the form.
 - [x] Re-read `docs/build/evidence/p4/certification.json` and `docs/test-evidence.md`; the Switch sections match the recorded scenarios.
 - [x] Confirm the repository is public and the README renders.
 - [x] Darshan reported the post-fix student retest; the room ledger confirms the proposal and expiry.
