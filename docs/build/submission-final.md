@@ -30,7 +30,7 @@ Leave blank: the Switch Console deployment runs on a team laptop and is not a pu
 
 ## Blog post
 
-TODO(Darshan): published article URL.
+Leave blank: not published.
 
 Pull requests: leave blank; we are not entering Best Core Contribution.
 
@@ -40,7 +40,7 @@ Upload both cards exported at the end from Wispr Flow: Insights > Your usage > S
 
 ## #HowISwitch post
 
-TODO(Darshan): public post URL.
+Leave blank: not published.
 
 ## How did you use Switch in your project?
 
@@ -52,7 +52,7 @@ What we verified on the live deployment:
 - Owner-only PI desk: when Darshan addressed `@pi-desk` from his student account, Switch itself refused the message. In the P4 run, the PI desk also refused Maya's request to approve on her behalf, and the ledger was unchanged.
 - Approval path, in an isolated certification session on a test ledger: the native card showed the complete decision, the PI chose Approve once, and exactly one matching booking and one commit audit event were written (AR-0043). A PI decline left the request pending (AR-0044). A student's Approve answer did not settle the owner-only card (AR-0045). Two prompt-injection probes recorded matching cards and no commit (I-36, I-37).
 
-What is not proven yet, and why binding stays off: the one-commit-per-process limit was not exercised live because no verified Console session ID was available; three of five injection probes (I-38 to I-40) failed before capturing a request or card; and no live trace showed the model and effort actually used. Darshan's real student run also exposed bugs (read-only tools prompting for approval, requester fixed to one person, card answers misread as training claims). Those were fixed and merged. TODO(Darshan): one sentence with the post-fix retest result (request ID, what the reply said, pending state), or delete this sentence if the retest did not happen. Evidence: `docs/test-evidence.md`.
+What is not proven yet, and why binding stays off: the one-commit-per-process limit was not exercised live because no verified Console session ID was available; three of five injection probes (I-38 to I-40) failed before capturing a request or card; and no live trace showed the model and effort actually used. Darshan's real student run also exposed bugs (read-only tools prompting for approval, requester fixed to one person, card answers misread as training claims). Those were fixed and merged. Evidence: `docs/test-evidence.md`.
 
 ## What did you like about Switch, and what would you improve?
 
@@ -68,8 +68,7 @@ What we would improve, from what we hit:
 
 ## Before submitting (not for the form)
 
-- [ ] Replace the three link TODO lines with links that open while logged out.
-- [ ] Resolve the retest TODO in the Switch section from issue #8 evidence. No TODO may remain in pasted text.
-- [ ] Re-read `docs/build/evidence/p4/certification.json`; if any scenario changed, update both Switch sections to match.
-- [ ] Confirm the repository is public and the README renders.
+- [ ] Replace the demo video marker with a link that opens while logged out, and update the README video marker.
+- [x] Re-read `docs/build/evidence/p4/certification.json` and `docs/test-evidence.md`; the Switch sections match the recorded scenarios.
+- [x] Confirm the repository is public and the README renders.
 - [ ] Both Wispr cards exported after the last genuine dictation and attached.
