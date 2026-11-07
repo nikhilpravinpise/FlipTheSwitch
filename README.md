@@ -54,7 +54,7 @@ collaborative workflow.
 
 ## Demo
 
-**Video:** TODO(Darshan): unlisted YouTube link to the proposal-only demo (under 3:00).
+**Video:** https://youtu.be/GbRepWsmOqk (proposal-only demo, 1:50, unlisted).
 
 1. A researcher asks `@labops` for an instrument and an explicit time window.
 2. LabOps checks training, availability and conflicts, names a conflicting booking
