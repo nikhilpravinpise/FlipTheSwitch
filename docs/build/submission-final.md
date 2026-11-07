@@ -1,5 +1,7 @@
 # Submission text
 
+Submitted 7 Nov 2026 22:30 IST.
+
 Evidence basis: `docs/build/evidence/p4/certification.json` and `docs/test-evidence.md` at v1.0.2 (`b1a5b14`), plus Darshan's Saturday retest report and the room ledger. Paste each section below into the matching form field. The checklist at the end is not part of the submission.
 
 ## Project title
@@ -36,7 +38,7 @@ Pull requests: leave blank; we are not entering Best Core Contribution.
 
 ## Wispr usage card
 
-Upload both Wispr Flow cards: `docs/build/evidence/wispr/insights-2026-11-05-1336.png` and `docs/build/evidence/wispr/insights-2026-11-07-2043.png`.
+Upload both Wispr Flow cards: `docs/build/evidence/wispr/nikhil-wispr-share-card-2026-11-07.png` (Nikhil) and `docs/build/evidence/wispr/insights-2026-11-07-2043.png` (Darshan).
 
 ## #HowISwitch post
 
@@ -70,11 +72,11 @@ What we would improve, from what we hit:
 ## Before submitting (not for the form)
 
 - [x] Add the demo video link to the submission text and README.
-- [ ] Check video playback while logged out.
-- [ ] Paste the submission text into the form.
+- [x] Check video playback while logged out.
+- [x] Paste the submission text into the form.
 - [x] Re-read `docs/build/evidence/p4/certification.json` and `docs/test-evidence.md`; the Switch sections match the recorded scenarios.
 - [x] Confirm the repository is public and the README renders.
 - [x] Darshan reported the post-fix student retest; the room ledger confirms the proposal and expiry.
 - [x] Blog published; review the identity claims flagged in the pull request.
 - [x] Both Wispr cards are on hand.
-- [ ] Attach both Wispr cards to the form after the last genuine dictation.
+- [x] Attach both Wispr cards to the form after the last genuine dictation.
