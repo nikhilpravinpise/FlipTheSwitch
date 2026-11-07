@@ -1,6 +1,6 @@
 # Submission text
 
-Evidence basis: `docs/build/evidence/p4/certification.json` and `docs/test-evidence.md` at v1.0.2 (`b1a5b14`), plus Darshan's Saturday retest once it is recorded. Paste each section below into the matching form field. The checklist at the end is not part of the submission.
+Evidence basis: `docs/build/evidence/p4/certification.json` and `docs/test-evidence.md` at v1.0.2 (`b1a5b14`), plus Darshan's Saturday retest report and the room ledger. Paste each section below into the matching form field. The checklist at the end is not part of the submission.
 
 ## Project title
 
@@ -30,17 +30,17 @@ Leave blank: the Switch Console deployment runs on a team laptop and is not a pu
 
 ## Blog post
 
-Leave blank: not published.
+https://dev.to/darshan_ved_9ca4564654404/a-proposal-is-not-a-reservation-what-we-learned-putting-ai-agents-in-a-labs-booking-chat-3cee
 
 Pull requests: leave blank; we are not entering Best Core Contribution.
 
 ## Wispr usage card
 
-Upload both cards exported at the end from Wispr Flow: Insights > Your usage > Share.
+Upload both Wispr Flow cards: `docs/build/evidence/wispr/insights-2026-11-05-1336.png` and `docs/build/evidence/wispr/insights-2026-11-07-2043.png`.
 
 ## #HowISwitch post
 
-Leave blank: not published.
+Leave blank: not posting.
 
 ## How did you use Switch in your project?
 
@@ -49,6 +49,7 @@ Switch is where the people and agents meet. We run Switch Console with two Codex
 What we verified on the live deployment:
 
 - Proposal: LabOps named Dr. Lena Okafor's committed 14:00-15:30 booking and proposed 15:45-16:45 the same day. The request (AR-0042) stayed pending with no commit event and no approval card on the proposer side.
+- Saturday student retest: Darshan reported a reply in about 80 seconds, zero approval cards, and Switch refusing his request to `@pi-desk` to approve; the room ledger records his INS-01 proposal as AR-0044 for Mon 9 Nov 2026, 15:45-16:45 IST, initially pending and later expired, with no commit event for that request.
 - Owner-only PI desk: when Darshan addressed `@pi-desk` from his student account, Switch itself refused the message. In the P4 run, the PI desk also refused Maya's request to approve on her behalf, and the ledger was unchanged.
 - Approval path, in an isolated certification session on a test ledger: the native card showed the complete decision, the PI chose Approve once, and exactly one matching booking and one commit audit event were written (AR-0043). A PI decline left the request pending (AR-0044). A student's Approve answer did not settle the owner-only card (AR-0045). Two prompt-injection probes recorded matching cards and no commit (I-36, I-37).
 
@@ -71,4 +72,7 @@ What we would improve, from what we hit:
 - [ ] Replace the demo video marker with a link that opens while logged out, and update the README video marker.
 - [x] Re-read `docs/build/evidence/p4/certification.json` and `docs/test-evidence.md`; the Switch sections match the recorded scenarios.
 - [x] Confirm the repository is public and the README renders.
-- [ ] Both Wispr cards exported after the last genuine dictation and attached.
+- [x] Darshan reported the post-fix student retest; the room ledger confirms the proposal and expiry.
+- [x] Blog published; review the identity claims flagged in the pull request.
+- [x] Both Wispr cards are on hand.
+- [ ] Attach both Wispr cards to the form after the last genuine dictation.
